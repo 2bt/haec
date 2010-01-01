@@ -5,11 +5,13 @@
 
 
 typedef struct {
+	int is_switch;
 	int id;
 	int parent_id;
 	int state;
 	double timestamp;
 
+	// these are invalid for switches
 	struct in_addr addr;
 	unsigned short port;
 	int socket_fd;
@@ -17,15 +19,16 @@ typedef struct {
 
 } Worker;
 
-
+/*
 typedef struct {
+	int is_switch;
 	int id;
 	int parent_id;
 	int state;
 	double timestamp;
 
 } Switch;
-
+*/
 
 enum {
 	WORKER_OFF,

@@ -80,6 +80,8 @@ void event_print(const Event* e, double time) {
 	case EVENT_SCENARIO_START:
 		server_log_event(" (file: %s)", e->scenario);
 		break;
+	case EVENT_SWITCH_ON:
+	case EVENT_SWITCH_OFF:
 	case EVENT_WORKER_ON:
 	case EVENT_WORKER_ONLINE:
 	case EVENT_WORKER_OFFLINE:

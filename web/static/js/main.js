@@ -242,6 +242,8 @@ $(document).ready(function() {
 						"WORK_REQUEST": true,
 						"WORK_COMMAND": true,
 						"WORK_COMPLETE": true,
+						"SWITCH_ON": true,
+						"SWITCH_OFF": true,
 						"WORKER_ON": true,
 						"WORKER_ONLINE": true,
 						"WORKER_OFF": true,
@@ -291,6 +293,25 @@ $(document).ready(function() {
 								f.complete = e;
 							}
 						});
+					}
+					else if (e.e == "SWITCH_ON") {
+						var i;
+						for (i = 0; i < events.length; i++) {
+							var f = events[i];
+							if (f.e == "SWITCH_ON" && f.info["id"] == e.info["id"] && !f.complete) {
+								break;
+							}
+						}
+						if (i == events.length) {
+							var i = id_to_index(e.info.id);
+							events.push(e);
+							e.svg.rect = svg_events_back_layer.append("rect")
+							.attr("y", (i + 1) * margin.row)
+							.attr("height", margin.row)
+							.style("stroke", "none")
+							.style("fill-opacity", 0.8)
+							.style("fill", d3.rgb(colors(i)));
+						}
 					}
 					else if (e.e == "WORKER_ON") {
 
@@ -349,6 +370,13 @@ $(document).ready(function() {
 						}
 
 					}
+					else if (e.e == "SWITCH_OFF") {
+						events.forEach(function(f) {
+							if (f.e == "SWITCH_ON" && f.info["id"] == e.info["id"] && !f.complete) {
+								f.complete = e;
+							}
+						});
+					}
 					else if (e.e == "WORKER_OFF") {
 						events.forEach(function(f) {
 							if (f.e == "WORKER_ON" && f.info["id"] == e.info["id"] && !f.complete) {
@@ -375,7 +403,7 @@ $(document).ready(function() {
 					// remove old events
 					if (e.t < time - past) {
 
-						if (e.e == "WORK_COMMAND" || e.e == "WORKER_ONLINE" || e.e == "WORKER_ON") {
+						if (e.e == "WORK_COMMAND" || e.e == "WORKER_ONLINE" || e.e == "WORKER_ON" || e.e == "SWITCH_ON") {
 							if (e.complete && e.complete.t < time - past) {
 								e.svg.rect.remove();
 								events.splice(i, 1);
@@ -398,7 +426,7 @@ $(document).ready(function() {
 					if (e.e == "WORK_REQUEST") {
 						e.svg.marker.attr("transform", "translate(" + x(e.t) + ",0)");
 					}
-					if (e.e == "WORK_COMMAND" || e.e == "WORKER_ONLINE" || e.e == "WORKER_ON") {
+					if (e.e == "WORK_COMMAND" || e.e == "WORKER_ONLINE" || e.e == "WORKER_ON" || e.e == "SWITCH_ON") {
 						var x1 = x(e.t);
 						if (x1 < 0) x1 = -1;
 						var x2 = width;

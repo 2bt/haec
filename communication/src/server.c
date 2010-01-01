@@ -13,7 +13,6 @@
 #include "cambri.h"
 
 
-// TODO: move this to scheme
 #define TIME_HALTING 13.0
 #define TIME_REBOOTDELAY 12.0
 #define TIME_NOCURRENT 12.0
@@ -61,14 +60,20 @@ static int server_command(char* cmd) {
 		printf("exiting...\n");
 	}
 	else if (strcmp(cmd, "status") == 0) {
-		printf(" id   | parent | address:port          | socket | state   | time\n");
-		printf("------+--------+-----------------------+--------+---------+-------------\n");
+		printf(" type   | id   | parent | address:port          | socket | state   | time\n");
+		printf("--------+------+--------+-----------------------+--------+---------+-------------\n");
 		for (w = worker_next(NULL); w; w = worker_next(w)) {
+			if (!w->is_switch) {
 			char s[INET_ADDRSTRLEN];
 			inet_ntop(AF_INET, &w->addr, s, sizeof(s));
-			printf(" %-4d | %-6d | %-15s:%05d | %6d | %-7s | %s\n",
+			printf(" worker | %-4d | %-6d | %-15s:%05d | %6d | %-7s | %s\n",
 				w->id, w->parent_id, s, w->port, w->socket_fd,
 				worker_state_string(w->state), format_timestamp(time - w->timestamp));
+			}
+			else {
+			printf(" switch | %-4d | %-6d | %21s |        | %-7s | %s\n",
+				w->id, w->parent_id, "", worker_state_string(w->state), format_timestamp(time - w->timestamp));
+			}
 		}
 	}
 	else if (sscanf(cmd, "work %lf %lf", &size, &duration) == 2) {
@@ -304,7 +309,22 @@ void server_process_events(void) {
 		case EVENT_SCENARIO_DONE:
 			break;
 
+		case EVENT_SWITCH_ON:
+			if (!w->is_switch) break;
+			w->state = WORKER_RUNNING;
+			w->timestamp = time;
+			cambri_set_mode(w->id, CAMBRI_CHARGE);
+			break;
+
+		case EVENT_SWITCH_OFF:
+			if (!w->is_switch) break;
+			w->state = WORKER_OFF;
+			w->timestamp = time;
+			cambri_set_mode(w->id, CAMBRI_OFF);
+			break;
+
 		case EVENT_WORKER_ON:
+			if (w->is_switch) break;
 			if (w->state != WORKER_OFF && w->state != WORKER_REBOOTING) {
 				printf("worker %d cannot be turned on as it is not off\n", w->id);
 				w->state = WORKER_ERROR;
@@ -354,6 +374,7 @@ void server_process_events(void) {
 			break;
 
 		case EVENT_WORK_COMMAND:
+			if (w->is_switch) break;
 			sendf(w->socket_fd, "work %d %lf", e->work_id, e->load_size);
 			break;
 
@@ -372,9 +393,10 @@ void server_process_events(void) {
 			break;
 
 		case EVENT_HALT_COMMAND:
+			if (w->is_switch) break;
 			sendf(w->socket_fd, "halt");
 			w->state = WORKER_HALTING;
-			w->timestamp = timestamp();
+			w->timestamp = time;
 			break;
 
 		case EVENT_HALT_ACK:
@@ -402,12 +424,15 @@ static void server_done(int sig) { server.running = 0; }
 
 
 void server_run(int argc, char** argv) {
-
 	if (argc == 2) {
 		Event* e = event_append(EVENT_SCENARIO_START);
 		e->scenario = strdup(argv[1]);
 	}
 
+	server.work_counter = 0;
+	server.timestamp = absolut_timestamp();
+	server.e_meter_timestamp = 0;
+	server.running = 1;
 
 	if (cambri_init()) printf("error initializing cambri\n");
 	if (worker_init()) {
@@ -436,17 +461,12 @@ void server_run(int argc, char** argv) {
 	}
 
 
-
 	FD_ZERO(&server.fds);
 	FD_SET(STDIN, &server.fds);
 	FD_SET(listener, &server.fds);
 	FD_SET(commander, &server.fds);
-
 	server.fdmax = commander;
-	server.work_counter = 0;
-	server.timestamp = absolut_timestamp();
-	server.e_meter_timestamp = 0;
-	server.running = 1;
+
 	signal(SIGINT, server_done);
 
 	server.log_fd = fopen("event.log", "w");

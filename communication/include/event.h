@@ -22,6 +22,9 @@ enum {
 	EVENT_SCENARIO_START,
 	EVENT_SCENARIO_DONE,
 
+	EVENT_SWITCH_ON,
+	EVENT_SWITCH_OFF,
+
 	EVENT_WORKER_ON,
 	EVENT_WORKER_ONLINE,
 	EVENT_WORKER_OFFLINE,
@@ -51,6 +54,9 @@ static inline const char* event_type_string(int type) {
 	static const char* strings[] = {
 		"SCENARIO_START",
 		"SCENARIO_DONE",
+
+		"SWITCH_ON",
+		"SWITCH_OFF",
 
 		"WORKER_ON",
 		"WORKER_ONLINE",

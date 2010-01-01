@@ -12,9 +12,6 @@
 static Worker* workers = NULL;
 static int worker_count;
 
-static Switch* switches = NULL;
-static int switch_count;
-
 
 void worker_kill(void) {
 	if (workers) {
@@ -22,11 +19,6 @@ void worker_kill(void) {
 		workers = NULL;
 	}
 	worker_count = 0;
-	if (switches) {
-		free(switches);
-		switches = NULL;
-	}
-	switch_count = 0;
 }
 
 
@@ -57,6 +49,7 @@ int worker_init(void) {
 			Worker* w = &workers[worker_count - 1];
 
 			inet_pton(AF_INET, addr, &w->addr);
+			w->is_switch = 0;
 			w->id = id;
 			w->parent_id = parent_id;
 
@@ -81,14 +74,16 @@ int worker_init(void) {
 		}
 		else if (sscanf(line, "switch %d %d", &id, &parent_id) == 2) {
 
-			switch_count++;
-			switches = realloc(workers, sizeof(Switch) * switch_count);
-			Switch* s = &switches[switch_count - 1];
+			worker_count++;
+			workers = realloc(workers, sizeof(Worker) * worker_count);
+			Worker* w = &workers[worker_count - 1];
+			memset(w, 0, sizeof(Worker));
 
-			s->id = id;
-			s->parent_id = parent_id;
-			s->state = WORKER_OFF;
-			s->timestamp = time;
+			w->is_switch = 1;
+			w->id = id;
+			w->parent_id = parent_id;
+			w->state = WORKER_OFF;
+			w->timestamp = time;
 
 			racr_call_str("add-switch-to-ast", "iid", id, parent_id, time);
 		}
@@ -113,6 +108,7 @@ Worker* worker_find_by_address(struct in_addr a, unsigned short p) {
 	int i;
 	for (i = 0; i < worker_count; i++) {
 		Worker* w = &workers[i];
+		if (w->is_switch) continue;
 		if (w->addr.s_addr == a.s_addr && w->port == p) return w;
 	}
 	return NULL;
@@ -123,6 +119,7 @@ Worker* worker_find_by_socket(int s) {
 	int i;
 	for (i = 0; i < worker_count; i++) {
 		Worker* w = &workers[i];
+		if (w->is_switch) continue;
 		if (w->socket_fd == s) return w;
 	}
 	return NULL;

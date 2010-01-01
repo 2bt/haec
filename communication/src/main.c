@@ -50,6 +50,16 @@ static Scheme_Object* prim_add_event(int argc, Scheme_Object** argv) {
 		e->worker = worker_find_by_id(SCHEME_INT_VAL(argv[1]));
 		return scheme_true;
 	}
+	else if (strcmp(sym, "event-switch-on") == 0) {
+		Event* e = event_append(EVENT_SWITCH_ON);
+		e->worker = worker_find_by_id(SCHEME_INT_VAL(argv[1]));
+		return scheme_true;
+	}
+	else if (strcmp(sym, "event-switch-off") == 0) {
+		Event* e = event_append(EVENT_SWITCH_OFF);
+		e->worker = worker_find_by_id(SCHEME_INT_VAL(argv[1]));
+		return scheme_true;
+	}
 
 	return scheme_false;
 }
