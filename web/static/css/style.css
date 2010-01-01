@@ -14,6 +14,7 @@ body {
 
 .right {
 	padding:0.5em;
+	min-width:200px;/* else in firefox it looks ugly */
 }
 .chart-title {
 	display:inline-block;

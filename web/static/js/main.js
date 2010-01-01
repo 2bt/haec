@@ -204,7 +204,7 @@ $(document).ready(function() {
 						events.push(e);
 						e.svg.marker = svg_events_front_layer.append("polygon")
 						.attr("class", "work-request")
-						.attr("points", "-3,0, 3,0, 0,15");
+						.attr("points", "0,0 5,5 0,10 0,0");
 
 					}
 					else if (e.e == "WORK_COMMAND") {

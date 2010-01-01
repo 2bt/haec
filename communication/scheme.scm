@@ -79,6 +79,7 @@
             ((backup-strategy (ast-child 'backupworkers n)))
              (cond
                ((eq? backup-strategy 'one-two) (one-two))
+               ((eq? backup-strategy 'one-three) (idle-min 1 3))
                (else backup-strategy))))))
 
 
@@ -391,6 +392,24 @@
      ;(displayln num-working-workers)
       (if (< num-working-workers 1) (- 2 num-working-workers) 1))))
 
+
+(define idle-min
+  (lambda (idle min-idle)
+    (display "[FUNCTION] idle-min\n")
+    (let*
+      ((working-workers
+             (att-value
+               'get-filtered-workers
+               config
+               (lambda (w)
+                 (let
+                   ((worker-working? (< 0 (ast-num-children (ast-child 'Queue w))))
+                    (worker-running? (eq? (ast-child 'state w) 'RUNNING)))
+                   worker-working?))))
+       (num-working-workers (length working-workers)))
+     ;(display "num-working-workers: ")
+     ;(displayln num-working-workers)
+      (if (< num-working-workers min-idle) (- min-idle num-working-workers) idle))))
 
 ; only the bootable workers can be considered.
 (define adapt

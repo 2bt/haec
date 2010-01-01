@@ -163,7 +163,7 @@ var Graph = function(recording_name, ready_function, recording_title, color) {
 				events.push(e);
 				e.svg.marker = svg_events_front_layer.append("polyline")
 				.attr("class", "marker")
-				.attr("points", "0,0, 5,5 0,10");
+				.attr("points", "0,0 5,5 0,10 0,0");
 
 			}
 			else if (e.e == "WORK_COMMAND") {
