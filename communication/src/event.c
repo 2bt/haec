@@ -75,6 +75,7 @@ void event_print(const Event* e, double time) {
 	case EVENT_SCENARIO_START:
 		server_log(" (file: %s)", e->scenario);
 		break;
+	case EVENT_WORKER_ON:
 	case EVENT_WORKER_ONLINE:
 	case EVENT_WORKER_OFFLINE:
 	case EVENT_WORKER_OFF:

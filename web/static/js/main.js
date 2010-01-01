@@ -104,6 +104,7 @@ $(document).ready(function() {
 
 	(function poll() {
 		$.post("poll", { "t": time, "m": past + delta }, function(json) {
+			console.log("poll", json);
 
 			if (json.current.length > 0) {
 				if (first_poll) {

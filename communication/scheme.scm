@@ -226,16 +226,15 @@
                    (att-value 'predicted-termination-time (ast-child (- index 1) queue))))
                (error
                  (cond
-                   (((> (+ dispatch-time processing-timespan) deadline)
-                     "deadline cannot be met.")
-                    (((and
-                        (<= index queue-length)
-                        (let
-                          ((deferment (att-value 'maximum-dispatch-deferment (ast-child index queue))))
-                          (> processing-timespan deferment)))
-                      "requests cannot be defered."
-                      ))
-                    (else #f)))))
+                   ((> (+ dispatch-time processing-timespan) deadline)
+                    "deadline cannot be met.")
+                   ((and
+                      (<= index queue-length)
+                      (let
+                        ((deferment (att-value 'maximum-dispatch-deferment (ast-child index queue))))
+                        (> processing-timespan deferment)))
+                    "requests cannot be defered.")
+                   (#t #f))))
               (if error
                 (cons #f error)
                 (cons n index))))))
@@ -255,15 +254,15 @@
                        (att-value 'workload-heuristic a)
                        (att-value 'workload-heuristic b)))
                    workers)))
-              (display (length sorted-workers))
+              ;(display (length sorted-workers))
               (let next ((rest sorted-workers))
                 (if (null? rest)
-                  (cons #f (string-append "[e4] switch does not have running workers: " (number->string (ast-child 'id n))))
+                  (cons #f (format "request could not be scheduled."))
                   (let*
                     ((pair (att-value 'schedule-batman (car rest) time work-id load-size deadline))
                      (w (car pair))
                      (i (cdr pair)))
-                    (display i)
+                    ;(display i)
                     (if w
                       pair
                       (next (cdr rest)))))))))))

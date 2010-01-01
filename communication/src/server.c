@@ -126,7 +126,7 @@ static int server_command(char* cmd) {
 		w->timestamp = timestamp();
 	}
 
-	else if (sscanf(cmd, "work-command %d %d %lf", &id, &work_id, &size) == 4) {
+	else if (sscanf(cmd, "work-command %d %d %lf", &id, &work_id, &size) == 3) {
 		w = worker_find_by_id(id);
 		if (!w) {
 			printf("error: %s\n", cmd);
