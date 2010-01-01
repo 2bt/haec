@@ -119,14 +119,23 @@ svg {
 }
 
 .work-command {
-	shape-rendering: crispEdges;
+/*	shape-rendering: crispEdges; */
 	fill:#ddd;
 	stroke:#999;
+}
+.work-command-highlight {
+/*	shape-rendering: crispEdges; */
+	fill:#fdd;
+	stroke:#f99;
 }
 
 .marker {
 	stroke:#444;
 	fill:#444;
+}
+.dead {
+	stroke:#f44;
+	fill:#f44;
 }
 
 .work-request {

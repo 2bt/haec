@@ -161,9 +161,24 @@ var Graph = function(recording_name, ready_function, recording_title, color) {
 
 			if (e.e == "WORK_REQUEST") {
 				events.push(e);
+
+				e.svg.dead = svg_events_front_layer.append("polyline")
+				.attr("class", "dead")
+				.style("visibility", "hidden")
+				.attr("points", "0,0 -5,5 0,10 0,0");
+
 				e.svg.marker = svg_events_front_layer.append("polyline")
 				.attr("class", "marker")
-				.attr("points", "0,0 5,5 0,10 0,0");
+				.attr("points", "0,0 5,5 0,10 0,0")
+				.on("mouseover", function(){
+					e.svg.dead.style("visibility", "visible");
+					if (e.command) e.command.svg.rect.attr("class", "work-command-highlight");
+				})
+				.on("mouseout", function(){
+					e.svg.dead.style("visibility", "hidden");
+					if (e.command) e.command.svg.rect.attr("class", "work-command");
+				})
+
 
 			}
 			else if (e.e == "WORK_COMMAND") {
@@ -275,6 +290,7 @@ Graph.set_x_domain = function(a, b) {
 
 		if (e.e == "WORK_REQUEST") {
 			e.svg.marker.attr("transform", "translate(" + self.x_scale(e.t) + ",0)");
+			e.svg.dead.attr("transform", "translate(" + self.x_scale(e.info.deadline) + ",0)");
 		}
 		if (e.e == "WORK_COMMAND" || e.e == "WORKER_ONLINE" || e.e == "WORKER_ON") {
 			var x1 = self.x_scale(e.t);
