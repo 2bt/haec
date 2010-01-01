@@ -96,12 +96,18 @@ h2 {
 
 
 svg {
-	font: 10px sans-serif;
+	font: 11px sans-serif;
 	display: block;
 	background-color:#fff;
 	margin-bottom:10px;
 }
 
+.legend {
+	font: 14px sans-serif;
+	display: block;
+	background-color:#fff;
+	margin-bottom:10px;
+}
 .axis path,
 .axis line {
 	fill: none;
@@ -118,8 +124,8 @@ svg {
 }
 
 .marker {
-	shape-rendering: crispEdges;
-	stroke:#777;
+	stroke:#444;
+	fill:#444;
 }
 
 .work-request {

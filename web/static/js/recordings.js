@@ -1,6 +1,6 @@
 
 
-var Graph = function(recording_name, ready_function, recording_title) {
+var Graph = function(recording_name, ready_function, recording_title, color) {
 	var self = this;
 
 	var x_scale = d3.scale.linear().range([0, self.width]);
@@ -49,29 +49,17 @@ var Graph = function(recording_name, ready_function, recording_title) {
 	.attr("transform", "translate(" + margin.left_label + "," + (margin.top + self.height + margin.middle) + ")");
 
 
-	var svg_xAxis = svg_chart.append("g")
-	.attr("class", "x axis")
-	.attr("transform", "translate(0," + self.height + ")")
-
-	var svg_yAxis = svg_chart.append("g")
-	.attr("class", "y axis");
-
-	svg_yAxis.append("text")
-	.attr("transform", "rotate(-90)")
-	.attr("y", 6)
-	.attr("dy", ".71em")
-	.style("text-anchor", "end")
-	.text("Power (W)");
-
-	y_scale.domain([0, 20]);
-	svg_yAxis.call(yAxis);
-
-
+	svg_chart.append("rect")
+		.attr("x", self.width / 3)
+		.attr("y", -10)
+		.attr("width", 20)
+		.attr("height", 20)
+		.attr("fill", color);
 	svg_chart.append("text")
-		.attr("x", self.width / 2)
+		.attr("x", self.width / 3 + 30)
 		.attr("y", 0)
 		.attr("dy", ".45em")
-		.style("text-anchor", "middle")
+		.style("text-anchor", "left")
 		.attr("class", "chart-title")
 		.text(recording_title);
 
@@ -84,7 +72,6 @@ var Graph = function(recording_name, ready_function, recording_title) {
 	self.areas = areas;
 	self.xAxis = xAxis;
 	self.x_scale = x_scale;
-	self.svg_xAxis = svg_xAxis;
 
 	$.post("get_recording_data", { "n": recording_name }, function(json) {
 		self.json = json;
@@ -127,6 +114,25 @@ var Graph = function(recording_name, ready_function, recording_title) {
 			}
 		});
 
+		var svg_xAxis = svg_chart.append("g")
+		.attr("class", "x axis")
+		.attr("transform", "translate(0," + self.height + ")")
+
+		var svg_yAxis = svg_chart.append("g")
+		.attr("class", "y axis");
+
+		svg_yAxis.append("text")
+		.attr("transform", "rotate(-90)")
+		.attr("y", 6)
+		.attr("dy", ".71em")
+		.style("text-anchor", "end")
+		.text("Power (W)");
+
+		y_scale.domain([0, 20]);
+		svg_yAxis.call(yAxis);
+
+		self.svg_xAxis = svg_xAxis;
+		self.svg_yAxis = svg_yAxis;
 
 
 		// events
@@ -157,7 +163,7 @@ var Graph = function(recording_name, ready_function, recording_title) {
 				events.push(e);
 				e.svg.marker = svg_events_front_layer.append("polyline")
 				.attr("class", "marker")
-				.attr("points", "0,0, 0,10");
+				.attr("points", "0,0, 5,5 0,10");
 
 			}
 			else if (e.e == "WORK_COMMAND") {
@@ -403,6 +409,7 @@ Energy.add_line = function(statuses, color, name) {
 		.attr("height", 20)
 		.attr("fill", color);
 	self.svg_chart.append("text")
+		.attr("class", "chart-title")
 		.attr("x", 72)
 		.attr("y", i*25 + 10)
 		.attr("dy", ".45em")
@@ -421,32 +428,34 @@ $(document).ready(function() {
 
 	var domain = 21*60 + 10;
 
-	g = new Graph("x4", function(g){
-
-		e.set_x_domain(0, domain);
-		e.add_line(g.json.statuses, "orange", "simple scheduler with adaptive switching of workers");
-
-	}, "simple scheduler with adaptive switching of workers");
-
 	i = new Graph("x6", function(i){
 
 		e.set_x_domain(0, domain);
-		h.set_x_domain(0, domain);
-		g.set_x_domain(0, domain);
 		i.set_x_domain(0, domain);
 
 		e.add_line(i.json.statuses, "red", "simple scheduler");
 
-	}, "simple scheduler");
+	}, "simple scheduler", "red");
+
+/*	g = new Graph("x4", function(g){
+
+		e.set_x_domain(0, domain);
+		i.set_x_domain(0, domain);
+		g.set_x_domain(0, domain);
+		e.add_line(g.json.statuses, "orange", "simple scheduler with adaptive switching of workers");
+
+	}, "simple scheduler with adaptive switching of workers");
+*/
 	h = new Graph("x2", function(h){
 
 		e.set_x_domain(0, domain);
+		i.set_x_domain(0, domain);
+//		g.set_x_domain(0, domain);
 		h.set_x_domain(0, domain);
-		g.set_x_domain(0, domain);
 
 		e.add_line(h.json.statuses, "green", "load-consolidating scheduler with adaptive switching of workers");
 
-	}, "load-consolidating scheduler with adaptive switching of workers");
+	}, "load-consolidating scheduler with adaptive switching of workers", "green");
 
 
 /*	j = new Graph("d4", function(j){
