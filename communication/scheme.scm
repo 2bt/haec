@@ -78,8 +78,8 @@
           (let
             ((backup-strategy (ast-child 'backupworkers n)))
              (cond
-               ((eq? backup-strategy 'one-two) (one-two))
-               ((eq? backup-strategy 'one-three) (idle-min 1 3))
+               ((eq? backup-strategy 'one-two) (determine-num-backup-workers 1 2))
+               ((eq? backup-strategy 'one-three) (determine-num-backup-workers 1 3))
                (else backup-strategy))))))
 
 
@@ -102,6 +102,7 @@
               (ast-child 'Workers n))))))
 
     (ag-rule
+      ; returns a list of all workers (excluding switches) that satisfy a given condition
       get-filtered-workers
       (Worker
         #f
@@ -122,6 +123,17 @@
               (append a (att-value 'get-filtered-workers b check)))
             (list)
             (ast-children (ast-child 'Workers n))))))
+
+
+    (ag-rule
+      depth
+      (Config
+        #f
+        (lambda (n) 0))
+      (AbstractWorker
+        #f
+        (lambda (n) (+ 1 (att-value 'depth (ast-parent n))))))
+
 
     (ag-rule
       schedule
@@ -258,6 +270,7 @@
                 (next (+ i 1)
                       (+ sum (att-value 'workload-heuristic (ast-child i workers))))))))))
 
+
     (ag-rule
       schedule-batman
       (Worker
@@ -326,7 +339,7 @@
       'Root
       (list
         'schedule-robin
-        'one-two
+        'one-three
         ;'schedule-batman
         (create-ast
           'Config
@@ -370,46 +383,20 @@
     (rewrite-terminal 'backupworkers ast number)))
 
 
-(define one-two
-  (lambda ()
-    (display "[FUNCTION] one-two\n")
+
+(define determine-num-backup-workers
+  (lambda (min-num-backup-workers min-num-running-workers)
+    (display "[FUNCTION] determine-num-backup-workers\n")
     (let*
       ((working-workers
-             (att-value
-               'get-filtered-workers
-               config
-               (lambda (w)
-                 (let
-                   ((worker-working? (< 0 (ast-num-children (ast-child 'Queue w))))
-                    (worker-running? (eq? (ast-child 'state w) 'RUNNING)))
-                 ;(display "w: ")
-                 ; (displayln worker-working?)
-                 ;(display "r: ")
-                 ;(displayln worker-running?)
-                   worker-working?))))
+         (att-value
+           'get-filtered-workers
+           config
+           (lambda (w) (< 0 (ast-num-children (ast-child 'Queue w))))))
        (num-working-workers (length working-workers)))
-     ;(display "num-working-workers: ")
-     ;(displayln num-working-workers)
-      (if (< num-working-workers 1) (- 2 num-working-workers) 1))))
+      (max min-num-backup-workers
+           (- min-num-running-workers num-working-workers)))))
 
-
-(define idle-min
-  (lambda (idle min-idle)
-    (display "[FUNCTION] idle-min\n")
-    (let*
-      ((working-workers
-             (att-value
-               'get-filtered-workers
-               config
-               (lambda (w)
-                 (let
-                   ((worker-working? (< 0 (ast-num-children (ast-child 'Queue w))))
-                    (worker-running? (eq? (ast-child 'state w) 'RUNNING)))
-                   worker-working?))))
-       (num-working-workers (length working-workers)))
-     ;(display "num-working-workers: ")
-     ;(displayln num-working-workers)
-      (if (< num-working-workers min-idle) (- min-idle num-working-workers) idle))))
 
 ; only the bootable workers can be considered.
 (define adapt
@@ -417,11 +404,6 @@
     (display "[FUNCTION] adapt\n")
     (let*
       ((num-backup-workers (att-value 'get-backup-workers ast))
-       (key
-         (lambda (worker)
-           (cdr (assq (ast-child 'devicetype worker)
-                      '((CUBIEBOARD . 1)
-                        (SAMA5D3 .    0))))))
        (idle-workers
          (att-value
            'get-filtered-workers
@@ -430,6 +412,7 @@
              (and
                (memq (ast-child 'state worker) '(RUNNING BOOTING))
                (= 0 (ast-num-children (ast-child 'Queue worker)))))))
+       (num-idle-workers (length idle-workers))
        (haltable-workers
          (att-value
            'get-filtered-workers
@@ -437,16 +420,9 @@
            (lambda (worker)
              (and
                (memq (ast-child 'state worker) '(RUNNING BOOTING))
-               (>= (- time (ast-child 'timestamp worker)) 30)
-               (= 0 (ast-num-children (ast-child 'Queue worker)))))))
-       (num-haltable-workers (length haltable-workers))
-       (num-idle-workers (length idle-workers)))
-      ;(display "num-idle-workers: ")
-      ;(displayln num-idle-workers)
-      ;(display "num-haltable-workers: ")
-      ;(displayln num-haltable-workers)
-      ;(display "num-backup-workers: ")
-      ;(displayln num-backup-workers)
+               (= 0 (ast-num-children (ast-child 'Queue worker)))
+               (>= (- time (ast-child 'timestamp worker)) 30)))))
+       (num-haltable-workers (length haltable-workers)))
       (cond
         ((> num-haltable-workers num-backup-workers) ; halt
          (displayln ">>>>>> HALT!")
@@ -454,16 +430,24 @@
            ((num-excess-workers (- num-haltable-workers num-backup-workers))
             (sorted-haltable-workers
               (list-sort
-                (lambda (a b) (eq? (ast-child 'state a) 'BOOTING))
+                (lambda (a b)
+                  (or
+                    (> (att-value 'depth a)
+                       (att-value 'depth b))
+                    (and
+                      (= (att-value 'depth a)
+                         (att-value 'depth b))
+                      (eq? (ast-child 'state a) 'BOOTING))))
                 haltable-workers))
             (sorted-bootable-haltable-workers
               (filter
                 (lambda (x)
-                  (let* ((devicetype (ast-child 'devicetype x))
-                          (bootable (device-characteristic-bootable (hashtable-ref device-table devicetype "error!"))))
+                  (let*
+                    ((devicetype (ast-child 'devicetype x))
+                     (bootable (device-characteristic-bootable (hashtable-ref device-table devicetype "error!"))))
                     (and
                       (>= (- time (ast-child 'timestamp x)) 30)
-                      (eq? bootable #t))))
+                      bootable)))
                   sorted-haltable-workers)))
            (let next ((i num-excess-workers) (rest sorted-bootable-haltable-workers))
              (when (and (> i 0) (not (null? rest)))
@@ -484,14 +468,17 @@
             (num-off-workers (length off-workers))
             (sorted-off-workers
               (list-sort
-                (lambda (a b) (> (key a) (key b)))
+                (lambda (a b)
+                  (< (att-value 'depth a)
+                     (att-value 'depth b)))
                 off-workers))
             (sorted-bootable-off-workers
               (filter
                 (lambda (x)
-                  (let* ((devicetype (ast-child 'devicetype x))
-                          (bootable (device-characteristic-bootable (hashtable-ref device-table devicetype "error!"))))
-                    (eq? bootable #t)))
+                  (let*
+                    ((devicetype (ast-child 'devicetype x))
+                     (bootable (device-characteristic-bootable (hashtable-ref device-table devicetype "error!"))))
+                    bootable))
                   sorted-off-workers))
             (num-wanting-workers (- num-backup-workers num-idle-workers)))
            (let next ((i num-wanting-workers) (rest sorted-bootable-off-workers))

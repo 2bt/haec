@@ -64,7 +64,7 @@ $(document).ready(function() {
 
 	d3.select("#cliprect")
 	.attr("width", width)
-	.attr("height", 1000);
+	.attr("height", 2000);
 	var svg_events_back_layer = svg_events.append("g");
 	var svg_events_front_layer = svg_events.append("g");
 
@@ -93,6 +93,65 @@ $(document).ready(function() {
 	svg_xAxis.call(xAxis);
 	svg_yAxis.call(yAxis);
 
+
+
+
+	svg_event_titles.append("line")
+					.attr("width", margin.row)
+					.attr("height", margin.row)
+					.attr("y1", 1.5 * margin.row)
+					.attr("y2", 5.5 * margin.row)
+					.attr("x1", -80 + margin.row/2)
+					.attr("x2", -80 + margin.row/2)
+					.style("stroke", "black");
+
+
+	svg_event_titles.append("line")
+					.attr("width", margin.row)
+					.attr("height", margin.row)
+					.attr("y1", 5.5 * margin.row)
+					.attr("y2", 8.5 * margin.row)
+					.attr("x1", -65 + margin.row/2)
+					.attr("x2", -65 + margin.row/2)
+					.style("stroke", "black");
+
+	for (var i = 1.5; i<6; i++) {
+		svg_event_titles.append("line")
+						.attr("width", margin.row)
+						.attr("height", margin.row)
+						.attr("y1", i * margin.row)
+						.attr("y2", i * margin.row)
+						.attr("x1", -80 + margin.row/2)
+						.attr("x2", -50 + margin.row/2)
+						.style("stroke", "black");
+	}
+	for (var i = 6.5; i<9; i++) {
+		svg_event_titles.append("line")
+						.attr("width", margin.row)
+						.attr("height", margin.row)
+						.attr("y1", i * margin.row)
+						.attr("y2", i * margin.row)
+						.attr("x1", -65 + margin.row/2)
+						.attr("x2", -50 + margin.row/2)
+						.style("stroke", "black");
+	}
+
+	svg_event_titles.append("rect")
+					.attr("width", margin.row)
+					.attr("height", margin.row)
+					.attr("y", 5 * margin.row)
+					.attr("x", -65)
+					.style("fill", "grey")
+					.style("stroke", "black");
+
+	svg_event_titles.append("rect")
+					.attr("width", margin.row)
+					.attr("height", margin.row)
+					.attr("y", 1 * margin.row)
+					.attr("x", -80)
+					.style("fill", "grey")
+					.style("stroke", "black");
+
 	var svg_areas = [];
 	var areas = [];
 
@@ -109,7 +168,7 @@ $(document).ready(function() {
 				if (first_poll) {
 					first_poll = false;
 
-					svg.attr("height", height + margin.top + margin.bottom + margin.middle + margin.row * 7);
+					svg.attr("height", height + margin.top + margin.bottom + margin.middle + margin.row * 9);
 
 					d3.range(8).forEach(function(i) {
 
@@ -128,7 +187,7 @@ $(document).ready(function() {
 						.attr("d", areas[i]);
 
 
-						if (i < 6) {
+						if (i < 8) {
 							// lanes
 							svg_events_front_layer.append("rect")
 							.attr("width", width)
