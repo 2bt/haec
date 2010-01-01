@@ -227,6 +227,10 @@ $(document).ready(function() {
 
 					// remove old events
 					if (e.t < time - past) {
+						if (e.e == "WORK_REQUEST") {
+							e.circle.remove();
+						}
+
 						if (e.e == "WORK_COMMAND") {
 							if (e.complete && e.complete.t < time - past) {
 								e.rect.remove();
