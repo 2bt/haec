@@ -3,6 +3,7 @@
 #include <signal.h>
 #include <string.h>
 #include <error.h>
+#include <errno.h>
 
 #include <racr/racr.h>
 
@@ -434,8 +435,13 @@ void server_run(int argc, char** argv) {
 		fd_set fds = server.fds;
 		struct timeval timeout = { 0, 50000 };
 		int count;
-		while ((count = select(server.fdmax + 1, &fds, NULL, NULL, &timeout)) != 0) {
+		for (;;) {
+tryagain:
+			count = select(server.fdmax + 1, &fds, NULL, NULL, &timeout);
+			if (count == 0) server.running = 0;
 			if (count < 0) {
+				if (errno == EINTR) goto tryagain;
+				perror("select");
 				server.running = 0;
 				break;
 			}

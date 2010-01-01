@@ -12,7 +12,7 @@
 static Worker* workers = NULL;
 static int worker_count;
 
-static Switch* switchs = NULL;
+static Switch* switches = NULL;
 static int switch_count;
 
 
@@ -22,9 +22,9 @@ void worker_kill(void) {
 		workers = NULL;
 	}
 	worker_count = 0;
-	if (switchs) {
-		free(switchs);
-		switchs = NULL;
+	if (switches) {
+		free(switches);
+		switches = NULL;
 	}
 	switch_count = 0;
 }
@@ -85,11 +85,11 @@ int worker_init(void) {
 			switches = realloc(workers, sizeof(Switch) * switch_count);
 			Switch* s = &switches[switch_count - 1];
 
-			s->id = id
+			s->id = id;
 			s->parent_id = parent_id;
 			s->state = WORKER_OFF;
 			s->timestamp = time;
-			
+
 			racr_call_str("add-switch-to-ast", "iid", id, parent_id, time);
 		}
 		else {
