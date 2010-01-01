@@ -385,6 +385,10 @@ void server_process_events(void) {
 			server.e_meter_timestamp = time;
 			break;
 
+		case EVENT_ADAPT:
+			racr_call_str("event-adapt", "d", time);
+			break;
+
 		default:
 			printf("unknown event: %d\n", e->type);
 			break;
@@ -529,7 +533,8 @@ tryagain:
 		}
 
 		if (timestamp() - adapt_time > ADAPTATION_FREQUENCY ) {
-			eval_string("(adapt)");
+			Event* e = event_append(EVENT_ADAPT);
+			e->worker = w;
 			adapt_time = timestamp();
 		}
 

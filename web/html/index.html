@@ -40,41 +40,46 @@
 
 					<select style="margin-left:5px" name="cmd" form="scenario-form">
 						<option value="scenario runs/demo8.run">Demo 1</option>
-						<option value="scenario runs/demo8.run">m1</option>
-						<option value="scenario runs/m2.run">m2</option>
+						<option value="scenario runs/review2.run">Demo 2</option>
+						<option value="scenario runs/review3.run">Demo 3</option>
 					</select>
 
 				</form>
-				<form style="margin-top:5px" class="cmd" id="scheduler-form">
-					<input class="button" type="submit" value="Switch scheduler" />
-					<select style="margin-left:5px" name="cmd" form="scheduler-form">
-						<option id="batman" value="(rewrite-terminal 'scheduler ast 'schedule-batman)">Load-consolidating Scheduler</option>
-						<option id="robin" value="(rewrite-terminal 'scheduler ast 'schedule-robin)">Simple Scheduler</option>
-					</select>
+				<form style="margin-top:5px" class="cmd">
+					<input class="button" type="submit" value="Simple Scheduler" />
+					<input type="hidden" name="cmd" value="(rewrite-terminal 'scheduler ast 'schedule-robin)" />
+				</form>
+				<form style="margin-top:5px" class="cmd">
+					<input class="button" type="submit" value="Load-Consolidating-S." />
+					<input type="hidden" name="cmd" value="(rewrite-terminal 'scheduler ast 'schedule-batman)" />
+				</form>
+				<form style="margin-top:5px" class="cmd">
+					<input class="button" type="submit" value="do some work" />
+					<input type="hidden" name="cmd" value="work 100 100" />
+				</form>
+				<form style="margin-top:5px" class="cmd">
+					<input class="button" type="submit" value="0 backup workers" />
+					<input type="hidden" name="cmd" value="(set-backup-workers 0)" />
+				</form>
+				<form style="margin-top:5px" class="cmd">
+					<input class="button" type="submit" value="1 backup worker" />
+					<input type="hidden" name="cmd" value="(set-backup-workers 1)" />
+				</form>
+				<form style="margin-top:5px" class="cmd">
+					<input class="button" type="submit" value="2 backup workers" />
+					<input type="hidden" name="cmd" value="(set-backup-workers 2)" />
+				</form>
+				<form style="margin-top:5px" class="cmd">
+					<input class="button" type="submit" value="6 backup workers" />
+					<input type="hidden" name="cmd" value="(set-backup-workers 6)" />
+				</form>
+				<form style="margin-top:5px" class="cmd">
+					<input class="button" type="submit" value="1/3 backup workers" />
+					<input type="hidden" name="cmd" value="(set-backup-workers 'one-two)" />
 				</form>
 				<form style="margin-top:5px" class="cmd">
 					<input class="button" type="submit" value="Execute custom command" />
 					<input style="margin-left:5px;font-family:monospace;" name="cmd" value="" />
-				</form>
-				<form style="margin-top:5px" class="cmd">
-					<input class="button" type="submit" value="adapt" />
-					<input type="hidden" name="cmd" value="(adapt)" />
-				</form>
-				<form style="margin-top:5px" class="cmd">
-					<input class="button" type="submit" value="set-backup-workers 0" />
-					<input type="hidden" name="cmd" value="(set-backup-workers 0)" />
-				</form>
-				<form style="margin-top:5px" class="cmd">
-					<input class="button" type="submit" value="set-backup-workers 1" />
-					<input type="hidden" name="cmd" value="(set-backup-workers 1)" />
-				</form>
-				<form style="margin-top:5px" class="cmd">
-					<input class="button" type="submit" value="set-backup-workers 2" />
-					<input type="hidden" name="cmd" value="(set-backup-workers 2)" />
-				</form>
-				<form style="margin-top:5px" class="cmd">
-					<input class="button" type="submit" value="set-backup-workers 8" />
-					<input type="hidden" name="cmd" value="(set-backup-workers 8)" />
 				</form>
 			</div>
 			<div class="column right">

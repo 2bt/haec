@@ -1,6 +1,6 @@
 
 
-var Graph = function(recording_name, ready_function) {
+var Graph = function(recording_name, ready_function, recording_title) {
 	var self = this;
 
 	var x_scale = d3.scale.linear().range([0, self.width]);
@@ -66,6 +66,14 @@ var Graph = function(recording_name, ready_function) {
 	y_scale.domain([0, 20]);
 	svg_yAxis.call(yAxis);
 
+
+	svg_chart.append("text")
+		.attr("x", self.width / 2)
+		.attr("y", 0)
+		.attr("dy", ".45em")
+		.style("text-anchor", "middle")
+		.attr("class", "chart-title")
+		.text(recording_title);
 
 	var events = [];
 	var svg_areas = [];
@@ -343,12 +351,14 @@ var Energy = function() {
 
 	self.lines = [];
 	self.svg_lines = [];
+
+
 };
 
 
 Energy.prototype = Energy;
 
-Energy.max_energy = 20000;
+Energy.max_energy = 18000;
 Energy.set_x_domain = function(t1, t2) {
 	var self = this;
 
@@ -367,7 +377,7 @@ Energy.set_x_domain = function(t1, t2) {
 };
 
 
-Energy.add_line = function(statuses, color) {
+Energy.add_line = function(statuses, color, name) {
 	var self = this;
 
 	var i = self.lines.length;
@@ -386,42 +396,83 @@ Energy.add_line = function(statuses, color) {
 	.datum(statuses)
 	.attr("d", self.lines[i]);
 
+	self.svg_chart.append("rect")
+		.attr("x",50)
+		.attr("y",i*25)
+		.attr("width", 20)
+		.attr("height", 20)
+		.attr("fill", color);
+	self.svg_chart.append("text")
+		.attr("x", 72)
+		.attr("y", i*25 + 10)
+		.attr("dy", ".45em")
+		.text(name);
+
 };
+
+
 
 
 
 $(document).ready(function() {
 
 	e = new Energy();
+	graphs = [];
 
-	g = new Graph("ro", function(g){
+	var domain = 21*60 + 10;
 
-		e.set_x_domain(0, g.recording_length);
-		e.add_line(g.json.statuses, "#aa3");
+	g = new Graph("x4", function(g){
 
-	});
+		e.set_x_domain(0, domain);
+		e.add_line(g.json.statuses, "orange", "simple scheduler with adaptive switching of workers");
 
-	h = new Graph("rs", function(h){
+	}, "simple scheduler with adaptive switching of workers");
 
-		e.set_x_domain(0, g.recording_length);
-		h.set_x_domain(0, g.recording_length);
-		g.set_x_domain(0, g.recording_length);
+	i = new Graph("x6", function(i){
 
-		e.add_line(h.json.statuses, "#55f");
+		e.set_x_domain(0, domain);
+		h.set_x_domain(0, domain);
+		g.set_x_domain(0, domain);
+		i.set_x_domain(0, domain);
 
-	});
+		e.add_line(i.json.statuses, "red", "simple scheduler");
 
-	i = new Graph("as", function(i){
+	}, "simple scheduler");
+	h = new Graph("x2", function(h){
+
+		e.set_x_domain(0, domain);
+		h.set_x_domain(0, domain);
+		g.set_x_domain(0, domain);
+
+		e.add_line(h.json.statuses, "green", "load-consolidating scheduler with adaptive switching of workers");
+
+	}, "load-consolidating scheduler with adaptive switching of workers");
+
+
+/*	j = new Graph("d4", function(j){
 
 		e.set_x_domain(0, g.recording_length);
 		h.set_x_domain(0, g.recording_length);
 		g.set_x_domain(0, g.recording_length);
 		i.set_x_domain(0, g.recording_length);
+		j.set_x_domain(0, g.recording_length);
 
-		e.add_line(i.json.statuses, "#000");
+		e.add_line(j.json.statuses, "#ff0", "run 4");
 
 	});
 
+	k = new Graph("d5", function(j){
+
+		e.set_x_domain(0, g.recording_length);
+		h.set_x_domain(0, g.recording_length);
+		g.set_x_domain(0, g.recording_length);
+		i.set_x_domain(0, g.recording_length);
+		j.set_x_domain(0, g.recording_length);
+		k.set_x_domain(0, g.recording_length);
+
+		e.add_line(k.json.statuses, "#777");
+
+	});*/ 
 
 });
 

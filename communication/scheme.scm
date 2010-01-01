@@ -1,16 +1,7 @@
 ; TODO:
 ; C:
 ; - keep state.txt
-; - implement current accumulator
-; - event reset-accumulator
-; - event set-scheduler
-; - display stats on completed tasks for analysis
 ; Web:
-; - select for scheduler
-; - select for scenario
-; - play button
-; - reset button
-; - stromzähler
 ; Scheme:
 ; - return error message from scheduler
 
@@ -81,6 +72,17 @@
     (compile-ast-specifications 'Root)
 
     (ag-rule
+      get-backup-workers
+      (Root
+        (lambda (n)
+          (let
+            ((backup-strategy (ast-child 'backupworkers n)))
+             (cond
+               ((eq? backup-strategy 'one-two) (one-two))
+               (else backup-strategy))))))
+
+
+    (ag-rule
       lookup-worker
       (Worker
         (lambda (n id)
@@ -101,12 +103,19 @@
     (ag-rule
       get-filtered-workers
       (Worker
+        #f
         (lambda (n check)
-          (display "[ATTRIBUTE on Worker] get-filtered-workers\n")
+          (display "[ATTRIBUTE on Worker ")
+          (display (ast-child 'id n))
+          (display "] get-filtered-workers: ")
+          (displayln (check n))
           (if (check n) (list n) (list))))
       (CompositeWorker
+        #f
         (lambda (n check)
-          (display "[ATTRIBUTE on CompositeWorker] get-filtered-workers\n")
+          (display "[ATTRIBUTE on CompositeWorker ")
+          (display (ast-child 'id n))
+          (displayln "] get-filtered-workers")
           (fold-left
             (lambda (a b)
               (append a (att-value 'get-filtered-workers b check)))
@@ -316,7 +325,7 @@
       'Root
       (list
         'schedule-robin
-        6
+        'one-two
         ;'schedule-batman
         (create-ast
           'Config
@@ -359,12 +368,36 @@
   (lambda (number)
     (rewrite-terminal 'backupworkers ast number)))
 
+
+(define one-two
+  (lambda ()
+    (display "[FUNCTION] one-two\n")
+    (let*
+      ((working-workers
+             (att-value
+               'get-filtered-workers
+               config
+               (lambda (w)
+                 (let
+                   ((worker-working? (< 0 (ast-num-children (ast-child 'Queue w))))
+                    (worker-running? (eq? (ast-child 'state w) 'RUNNING)))
+                 ;(display "w: ")
+                 ; (displayln worker-working?)
+                 ;(display "r: ")
+                 ;(displayln worker-running?)
+                   worker-working?))))
+       (num-working-workers (length working-workers)))
+     ;(display "num-working-workers: ")
+     ;(displayln num-working-workers)
+      (if (< num-working-workers 1) (- 2 num-working-workers) 1))))
+
+
 ; only the bootable workers can be considered.
 (define adapt
-  (lambda ()
+  (lambda (time)
     (display "[FUNCTION] adapt\n")
     (let*
-      ((num-backup-workers (ast-child 'backupworkers ast))
+      ((num-backup-workers (att-value 'get-backup-workers ast))
        (key
          (lambda (worker)
            (cdr (assq (ast-child 'devicetype worker)
@@ -378,26 +411,42 @@
              (and
                (memq (ast-child 'state worker) '(RUNNING BOOTING))
                (= 0 (ast-num-children (ast-child 'Queue worker)))))))
+       (haltable-workers
+         (att-value
+           'get-filtered-workers
+           config
+           (lambda (worker)
+             (and
+               (memq (ast-child 'state worker) '(RUNNING BOOTING))
+               (>= (- time (ast-child 'timestamp worker)) 30)
+               (= 0 (ast-num-children (ast-child 'Queue worker)))))))
+       (num-haltable-workers (length haltable-workers))
        (num-idle-workers (length idle-workers)))
+      ;(display "num-idle-workers: ")
+      ;(displayln num-idle-workers)
+      ;(display "num-haltable-workers: ")
+      ;(displayln num-haltable-workers)
+      ;(display "num-backup-workers: ")
+      ;(displayln num-backup-workers)
       (cond
-        ((> num-idle-workers num-backup-workers) ; halt
+        ((> num-haltable-workers num-backup-workers) ; halt
+         (displayln ">>>>>> HALT!")
          (let*
-           ((num-excess-workers (- num-idle-workers num-backup-workers))
-            (sorted-idle-workers
+           ((num-excess-workers (- num-haltable-workers num-backup-workers))
+            (sorted-haltable-workers
               (list-sort
-               ;(lambda (a b) (< (key a) (key b)))
                 (lambda (a b) (eq? (ast-child 'state a) 'BOOTING))
-
-
-                idle-workers))
-            (sorted-bootable-idle-workers
+                haltable-workers))
+            (sorted-bootable-haltable-workers
               (filter
                 (lambda (x)
                   (let* ((devicetype (ast-child 'devicetype x))
                           (bootable (device-characteristic-bootable (hashtable-ref device-table devicetype "error!"))))
-                    (eq? bootable #t)))
-                  sorted-idle-workers)))
-           (let next ((i num-excess-workers) (rest sorted-bootable-idle-workers))
+                    (and
+                      (>= (- time (ast-child 'timestamp x)) 30)
+                      (eq? bootable #t))))
+                  sorted-haltable-workers)))
+           (let next ((i num-excess-workers) (rest sorted-bootable-haltable-workers))
              (when (and (> i 0) (not (null? rest)))
                (let ((worker (car rest)))
                  (rewrite-terminal 'state worker 'HALTING)
@@ -406,6 +455,7 @@
                    (ast-child 'id worker))
                  (next (- i 1) (cdr rest)))))))
         ((< num-idle-workers num-backup-workers) ; boot
+         (displayln ">>>>>> BOOT!")
          (let*
            ((off-workers
               (att-value
@@ -429,6 +479,7 @@
              (when (and (> i 0) (not (null? rest)))
                (let ((worker (car rest)))
                  (rewrite-terminal 'state worker 'BOOTING)
+                 (rewrite-terminal 'timestamp worker time)
                  (add-event
                    'event-worker-on
                    (ast-child 'id worker))
@@ -473,6 +524,11 @@
     (let ((worker (att-value 'lookup-worker config id)))
       (rewrite-terminal 'state worker 'OFF)
       (rewrite-terminal 'timestamp worker time))))
+
+
+(define event-adapt
+  (lambda (time)
+    (adapt time)))
 
 
 (define event-work-request

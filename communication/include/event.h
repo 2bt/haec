@@ -42,7 +42,7 @@ enum {
 
 	EVENT_E_METER_RESET,
 
-
+	EVENT_ADAPT,
 
 };
 
@@ -71,6 +71,8 @@ static inline const char* event_type_string(int type) {
 		"MEM_ACK",
 
 		"E_METER_RESET",
+
+		"ADAPT",
 
 	};
 	return strings[type];
