@@ -1,0 +1,873 @@
+00:00:20.22 ADAPT
+00:00:20.22 WORKER_ON (id: 1001)
+00:00:20.22 WORKER_ON (id: 1002)
+00:00:30.00 WORKER_ONLINE (id: 1002)
+00:00:30.46 WORKER_ONLINE (id: 1003)
+00:00:40.23 ADAPT
+00:00:48.48 WORKER_ONLINE (id: 1004)
+00:01:00.38 ADAPT
+00:01:06.95 WORKER_ONLINE (id: 1005)
+00:01:20.41 ADAPT
+00:01:20.41 HALT_COMMAND (id: 1001)
+00:01:20.41 HALT_COMMAND (id: 1002)
+00:01:20.67 HALT_ACK (id: 1002; ack: 0)
+00:01:20.67 WORKER_OFFLINE (id: 1002)
+00:01:33.73 WORKER_OFF (id: 1001)
+00:01:33.73 WORKER_OFF (id: 1002)
+00:01:40.45 ADAPT
+00:01:40.45 HALT_COMMAND (id: 1003)
+00:01:40.60 HALT_ACK (id: 1003; ack: 0)
+00:01:40.60 WORKER_OFFLINE (id: 1003)
+00:01:53.70 WORKER_OFF (id: 1003)
+00:02:00.52 ADAPT
+00:02:20.58 ADAPT
+00:02:40.62 ADAPT
+00:03:00.71 ADAPT
+00:03:20.72 ADAPT
+00:03:40.88 ADAPT
+00:04:00.91 ADAPT
+00:04:20.99 ADAPT
+00:04:41.15 ADAPT
+00:05:01.16 ADAPT
+00:05:21.31 ADAPT
+00:05:41.32 ADAPT
+00:06:01.44 ADAPT
+00:06:21.58 ADAPT
+00:06:41.70 ADAPT
+00:07:01.82 ADAPT
+00:07:21.84 ADAPT
+00:07:41.84 ADAPT
+00:08:01.89 ADAPT
+00:08:21.90 ADAPT
+00:08:42.05 ADAPT
+00:09:02.19 ADAPT
+00:09:22.29 ADAPT
+00:09:42.36 ADAPT
+00:10:02.41 ADAPT
+00:10:22.44 ADAPT
+00:10:42.50 ADAPT
+00:11:02.63 ADAPT
+00:11:22.78 ADAPT
+00:11:42.82 ADAPT
+00:12:02.90 ADAPT
+00:12:23.00 ADAPT
+00:12:43.12 ADAPT
+00:13:03.12 ADAPT
+00:13:23.24 ADAPT
+00:13:43.25 ADAPT
+00:14:03.28 ADAPT
+00:14:23.31 ADAPT
+00:14:43.33 ADAPT
+00:15:03.41 ADAPT
+00:15:23.52 ADAPT
+00:15:43.65 ADAPT
+00:16:03.79 ADAPT
+00:16:23.80 ADAPT
+00:16:43.83 ADAPT
+00:17:03.86 ADAPT
+00:17:24.02 ADAPT
+00:17:44.15 ADAPT
+00:18:04.18 ADAPT
+00:18:24.25 ADAPT
+00:18:44.40 ADAPT
+00:19:04.46 ADAPT
+00:19:24.52 ADAPT
+00:19:44.57 ADAPT
+00:20:04.58 ADAPT
+00:20:24.61 ADAPT
+00:20:35.37 SCENARIO_START (file: runs/paper01.run)
+00:20:35.52 E_METER_RESET
+00:20:35.52 WORK_REQUEST (work-id: 0; load-size: 212.222; deadline: 1407.18)
+00:20:35.52 WORK_COMMAND (id: 1004; work-id: 0; load-size: 212.222)
+00:20:35.68 WORK_ACK (id: 1004; ack: 0)
+00:20:44.65 ADAPT
+00:20:55.61 WORK_REQUEST (work-id: 1; load-size: 115.298; deadline: 1358.44)
+00:20:55.61 WORK_COMMAND (id: 1005; work-id: 1; load-size: 115.298)
+00:20:55.76 WORK_ACK (id: 1005; ack: 0)
+00:21:04.71 ADAPT
+00:21:04.71 WORKER_ON (id: 1001)
+00:21:11.63 WORK_REQUEST (work-id: 2; load-size: 220.755; deadline: 1461.21)
+00:21:24.86 ADAPT
+00:21:30.65 WORK_COMPLETE (id: 1005; work-id: 1; ack: 0)
+00:21:40.55 WORK_REQUEST (work-id: 3; load-size: 277.224; deadline: 1511.75)
+00:21:40.55 WORK_COMMAND (id: 1005; work-id: 3; load-size: 277.224)
+00:21:40.71 WORK_ACK (id: 1005; ack: 0)
+00:21:42.67 WORK_COMPLETE (id: 1004; work-id: 0; ack: 0)
+00:21:42.67 WORK_COMMAND (id: 1004; work-id: 2; load-size: 220.755)
+00:21:42.83 WORK_ACK (id: 1004; ack: 0)
+00:21:44.96 ADAPT
+00:21:54.52 WORK_REQUEST (work-id: 4; load-size: 204.240; deadline: 1476.05)
+00:22:05.03 ADAPT
+00:22:15.58 WORK_REQUEST (work-id: 5; load-size: 281.193; deadline: 1569.92)
+00:22:25.05 ADAPT
+00:22:35.68 WORKER_ONLINE (id: 1001)
+00:22:40.84 WORK_COMPLETE (id: 1004; work-id: 2; ack: 0)
+00:22:40.84 WORK_COMMAND (id: 1004; work-id: 4; load-size: 204.240)
+00:22:40.99 WORK_ACK (id: 1004; ack: 0)
+00:22:44.67 WORK_REQUEST (work-id: 6; load-size: 149.123; deadline: 1489.15)
+00:22:44.67 WORK_COMMAND (id: 1001; work-id: 6; load-size: 149.123)
+00:22:44.83 WORK_ACK (id: 1001; ack: 0)
+00:22:45.13 ADAPT
+00:22:45.13 WORKER_ON (id: 1002)
+00:22:57.60 WORK_REQUEST (work-id: 7; load-size: 155.792; deadline: 1521.11)
+00:23:02.10 WORK_COMPLETE (id: 1005; work-id: 3; ack: 0)
+00:23:02.10 WORK_COMMAND (id: 1005; work-id: 5; load-size: 281.193)
+00:23:02.26 WORK_ACK (id: 1005; ack: 0)
+00:23:05.20 ADAPT
+00:23:15.53 WORK_REQUEST (work-id: 8; load-size: 231.278; deadline: 1557.23)
+00:23:25.28 ADAPT
+00:23:33.71 WORK_COMPLETE (id: 1001; work-id: 6; ack: 0)
+00:23:33.71 WORK_COMMAND (id: 1001; work-id: 7; load-size: 155.792)
+00:23:33.87 WORK_ACK (id: 1001; ack: 0)
+00:23:34.03 WORK_COMPLETE (id: 1004; work-id: 4; ack: 0)
+00:23:34.03 WORK_COMMAND (id: 1004; work-id: 8; load-size: 231.278)
+00:23:34.19 WORK_ACK (id: 1004; ack: 0)
+00:23:44.58 WORK_REQUEST (work-id: 9; load-size: 163.853; deadline: 1557.17)
+00:23:45.36 ADAPT
+00:24:02.64 WORK_REQUEST (work-id: 10; load-size: 90.663; deadline: 1589.62)
+00:24:05.48 ADAPT
+00:24:13.54 WORK_REQUEST (work-id: 11; load-size: 87.263; deadline: 1573.86)
+00:24:15.00 WORK_COMPLETE (id: 1001; work-id: 7; ack: 0)
+00:24:15.00 WORK_COMMAND (id: 1001; work-id: 9; load-size: 163.853)
+00:24:15.16 WORKER_ONLINE (id: 1002)
+00:24:15.32 WORK_ACK (id: 1001; ack: 0)
+00:24:16.28 WORK_COMPLETE (id: 1005; work-id: 5; ack: 0)
+00:24:16.28 WORK_COMMAND (id: 1005; work-id: 11; load-size: 87.263)
+00:24:16.44 WORK_ACK (id: 1005; ack: 0)
+00:24:18.61 WORK_REQUEST (work-id: 12; load-size: 75.865; deadline: 1578.65)
+00:24:18.61 WORK_COMMAND (id: 1002; work-id: 12; load-size: 75.865)
+00:24:18.77 WORK_ACK (id: 1002; ack: 0)
+00:24:25.50 ADAPT
+00:24:25.50 WORKER_ON (id: 1003)
+00:24:26.63 WORK_REQUEST (work-id: 13; load-size: 80.933; deadline: 1608.92)
+00:24:36.24 WORK_COMPLETE (id: 1004; work-id: 8; ack: 0)
+00:24:36.24 WORK_COMMAND (id: 1004; work-id: 10; load-size: 90.663)
+00:24:36.41 WORK_ACK (id: 1004; ack: 0)
+00:24:37.69 WORK_REQUEST (work-id: 14; load-size: 86.835; deadline: 1598.54)
+00:24:39.13 WORK_COMPLETE (id: 1005; work-id: 11; ack: 0)
+00:24:41.88 WORK_COMPLETE (id: 1002; work-id: 12; ack: 0)
+00:24:41.88 WORK_COMMAND (id: 1002; work-id: 14; load-size: 86.835)
+00:24:42.04 WORK_ACK (id: 1002; ack: 0)
+00:24:43.64 WORK_REQUEST (work-id: 15; load-size: 84.735; deadline: 1623.68)
+00:24:43.64 WORK_COMMAND (id: 1005; work-id: 15; load-size: 84.735)
+00:24:43.81 WORK_ACK (id: 1005; ack: 0)
+00:24:45.57 ADAPT
+00:24:54.61 WORK_REQUEST (work-id: 16; load-size: 90.290; deadline: 1641.79)
+00:24:58.00 WORK_COMPLETE (id: 1001; work-id: 9; ack: 0)
+00:24:58.00 WORK_COMMAND (id: 1001; work-id: 13; load-size: 80.933)
+00:24:58.18 WORK_ACK (id: 1001; ack: 0)
+00:24:59.81 WORK_COMPLETE (id: 1004; work-id: 10; ack: 0)
+00:25:02.56 WORK_REQUEST (work-id: 17; load-size: 111.095; deadline: 1665.92)
+00:25:02.56 WORK_COMMAND (id: 1004; work-id: 17; load-size: 111.095)
+00:25:02.72 WORK_ACK (id: 1004; ack: 0)
+00:25:05.44 WORK_COMPLETE (id: 1002; work-id: 14; ack: 0)
+00:25:05.44 WORK_COMMAND (id: 1002; work-id: 16; load-size: 90.290)
+00:25:05.61 WORK_ACK (id: 1002; ack: 0)
+00:25:05.61 ADAPT
+00:25:06.09 WORK_COMPLETE (id: 1005; work-id: 15; ack: 0)
+00:25:10.64 WORK_REQUEST (work-id: 18; load-size: 67.133; deadline: 1597.18)
+00:25:10.64 WORK_COMMAND (id: 1005; work-id: 18; load-size: 67.133)
+00:25:10.81 WORK_ACK (id: 1005; ack: 0)
+00:25:19.33 WORK_COMPLETE (id: 1001; work-id: 13; ack: 0)
+00:25:25.77 ADAPT
+00:25:25.77 HALT_COMMAND (id: 1003)
+00:25:28.21 WORK_COMPLETE (id: 1005; work-id: 18; ack: 0)
+00:25:29.03 WORK_COMPLETE (id: 1002; work-id: 16; ack: 0)
+00:25:31.44 WORK_COMPLETE (id: 1004; work-id: 17; ack: 0)
+00:25:34.64 WORK_REQUEST (work-id: 19; load-size: 161.147; deadline: 1723.81)
+00:25:34.64 WORK_COMMAND (id: 1001; work-id: 19; load-size: 161.147)
+00:25:34.80 WORK_ACK (id: 1001; ack: 0)
+00:25:39.00 WORKER_OFF (id: 1003)
+00:25:45.82 ADAPT
+00:25:45.82 HALT_COMMAND (id: 1002)
+00:25:45.82 HALT_COMMAND (id: 1004)
+00:25:45.97 HALT_ACK (id: 1004; ack: 0)
+00:25:45.97 WORKER_OFFLINE (id: 1004)
+00:25:46.08 HALT_ACK (id: 1002; ack: 0)
+00:25:46.08 WORKER_OFFLINE (id: 1002)
+00:25:56.58 WORK_REQUEST (work-id: 20; load-size: 162.956; deadline: 1760.13)
+00:25:56.58 WORK_COMMAND (id: 1005; work-id: 20; load-size: 162.956)
+00:25:56.74 WORK_ACK (id: 1005; ack: 0)
+00:25:59.06 WORKER_OFF (id: 1002)
+00:25:59.06 WORKER_OFF (id: 1004)
+00:26:05.94 ADAPT
+00:26:05.94 WORKER_ON (id: 1002)
+00:26:16.63 WORK_COMPLETE (id: 1001; work-id: 19; ack: 0)
+00:26:21.62 WORK_REQUEST (work-id: 21; load-size: 145.311; deadline: 1750.65)
+00:26:21.62 WORK_COMMAND (id: 1001; work-id: 21; load-size: 145.311)
+00:26:21.78 WORK_ACK (id: 1001; ack: 0)
+00:26:26.03 ADAPT
+00:26:38.93 WORK_COMPLETE (id: 1005; work-id: 20; ack: 0)
+00:26:40.60 WORK_REQUEST (work-id: 22; load-size: 162.918; deadline: 1799.72)
+00:26:40.60 WORK_COMMAND (id: 1005; work-id: 22; load-size: 162.918)
+00:26:40.76 WORK_ACK (id: 1005; ack: 0)
+00:26:46.06 ADAPT
+00:27:00.32 WORK_COMPLETE (id: 1001; work-id: 21; ack: 0)
+00:27:04.57 WORK_REQUEST (work-id: 23; load-size: 88.836; deadline: 1734.38)
+00:27:04.57 WORK_COMMAND (id: 1001; work-id: 23; load-size: 88.836)
+00:27:04.74 WORK_ACK (id: 1001; ack: 0)
+00:27:06.10 ADAPT
+00:27:23.12 WORK_COMPLETE (id: 1005; work-id: 22; ack: 0)
+00:27:26.16 ADAPT
+00:27:26.16 HALT_COMMAND (id: 1002)
+00:27:27.68 WORK_COMPLETE (id: 1001; work-id: 23; ack: 0)
+00:27:34.67 WORKER_ONLINE (id: 1002)
+00:27:38.61 WORK_REQUEST (work-id: 24; load-size: 151.823; deadline: 1855.69)
+00:27:38.61 WORK_COMMAND (id: 1001; work-id: 24; load-size: 151.823)
+00:27:38.79 WORK_ACK (id: 1001; ack: 0)
+00:27:46.22 ADAPT
+00:27:56.57 WORK_REQUEST (work-id: 25; load-size: 78.791; deadline: 1768.51)
+00:27:56.57 WORK_COMMAND (id: 1002; work-id: 25; load-size: 78.791)
+00:27:56.73 WORK_ACK (id: 1002; ack: 0)
+00:28:06.30 ADAPT
+00:28:15.63 WORK_REQUEST (work-id: 26; load-size: 207.039; deadline: 1954.67)
+00:28:15.63 WORK_COMMAND (id: 1005; work-id: 26; load-size: 207.039)
+00:28:15.78 WORK_ACK (id: 1005; ack: 0)
+00:28:17.75 WORK_COMPLETE (id: 1001; work-id: 24; ack: 0)
+00:28:21.39 WORK_COMPLETE (id: 1002; work-id: 25; ack: 0)
+00:28:26.41 ADAPT
+00:28:26.41 HALT_COMMAND (id: 1001)
+00:28:26.69 HALT_ACK (id: 1001; ack: 0)
+00:28:26.69 WORKER_OFFLINE (id: 1001)
+00:28:36.56 WORK_REQUEST (work-id: 27; load-size: 169.844; deadline: 1932.44)
+00:28:36.56 WORK_COMMAND (id: 1002; work-id: 27; load-size: 169.844)
+00:28:36.72 WORK_ACK (id: 1002; ack: 0)
+00:28:39.62 WORKER_OFF (id: 1001)
+00:28:46.44 ADAPT
+00:28:46.44 WORKER_ON (id: 1001)
+00:28:58.68 WORKER_REBOOT (id: 1001)
+00:29:01.57 WORK_REQUEST (work-id: 28; load-size: 125.811; deadline: 1930.32)
+00:29:06.54 ADAPT
+00:29:10.01 WORK_COMPLETE (id: 1005; work-id: 26; ack: 0)
+00:29:10.92 WORKER_ON (id: 1001)
+00:29:13.52 WORK_REQUEST (work-id: 29; load-size: 76.762; deadline: 1862.71)
+00:29:13.52 WORK_COMMAND (id: 1005; work-id: 29; load-size: 76.762)
+00:29:13.68 WORK_ACK (id: 1005; ack: 0)
+00:29:20.55 WORK_REQUEST (work-id: 30; load-size: 90.501; deadline: 1883.97)
+00:29:24.66 WORK_REQUEST (work-id: 31; load-size: 132.505; deadline: 1963.02)
+00:29:25.43 WORK_COMPLETE (id: 1002; work-id: 27; ack: 0)
+00:29:25.43 WORK_COMMAND (id: 1002; work-id: 28; load-size: 125.811)
+00:29:25.58 WORK_ACK (id: 1002; ack: 0)
+00:29:26.65 ADAPT
+00:29:29.54 WORK_REQUEST (work-id: 32; load-size: 72.955; deadline: 1874.73)
+00:29:33.48 WORK_COMPLETE (id: 1005; work-id: 29; ack: 0)
+00:29:33.48 WORK_COMMAND (id: 1005; work-id: 30; load-size: 90.501)
+00:29:33.63 WORK_ACK (id: 1005; ack: 0)
+00:29:35.61 WORK_REQUEST (work-id: 33; load-size: 95.276; deadline: 1917.34)
+00:29:37.59 WORK_REQUEST (work-id: 34; load-size: 53.510; deadline: 1867.87)
+00:29:45.62 WORK_REQUEST (work-id: 35; load-size: 40.653; deadline: 1838.04)
+00:29:46.68 ADAPT
+00:29:52.62 WORK_REQUEST (work-id: 36; load-size: 63.059; deadline: 1888.63)
+00:29:57.03 WORK_COMPLETE (id: 1005; work-id: 30; ack: 0)
+00:29:57.03 WORK_COMMAND (id: 1005; work-id: 33; load-size: 95.276)
+00:29:57.18 WORK_ACK (id: 1005; ack: 0)
+00:29:57.80 WORK_COMPLETE (id: 1002; work-id: 28; ack: 0)
+00:29:57.80 WORK_COMMAND (id: 1002; work-id: 31; load-size: 132.505)
+00:29:57.95 WORK_ACK (id: 1002; ack: 0)
+00:30:03.58 WORK_REQUEST (work-id: 37; load-size: 170.077; deadline: 2054.62)
+00:30:06.79 ADAPT
+00:30:09.54 WORK_REQUEST (work-id: 38; load-size: 156.941; deadline: 1976.38)
+00:30:22.00 WORK_COMPLETE (id: 1005; work-id: 33; ack: 0)
+00:30:22.00 WORK_COMMAND (id: 1005; work-id: 34; load-size: 53.510)
+00:30:22.15 WORK_ACK (id: 1005; ack: 0)
+00:30:26.86 ADAPT
+00:30:28.53 WORK_REQUEST (work-id: 39; load-size: 186.078; deadline: 2013.03)
+00:30:32.02 WORK_COMPLETE (id: 1002; work-id: 31; ack: 0)
+00:30:32.02 WORK_COMMAND (id: 1002; work-id: 32; load-size: 72.955)
+00:30:32.18 WORK_ACK (id: 1002; ack: 0)
+00:30:35.98 WORK_COMPLETE (id: 1005; work-id: 34; ack: 0)
+00:30:35.98 WORK_COMMAND (id: 1005; work-id: 36; load-size: 63.059)
+00:30:36.13 WORK_ACK (id: 1005; ack: 0)
+00:30:41.76 WORKER_ONLINE (id: 1001)
+00:30:42.66 WORK_REQUEST (work-id: 40; load-size: 143.405; deadline: 1996.08)
+00:30:42.66 WORK_COMMAND (id: 1001; work-id: 40; load-size: 143.405)
+00:30:42.82 WORK_ACK (id: 1001; ack: 0)
+00:30:46.92 ADAPT
+00:30:46.92 WORKER_ON (id: 1003)
+00:30:51.26 WORK_COMPLETE (id: 1002; work-id: 32; ack: 0)
+00:30:51.26 WORK_COMMAND (id: 1002; work-id: 35; load-size: 40.653)
+00:30:51.42 WORK_ACK (id: 1002; ack: 0)
+00:30:52.49 WORK_COMPLETE (id: 1005; work-id: 36; ack: 0)
+00:30:52.49 WORK_COMMAND (id: 1005; work-id: 38; load-size: 156.941)
+00:30:52.65 WORK_ACK (id: 1005; ack: 0)
+00:31:01.55 WORK_REQUEST (work-id: 41; load-size: 103.763; deadline: 1966.91)
+00:31:02.03 WORK_COMPLETE (id: 1002; work-id: 35; ack: 0)
+00:31:02.03 WORK_COMMAND (id: 1002; work-id: 37; load-size: 170.077)
+00:31:02.18 WORK_ACK (id: 1002; ack: 0)
+00:31:06.97 ADAPT
+00:31:27.07 ADAPT
+00:31:28.77 WORK_COMPLETE (id: 1001; work-id: 40; ack: 0)
+00:31:28.77 WORK_COMMAND (id: 1001; work-id: 41; load-size: 103.763)
+00:31:28.94 WORK_ACK (id: 1001; ack: 0)
+00:31:33.87 WORK_COMPLETE (id: 1005; work-id: 38; ack: 0)
+00:31:33.87 WORK_COMMAND (id: 1005; work-id: 39; load-size: 186.078)
+00:31:34.04 WORK_ACK (id: 1005; ack: 0)
+00:31:35.58 WORK_REQUEST (work-id: 42; load-size: 170.076; deadline: 2064.47)
+00:31:46.40 WORK_COMPLETE (id: 1002; work-id: 37; ack: 0)
+00:31:47.18 ADAPT
+00:31:47.18 HALT_COMMAND (id: 1003)
+00:31:55.68 WORK_COMPLETE (id: 1001; work-id: 41; ack: 0)
+00:31:55.68 WORK_COMMAND (id: 1001; work-id: 42; load-size: 170.076)
+00:31:55.84 WORK_ACK (id: 1001; ack: 0)
+00:32:00.50 WORKER_OFF (id: 1003)
+00:32:01.60 WORK_REQUEST (work-id: 43; load-size: 210.902; deadline: 2139.27)
+00:32:01.60 WORK_COMMAND (id: 1002; work-id: 43; load-size: 210.902)
+00:32:01.75 WORK_ACK (id: 1002; ack: 0)
+00:32:07.21 ADAPT
+00:32:07.21 WORKER_ON (id: 1003)
+00:32:18.62 WORK_REQUEST (work-id: 44; load-size: 51.348; deadline: 1990.96)
+00:32:22.30 WORK_COMPLETE (id: 1005; work-id: 39; ack: 0)
+00:32:27.25 ADAPT
+00:32:41.22 WORK_COMPLETE (id: 1001; work-id: 42; ack: 0)
+00:32:41.22 WORK_COMMAND (id: 1001; work-id: 44; load-size: 51.348)
+00:32:41.38 WORK_ACK (id: 1001; ack: 0)
+00:32:43.56 WORK_REQUEST (work-id: 45; load-size: 133.917; deadline: 2093.30)
+00:32:43.56 WORK_COMMAND (id: 1005; work-id: 45; load-size: 133.917)
+00:32:43.72 WORK_ACK (id: 1005; ack: 0)
+00:32:47.30 ADAPT
+00:32:54.67 WORK_COMPLETE (id: 1001; work-id: 44; ack: 0)
+00:32:58.70 WORK_COMPLETE (id: 1002; work-id: 43; ack: 0)
+00:33:07.31 ADAPT
+00:33:07.31 HALT_COMMAND (id: 1003)
+00:33:07.31 HALT_COMMAND (id: 1001)
+00:33:07.58 HALT_ACK (id: 1001; ack: 0)
+00:33:07.58 WORKER_OFFLINE (id: 1001)
+00:33:11.66 WORK_REQUEST (work-id: 46; load-size: 114.175; deadline: 2076.79)
+00:33:11.66 WORK_COMMAND (id: 1002; work-id: 46; load-size: 114.175)
+00:33:11.82 WORK_ACK (id: 1002; ack: 0)
+00:33:18.36 WORK_COMPLETE (id: 1005; work-id: 45; ack: 0)
+00:33:20.57 WORKER_OFF (id: 1001)
+00:33:20.57 WORKER_OFF (id: 1003)
+00:33:27.44 ADAPT
+00:33:39.59 WORK_REQUEST (work-id: 47; load-size: 160.487; deadline: 2170.19)
+00:33:39.59 E_METER_RESET
+00:33:39.59 WORK_COMMAND (id: 1005; work-id: 47; load-size: 160.487)
+00:33:39.74 WORK_ACK (id: 1005; ack: 0)
+00:33:41.40 WORK_COMPLETE (id: 1002; work-id: 46; ack: 0)
+00:33:47.50 ADAPT
+00:33:57.66 WORK_REQUEST (work-id: 48; load-size: 219.189; deadline: 2226.95)
+00:33:57.66 WORK_COMMAND (id: 1002; work-id: 48; load-size: 219.189)
+00:33:57.81 WORK_ACK (id: 1002; ack: 0)
+00:34:07.51 ADAPT
+00:34:07.51 WORKER_ON (id: 1001)
+00:34:11.54 WORK_REQUEST (work-id: 49; load-size: 198.236; deadline: 2200.50)
+00:34:19.81 WORKER_REBOOT (id: 1001)
+00:34:20.60 WORK_REQUEST (work-id: 50; load-size: 163.273; deadline: 2195.60)
+00:34:21.37 WORK_COMPLETE (id: 1005; work-id: 47; ack: 0)
+00:34:21.37 WORK_COMMAND (id: 1005; work-id: 50; load-size: 163.273)
+00:34:21.52 WORK_ACK (id: 1005; ack: 0)
+00:34:27.56 ADAPT
+00:34:31.97 WORKER_ON (id: 1001)
+00:34:46.63 WORK_REQUEST (work-id: 51; load-size: 186.894; deadline: 2248.97)
+00:34:47.70 ADAPT
+00:34:56.21 WORK_COMPLETE (id: 1002; work-id: 48; ack: 0)
+00:34:56.21 WORK_COMMAND (id: 1002; work-id: 49; load-size: 198.236)
+00:34:56.36 WORK_ACK (id: 1002; ack: 0)
+00:35:04.59 WORK_REQUEST (work-id: 52; load-size: 171.477; deadline: 2259.42)
+00:35:04.59 WORK_COMPLETE (id: 1005; work-id: 50; ack: 0)
+00:35:04.59 WORK_COMMAND (id: 1005; work-id: 51; load-size: 186.894)
+00:35:04.75 WORK_ACK (id: 1005; ack: 0)
+00:35:07.79 ADAPT
+00:35:17.53 WORK_REQUEST (work-id: 53; load-size: 208.456; deadline: 2287.56)
+00:35:27.89 ADAPT
+00:35:31.67 WORK_REQUEST (work-id: 54; load-size: 225.624; deadline: 2311.38)
+00:35:35.62 WORK_REQUEST (work-id: 55; load-size: 172.827; deadline: 2290.58)
+00:35:47.98 ADAPT
+00:35:48.14 WORK_COMPLETE (id: 1002; work-id: 49; ack: 0)
+00:35:48.14 WORK_COMMAND (id: 1002; work-id: 52; load-size: 171.477)
+00:35:48.29 WORK_ACK (id: 1002; ack: 0)
+00:35:53.33 WORK_COMPLETE (id: 1005; work-id: 51; ack: 0)
+00:35:53.33 WORK_COMMAND (id: 1005; work-id: 53; load-size: 208.456)
+00:35:53.48 WORK_ACK (id: 1005; ack: 0)
+00:35:56.54 WORK_REQUEST (work-id: 56; load-size: 205.079; deadline: 2325.62)
+00:36:01.70 WORKER_ONLINE (id: 1001)
+00:36:08.09 ADAPT
+00:36:21.62 WORK_REQUEST (work-id: 57; load-size: 108.418; deadline: 2276.74)
+00:36:21.62 WORK_COMMAND (id: 1001; work-id: 57; load-size: 108.418)
+00:36:21.79 WORK_ACK (id: 1001; ack: 0)
+00:36:28.17 ADAPT
+00:36:28.17 WORKER_ON (id: 1003)
+00:36:32.97 WORK_COMPLETE (id: 1002; work-id: 52; ack: 0)
+00:36:32.97 WORK_COMMAND (id: 1002; work-id: 54; load-size: 225.624)
+00:36:33.12 WORK_ACK (id: 1002; ack: 0)
+00:36:35.58 WORK_REQUEST (work-id: 58; load-size: 91.439; deadline: 2352.08)
+00:36:46.66 WORK_REQUEST (work-id: 59; load-size: 111.607; deadline: 2390.14)
+00:36:47.90 WORK_COMPLETE (id: 1005; work-id: 53; ack: 0)
+00:36:47.90 WORK_COMMAND (id: 1005; work-id: 55; load-size: 172.827)
+00:36:48.05 WORK_ACK (id: 1005; ack: 0)
+00:36:48.22 ADAPT
+00:36:55.30 WORK_COMPLETE (id: 1001; work-id: 57; ack: 0)
+00:36:55.30 WORK_COMMAND (id: 1001; work-id: 58; load-size: 91.439)
+00:36:55.46 WORK_ACK (id: 1001; ack: 0)
+00:36:56.52 WORK_REQUEST (work-id: 60; load-size: 111.977; deadline: 2369.34)
+00:37:03.62 WORK_REQUEST (work-id: 61; load-size: 79.072; deadline: 2347.24)
+00:37:08.22 ADAPT
+00:37:10.67 WORK_REQUEST (work-id: 62; load-size: 107.621; deadline: 2382.40)
+00:37:14.65 WORK_REQUEST (work-id: 63; load-size: 94.493; deadline: 2383.49)
+00:37:19.15 WORK_COMPLETE (id: 1001; work-id: 58; ack: 0)
+00:37:19.15 WORK_COMMAND (id: 1001; work-id: 59; load-size: 111.607)
+00:37:19.32 WORK_ACK (id: 1001; ack: 0)
+00:37:22.56 WORK_REQUEST (work-id: 64; load-size: 29.540; deadline: 2287.40)
+00:37:28.38 ADAPT
+00:37:32.87 WORK_COMPLETE (id: 1005; work-id: 55; ack: 0)
+00:37:32.87 WORK_COMMAND (id: 1005; work-id: 60; load-size: 111.977)
+00:37:33.03 WORK_ACK (id: 1005; ack: 0)
+00:37:33.20 WORK_COMPLETE (id: 1002; work-id: 54; ack: 0)
+00:37:33.20 WORK_COMMAND (id: 1002; work-id: 56; load-size: 205.079)
+00:37:33.35 WORK_ACK (id: 1002; ack: 0)
+00:37:33.66 WORK_REQUEST (work-id: 65; load-size: 87.991; deadline: 2389.15)
+00:37:44.64 WORK_REQUEST (work-id: 66; load-size: 226.911; deadline: 2530.11)
+00:37:48.52 WORK_COMPLETE (id: 1001; work-id: 59; ack: 0)
+00:37:48.52 ADAPT
+00:37:48.52 WORK_COMMAND (id: 1001; work-id: 61; load-size: 79.072)
+00:37:48.68 WORK_ACK (id: 1001; ack: 0)
+00:37:55.55 WORK_REQUEST (work-id: 67; load-size: 150.581; deadline: 2468.41)
+00:37:58.51 WORKER_ONLINE (id: 1003)
+00:38:02.50 WORK_COMPLETE (id: 1005; work-id: 60; ack: 0)
+00:38:02.50 WORK_COMMAND (id: 1005; work-id: 63; load-size: 94.493)
+00:38:02.66 WORK_ACK (id: 1005; ack: 0)
+00:38:08.58 ADAPT
+00:38:09.21 WORK_COMPLETE (id: 1001; work-id: 61; ack: 0)
+00:38:09.21 WORK_COMMAND (id: 1001; work-id: 64; load-size: 29.540)
+00:38:09.36 WORK_ACK (id: 1001; ack: 0)
+00:38:12.62 WORK_REQUEST (work-id: 68; load-size: 10.283; deadline: 2313.94)
+00:38:12.62 WORK_COMMAND (id: 1003; work-id: 68; load-size: 10.283)
+00:38:12.78 WORK_ACK (id: 1003; ack: 0)
+00:38:16.27 WORK_COMPLETE (id: 1003; work-id: 68; ack: 0)
+00:38:17.08 WORK_COMPLETE (id: 1001; work-id: 64; ack: 0)
+00:38:17.08 WORK_COMMAND (id: 1001; work-id: 67; load-size: 150.581)
+00:38:17.23 WORK_ACK (id: 1001; ack: 0)
+00:38:26.57 WORK_REQUEST (work-id: 69; load-size: 174.360; deadline: 2520.98)
+00:38:26.57 WORK_COMPLETE (id: 1002; work-id: 56; ack: 0)
+00:38:26.57 WORK_COMMAND (id: 1003; work-id: 69; load-size: 174.360)
+00:38:26.57 WORK_COMMAND (id: 1002; work-id: 62; load-size: 107.621)
+00:38:26.74 WORK_ACK (id: 1002; ack: 0)
+00:38:26.74 WORK_ACK (id: 1003; ack: 0)
+00:38:27.20 WORK_COMPLETE (id: 1005; work-id: 63; ack: 0)
+00:38:27.20 WORK_COMMAND (id: 1005; work-id: 66; load-size: 226.911)
+00:38:27.36 WORK_ACK (id: 1005; ack: 0)
+00:38:28.60 ADAPT
+00:38:28.60 WORKER_ON (id: 1004)
+00:38:40.60 WORK_REQUEST (work-id: 70; load-size: 186.251; deadline: 2544.92)
+00:38:48.76 ADAPT
+00:38:54.56 WORK_COMPLETE (id: 1002; work-id: 62; ack: 0)
+00:38:54.56 WORK_COMMAND (id: 1002; work-id: 65; load-size: 87.991)
+00:38:54.72 WORK_ACK (id: 1002; ack: 0)
+00:38:58.28 WORK_COMPLETE (id: 1001; work-id: 67; ack: 0)
+00:38:58.28 WORK_COMMAND (id: 1001; work-id: 70; load-size: 186.251)
+00:38:58.43 WORK_ACK (id: 1001; ack: 0)
+00:39:05.56 WORK_REQUEST (work-id: 71; load-size: 152.143; deadline: 2518.60)
+00:39:08.92 ADAPT
+00:39:17.42 WORK_COMPLETE (id: 1002; work-id: 65; ack: 0)
+00:39:21.76 WORK_COMPLETE (id: 1003; work-id: 69; ack: 0)
+00:39:26.56 WORK_COMPLETE (id: 1005; work-id: 66; ack: 0)
+00:39:28.64 WORK_REQUEST (work-id: 72; load-size: 107.567; deadline: 2507.46)
+00:39:28.64 WORK_COMMAND (id: 1002; work-id: 72; load-size: 107.567)
+00:39:28.81 WORK_ACK (id: 1002; ack: 0)
+00:39:28.97 ADAPT
+00:39:28.97 HALT_COMMAND (id: 1004)
+00:39:28.97 HALT_COMMAND (id: 1003)
+00:39:29.39 HALT_ACK (id: 1003; ack: 0)
+00:39:29.39 WORKER_OFFLINE (id: 1003)
+00:39:34.68 WORK_REQUEST (work-id: 73; load-size: 177.826; deadline: 2568.03)
+00:39:34.68 WORK_COMMAND (id: 1005; work-id: 73; load-size: 177.826)
+00:39:34.83 WORK_ACK (id: 1005; ack: 0)
+00:39:42.23 WORKER_OFF (id: 1003)
+00:39:42.23 WORKER_OFF (id: 1004)
+00:39:48.66 WORK_REQUEST (work-id: 74; load-size: 162.403; deadline: 2586.03)
+00:39:48.66 WORK_COMPLETE (id: 1001; work-id: 70; ack: 0)
+00:39:48.66 WORK_COMMAND (id: 1001; work-id: 71; load-size: 152.143)
+00:39:48.82 WORK_ACK (id: 1001; ack: 0)
+00:39:48.97 ADAPT
+00:39:48.97 WORKER_ON (id: 1003)
+00:39:56.73 WORK_COMPLETE (id: 1002; work-id: 72; ack: 0)
+00:39:56.73 WORK_COMMAND (id: 1002; work-id: 74; load-size: 162.403)
+00:39:56.90 WORK_ACK (id: 1002; ack: 0)
+00:40:09.09 ADAPT
+00:40:11.60 WORK_REQUEST (work-id: 75; load-size: 237.893; deadline: 2698.84)
+00:40:20.46 WORK_COMPLETE (id: 1005; work-id: 73; ack: 0)
+00:40:26.64 WORK_REQUEST (work-id: 76; load-size: 43.869; deadline: 2486.48)
+00:40:26.64 WORK_COMMAND (id: 1005; work-id: 76; load-size: 43.869)
+00:40:26.79 WORK_ACK (id: 1005; ack: 0)
+00:40:28.83 WORK_COMPLETE (id: 1001; work-id: 71; ack: 0)
+00:40:28.83 WORK_COMMAND (id: 1001; work-id: 75; load-size: 237.893)
+00:40:29.00 WORK_ACK (id: 1001; ack: 0)
+00:40:29.15 ADAPT
+00:40:30.62 WORK_REQUEST (work-id: 77; load-size: 52.172; deadline: 2497.19)
+00:40:38.45 WORK_COMPLETE (id: 1005; work-id: 76; ack: 0)
+00:40:38.92 WORK_COMPLETE (id: 1002; work-id: 74; ack: 0)
+00:40:44.62 WORK_REQUEST (work-id: 78; load-size: 30.262; deadline: 2474.29)
+00:40:44.62 WORK_COMMAND (id: 1002; work-id: 78; load-size: 30.262)
+00:40:44.78 WORK_ACK (id: 1002; ack: 0)
+00:40:49.26 ADAPT
+00:40:49.26 HALT_COMMAND (id: 1003)
+00:40:52.68 WORK_COMPLETE (id: 1002; work-id: 78; ack: 0)
+00:40:55.64 WORK_REQUEST (work-id: 79; load-size: 110.602; deadline: 2615.94)
+00:40:55.64 WORK_COMMAND (id: 1002; work-id: 79; load-size: 110.602)
+00:40:55.80 WORK_ACK (id: 1002; ack: 0)
+00:41:00.59 WORK_REQUEST (work-id: 80; load-size: 98.214; deadline: 2606.57)
+00:41:00.59 WORK_COMMAND (id: 1005; work-id: 80; load-size: 98.214)
+00:41:00.75 WORK_ACK (id: 1005; ack: 0)
+00:41:02.47 WORKER_OFF (id: 1003)
+00:41:05.53 WORK_REQUEST (work-id: 81; load-size: 96.431; deadline: 2595.01)
+00:41:09.32 ADAPT
+00:41:09.32 WORKER_ON (id: 1003)
+00:41:17.67 WORK_REQUEST (work-id: 82; load-size: 61.657; deadline: 2571.88)
+00:41:24.48 WORK_COMPLETE (id: 1002; work-id: 79; ack: 0)
+00:41:24.48 WORK_COMMAND (id: 1002; work-id: 81; load-size: 96.431)
+00:41:24.63 WORK_ACK (id: 1002; ack: 0)
+00:41:26.19 WORK_COMPLETE (id: 1005; work-id: 80; ack: 0)
+00:41:26.19 WORK_COMMAND (id: 1005; work-id: 82; load-size: 61.657)
+00:41:26.35 WORK_ACK (id: 1005; ack: 0)
+00:41:26.65 WORK_REQUEST (work-id: 83; load-size: 78.684; deadline: 2593.72)
+00:41:29.42 ADAPT
+00:41:32.55 WORK_REQUEST (work-id: 84; load-size: 117.987; deadline: 2690.96)
+00:41:35.02 WORK_COMPLETE (id: 1001; work-id: 75; ack: 0)
+00:41:35.02 WORK_COMMAND (id: 1001; work-id: 77; load-size: 52.172)
+00:41:35.18 WORK_ACK (id: 1001; ack: 0)
+00:41:42.65 WORK_REQUEST (work-id: 85; load-size: 108.599; deadline: 2669.63)
+00:41:42.81 WORK_COMPLETE (id: 1005; work-id: 82; ack: 0)
+00:41:42.81 WORK_COMMAND (id: 1005; work-id: 84; load-size: 117.987)
+00:41:42.96 WORK_ACK (id: 1005; ack: 0)
+00:41:47.57 WORK_REQUEST (work-id: 86; load-size: 114.276; deadline: 2616.67)
+00:41:48.66 WORK_COMPLETE (id: 1001; work-id: 77; ack: 0)
+00:41:48.66 WORK_COMMAND (id: 1001; work-id: 85; load-size: 108.599)
+00:41:48.83 WORK_ACK (id: 1001; ack: 0)
+00:41:49.46 ADAPT
+00:41:49.62 WORK_COMPLETE (id: 1002; work-id: 81; ack: 0)
+00:41:49.62 WORK_COMMAND (id: 1002; work-id: 83; load-size: 78.684)
+00:41:49.79 WORK_ACK (id: 1002; ack: 0)
+00:42:09.46 ADAPT
+00:42:10.55 WORK_COMPLETE (id: 1002; work-id: 83; ack: 0)
+00:42:14.01 WORK_COMPLETE (id: 1005; work-id: 84; ack: 0)
+00:42:14.01 WORK_COMMAND (id: 1005; work-id: 86; load-size: 114.276)
+00:42:14.17 WORK_ACK (id: 1005; ack: 0)
+00:42:16.67 WORK_REQUEST (work-id: 87; load-size: 135.020; deadline: 2668.39)
+00:42:16.67 WORK_COMMAND (id: 1002; work-id: 87; load-size: 135.020)
+00:42:16.83 WORK_ACK (id: 1002; ack: 0)
+00:42:17.13 WORK_COMPLETE (id: 1001; work-id: 85; ack: 0)
+00:42:29.52 ADAPT
+00:42:29.52 HALT_COMMAND (id: 1003)
+00:42:33.55 WORK_REQUEST (work-id: 88; load-size: 183.023; deadline: 2751.19)
+00:42:33.55 WORK_COMMAND (id: 1001; work-id: 88; load-size: 183.023)
+00:42:33.71 WORK_ACK (id: 1001; ack: 0)
+00:42:38.23 WORKER_ONLINE (id: 1003)
+00:42:40.56 WORK_REQUEST (work-id: 89; load-size: 157.640; deadline: 2714.07)
+00:42:40.56 WORK_COMMAND (id: 1003; work-id: 89; load-size: 157.640)
+00:42:40.72 WORK_ACK (id: 1003; ack: 0)
+00:42:43.67 WORK_COMPLETE (id: 1005; work-id: 86; ack: 0)
+00:42:49.53 ADAPT
+00:42:52.53 WORK_COMPLETE (id: 1002; work-id: 87; ack: 0)
+00:43:06.55 WORK_REQUEST (work-id: 90; load-size: 186.252; deadline: 2782.23)
+00:43:06.55 WORK_COMMAND (id: 1002; work-id: 90; load-size: 186.252)
+00:43:06.71 WORK_ACK (id: 1002; ack: 0)
+00:43:09.58 ADAPT
+00:43:21.39 WORK_COMPLETE (id: 1001; work-id: 88; ack: 0)
+00:43:29.58 ADAPT
+00:43:29.58 HALT_COMMAND (id: 1001)
+00:43:29.74 HALT_ACK (id: 1001; ack: 0)
+00:43:29.74 WORKER_OFFLINE (id: 1001)
+00:43:30.06 WORK_COMPLETE (id: 1003; work-id: 89; ack: 0)
+00:43:33.67 WORK_REQUEST (work-id: 91; load-size: 108.268; deadline: 2737.70)
+00:43:33.67 WORK_COMMAND (id: 1003; work-id: 91; load-size: 108.268)
+00:43:33.83 WORK_ACK (id: 1003; ack: 0)
+00:43:42.81 WORKER_OFF (id: 1001)
+00:43:49.67 ADAPT
+00:43:55.17 WORK_COMPLETE (id: 1002; work-id: 90; ack: 0)
+00:44:02.47 WORK_COMPLETE (id: 1003; work-id: 91; ack: 0)
+00:44:05.67 WORK_REQUEST (work-id: 92; load-size: 188.304; deadline: 2826.95)
+00:44:05.67 WORK_COMMAND (id: 1002; work-id: 92; load-size: 188.304)
+00:44:05.83 WORK_ACK (id: 1002; ack: 0)
+00:44:09.81 ADAPT
+00:44:09.81 HALT_COMMAND (id: 1003)
+00:44:10.07 HALT_ACK (id: 1003; ack: 0)
+00:44:10.07 WORKER_OFFLINE (id: 1003)
+00:44:17.53 WORK_REQUEST (work-id: 93; load-size: 188.079; deadline: 2868.89)
+00:44:17.53 WORK_COMMAND (id: 1005; work-id: 93; load-size: 188.079)
+00:44:17.70 WORK_ACK (id: 1005; ack: 0)
+00:44:23.00 WORKER_OFF (id: 1003)
+00:44:29.96 ADAPT
+00:44:29.96 WORKER_ON (id: 1001)
+00:44:33.67 WORK_REQUEST (work-id: 94; load-size: 103.791; deadline: 2777.03)
+00:44:49.96 ADAPT
+00:44:54.69 WORK_COMPLETE (id: 1002; work-id: 92; ack: 0)
+00:44:54.69 WORK_COMMAND (id: 1002; work-id: 94; load-size: 103.791)
+00:44:54.85 WORK_ACK (id: 1002; ack: 0)
+00:44:55.61 WORK_REQUEST (work-id: 95; load-size: 129.926; deadline: 2831.87)
+00:44:55.61 E_METER_RESET
+00:45:06.64 WORK_COMPLETE (id: 1005; work-id: 93; ack: 0)
+00:45:10.05 ADAPT
+00:45:10.05 HALT_COMMAND (id: 1001)
+00:45:21.70 WORK_COMPLETE (id: 1002; work-id: 94; ack: 0)
+00:45:21.70 WORK_COMMAND (id: 1002; work-id: 95; load-size: 129.926)
+00:45:21.86 WORK_ACK (id: 1002; ack: 0)
+00:45:22.63 WORK_REQUEST (work-id: 96; load-size: 141.076; deadline: 2832.37)
+00:45:22.63 WORK_COMMAND (id: 1005; work-id: 96; load-size: 141.076)
+00:45:22.80 WORK_ACK (id: 1005; ack: 0)
+00:45:23.27 WORKER_OFF (id: 1001)
+00:45:30.11 ADAPT
+00:45:30.11 WORKER_ON (id: 1001)
+00:45:35.57 WORK_REQUEST (work-id: 97; load-size: 170.527; deadline: 2863.64)
+00:45:42.40 WORKER_REBOOT (id: 1001)
+00:45:50.15 ADAPT
+00:45:52.64 WORK_REQUEST (work-id: 98; load-size: 178.480; deadline: 2886.33)
+00:45:54.69 WORKER_ON (id: 1001)
+00:45:55.48 WORK_COMPLETE (id: 1002; work-id: 95; ack: 0)
+00:45:55.48 WORK_COMMAND (id: 1002; work-id: 97; load-size: 170.527)
+00:45:55.64 WORK_ACK (id: 1002; ack: 0)
+00:45:59.34 WORK_COMPLETE (id: 1005; work-id: 96; ack: 0)
+00:45:59.34 WORK_COMMAND (id: 1005; work-id: 98; load-size: 178.480)
+00:45:59.50 WORK_ACK (id: 1005; ack: 0)
+00:46:10.18 ADAPT
+00:46:15.64 WORK_REQUEST (work-id: 99; load-size: 131.123; deadline: 2895.43)
+00:46:21.68 WORK_REQUEST (work-id: 100; load-size: 195.110; deadline: 2924.73)
+00:46:30.21 ADAPT
+00:46:39.80 WORK_COMPLETE (id: 1002; work-id: 97; ack: 0)
+00:46:39.80 WORK_COMMAND (id: 1002; work-id: 99; load-size: 131.123)
+00:46:39.95 WORK_ACK (id: 1002; ack: 0)
+00:46:42.58 WORK_REQUEST (work-id: 101; load-size: 171.738; deadline: 2933.78)
+00:46:45.53 WORK_COMPLETE (id: 1005; work-id: 98; ack: 0)
+00:46:45.53 WORK_COMMAND (id: 1005; work-id: 100; load-size: 195.110)
+00:46:45.69 WORK_ACK (id: 1005; ack: 0)
+00:46:50.36 ADAPT
+00:46:58.65 WORK_REQUEST (work-id: 102; load-size: 211.895; deadline: 2997.03)
+00:47:10.48 ADAPT
+00:47:11.59 WORK_REQUEST (work-id: 103; load-size: 144.693; deadline: 2945.35)
+00:47:13.93 WORK_COMPLETE (id: 1002; work-id: 99; ack: 0)
+00:47:13.93 WORK_COMMAND (id: 1002; work-id: 101; load-size: 171.738)
+00:47:14.10 WORK_ACK (id: 1002; ack: 0)
+00:47:25.80 WORKER_ONLINE (id: 1001)
+00:47:30.50 ADAPT
+00:47:30.67 WORK_REQUEST (work-id: 104; load-size: 175.535; deadline: 2991.02)
+00:47:30.67 WORK_COMMAND (id: 1001; work-id: 104; load-size: 175.535)
+00:47:30.83 WORK_ACK (id: 1001; ack: 0)
+00:47:36.41 WORK_COMPLETE (id: 1005; work-id: 100; ack: 0)
+00:47:36.41 WORK_COMMAND (id: 1005; work-id: 102; load-size: 211.895)
+00:47:36.56 WORK_ACK (id: 1005; ack: 0)
+00:47:37.67 WORK_REQUEST (work-id: 105; load-size: 224.636; deadline: 3039.79)
+00:47:50.56 ADAPT
+00:47:50.56 WORKER_ON (id: 1003)
+00:47:58.63 WORK_COMPLETE (id: 1002; work-id: 101; ack: 0)
+00:47:58.63 WORK_COMMAND (id: 1002; work-id: 103; load-size: 144.693)
+00:47:58.79 WORK_ACK (id: 1002; ack: 0)
+00:48:07.55 WORK_REQUEST (work-id: 106; load-size: 82.996; deadline: 3003.99)
+00:48:10.58 ADAPT
+00:48:15.55 WORK_REQUEST (work-id: 107; load-size: 102.229; deadline: 3047.02)
+00:48:20.67 WORK_REQUEST (work-id: 108; load-size: 78.076; deadline: 2999.86)
+00:48:24.51 WORK_COMPLETE (id: 1001; work-id: 104; ack: 0)
+00:48:24.51 WORK_COMMAND (id: 1001; work-id: 105; load-size: 224.636)
+00:48:24.68 WORK_ACK (id: 1001; ack: 0)
+00:48:29.64 WORK_REQUEST (work-id: 109; load-size: 120.934; deadline: 3078.08)
+00:48:30.59 ADAPT
+00:48:33.16 WORK_COMPLETE (id: 1005; work-id: 102; ack: 0)
+00:48:33.16 WORK_COMMAND (id: 1005; work-id: 107; load-size: 102.229)
+00:48:33.31 WORK_ACK (id: 1005; ack: 0)
+00:48:34.59 WORK_REQUEST (work-id: 110; load-size: 68.918; deadline: 3005.83)
+00:48:36.20 WORK_COMPLETE (id: 1002; work-id: 103; ack: 0)
+00:48:36.20 WORK_COMMAND (id: 1002; work-id: 106; load-size: 82.996)
+00:48:36.36 WORK_ACK (id: 1002; ack: 0)
+00:48:42.60 WORK_REQUEST (work-id: 111; load-size: 81.244; deadline: 3035.05)
+00:48:50.57 WORK_REQUEST (work-id: 112; load-size: 41.844; deadline: 2991.02)
+00:48:50.74 ADAPT
+00:48:55.67 WORK_REQUEST (work-id: 113; load-size: 31.623; deadline: 2965.58)
+00:48:57.93 WORK_COMPLETE (id: 1002; work-id: 106; ack: 0)
+00:48:57.93 WORK_COMMAND (id: 1002; work-id: 111; load-size: 81.244)
+00:48:58.09 WORK_ACK (id: 1002; ack: 0)
+00:48:59.71 WORK_COMPLETE (id: 1005; work-id: 107; ack: 0)
+00:48:59.71 WORK_COMMAND (id: 1005; work-id: 110; load-size: 68.918)
+00:48:59.87 WORK_ACK (id: 1005; ack: 0)
+00:49:02.55 WORK_REQUEST (work-id: 114; load-size: 130.296; deadline: 3102.04)
+00:49:10.81 ADAPT
+00:49:16.60 WORK_REQUEST (work-id: 115; load-size: 53.739; deadline: 3020.92)
+00:49:17.71 WORK_COMPLETE (id: 1005; work-id: 110; ack: 0)
+00:49:17.71 WORK_COMMAND (id: 1005; work-id: 113; load-size: 31.623)
+00:49:17.87 WORK_ACK (id: 1005; ack: 0)
+00:49:19.15 WORK_COMPLETE (id: 1002; work-id: 111; ack: 0)
+00:49:19.15 WORK_COMMAND (id: 1002; work-id: 112; load-size: 41.844)
+00:49:19.31 WORK_ACK (id: 1002; ack: 0)
+00:49:20.90 WORKER_ONLINE (id: 1003)
+00:49:25.75 WORK_COMPLETE (id: 1001; work-id: 105; ack: 0)
+00:49:25.75 WORK_COMMAND (id: 1001; work-id: 108; load-size: 78.076)
+00:49:25.91 WORK_ACK (id: 1001; ack: 0)
+00:49:26.22 WORK_COMPLETE (id: 1005; work-id: 113; ack: 0)
+00:49:26.22 WORK_COMMAND (id: 1005; work-id: 115; load-size: 53.739)
+00:49:26.39 WORK_ACK (id: 1005; ack: 0)
+00:49:30.39 WORK_COMPLETE (id: 1002; work-id: 112; ack: 0)
+00:49:30.39 WORK_COMMAND (id: 1002; work-id: 114; load-size: 130.296)
+00:49:30.55 WORK_ACK (id: 1002; ack: 0)
+00:49:30.87 ADAPT
+00:49:40.31 WORK_COMPLETE (id: 1005; work-id: 115; ack: 0)
+00:49:46.56 WORK_REQUEST (work-id: 116; load-size: 221.505; deadline: 3250.75)
+00:49:46.56 WORK_COMPLETE (id: 1001; work-id: 108; ack: 0)
+00:49:46.56 WORK_COMMAND (id: 1003; work-id: 116; load-size: 221.505)
+00:49:46.56 WORK_COMMAND (id: 1001; work-id: 109; load-size: 120.934)
+00:49:46.72 WORK_ACK (id: 1001; ack: 0)
+00:49:46.72 WORK_ACK (id: 1003; ack: 0)
+00:49:50.91 ADAPT
+00:49:52.68 WORK_REQUEST (work-id: 117; load-size: 78.913; deadline: 3087.41)
+00:49:52.68 WORK_COMMAND (id: 1005; work-id: 117; load-size: 78.913)
+00:49:52.84 WORK_ACK (id: 1005; ack: 0)
+00:50:04.20 WORK_COMPLETE (id: 1002; work-id: 114; ack: 0)
+00:50:05.64 WORK_REQUEST (work-id: 118; load-size: 204.461; deadline: 3256.30)
+00:50:05.64 WORK_COMMAND (id: 1002; work-id: 118; load-size: 204.461)
+00:50:05.80 WORK_ACK (id: 1002; ack: 0)
+00:50:10.91 ADAPT
+00:50:10.91 WORKER_ON (id: 1004)
+00:50:13.20 WORK_COMPLETE (id: 1005; work-id: 117; ack: 0)
+00:50:18.17 WORK_COMPLETE (id: 1001; work-id: 109; ack: 0)
+00:50:25.67 WORK_REQUEST (work-id: 119; load-size: 215.334; deadline: 3281.15)
+00:50:25.67 WORK_COMMAND (id: 1001; work-id: 119; load-size: 215.334)
+00:50:25.84 WORK_ACK (id: 1001; ack: 0)
+00:50:31.03 ADAPT
+00:50:45.60 WORK_REQUEST (work-id: 120; load-size: 129.171; deadline: 3215.74)
+00:50:45.60 WORK_COMMAND (id: 1005; work-id: 120; load-size: 129.171)
+00:50:45.76 WORK_ACK (id: 1005; ack: 0)
+00:50:51.15 ADAPT
+00:50:55.01 WORK_COMPLETE (id: 1003; work-id: 116; ack: 0)
+00:51:00.23 WORK_COMPLETE (id: 1002; work-id: 118; ack: 0)
+00:51:02.67 WORK_REQUEST (work-id: 121; load-size: 154.015; deadline: 3264.28)
+00:51:02.67 WORK_COMMAND (id: 1002; work-id: 121; load-size: 154.015)
+00:51:02.83 WORK_ACK (id: 1002; ack: 0)
+00:51:11.15 ADAPT
+00:51:11.15 HALT_COMMAND (id: 1004)
+00:51:19.31 WORK_COMPLETE (id: 1005; work-id: 120; ack: 0)
+00:51:21.75 WORK_COMPLETE (id: 1001; work-id: 119; ack: 0)
+00:51:24.42 WORKER_OFF (id: 1004)
+00:51:30.68 WORK_REQUEST (work-id: 122; load-size: 205.745; deadline: 3335.15)
+00:51:30.68 WORK_COMMAND (id: 1001; work-id: 122; load-size: 205.745)
+00:51:30.84 WORK_ACK (id: 1001; ack: 0)
+00:51:31.16 ADAPT
+00:51:31.16 HALT_COMMAND (id: 1003)
+00:51:31.43 HALT_ACK (id: 1003; ack: 0)
+00:51:31.43 WORKER_OFFLINE (id: 1003)
+00:51:43.47 WORK_COMPLETE (id: 1002; work-id: 121; ack: 0)
+00:51:44.44 WORKER_OFF (id: 1003)
+00:51:45.55 WORK_REQUEST (work-id: 123; load-size: 144.642; deadline: 3275.67)
+00:51:45.55 WORK_COMMAND (id: 1002; work-id: 123; load-size: 144.642)
+00:51:45.71 WORK_ACK (id: 1002; ack: 0)
+00:51:51.27 ADAPT
+00:51:58.52 WORK_REQUEST (work-id: 124; load-size: 105.524; deadline: 3270.32)
+00:51:58.52 WORK_COMMAND (id: 1005; work-id: 124; load-size: 105.524)
+00:51:58.69 WORK_ACK (id: 1005; ack: 0)
+00:52:06.55 WORK_REQUEST (work-id: 125; load-size: 124.221; deadline: 3318.51)
+00:52:11.37 ADAPT
+00:52:11.37 WORKER_ON (id: 1003)
+00:52:22.64 WORK_REQUEST (work-id: 126; load-size: 26.906; deadline: 3167.84)
+00:52:23.44 WORK_COMPLETE (id: 1002; work-id: 123; ack: 0)
+00:52:23.44 WORK_COMMAND (id: 1002; work-id: 126; load-size: 26.906)
+00:52:23.60 WORK_ACK (id: 1002; ack: 0)
+00:52:24.38 WORK_COMPLETE (id: 1001; work-id: 122; ack: 0)
+00:52:24.38 WORK_COMMAND (id: 1001; work-id: 125; load-size: 124.221)
+00:52:24.54 WORK_REQUEST (work-id: 127; load-size: 108.799; deadline: 3310.35)
+00:52:24.54 WORK_ACK (id: 1001; ack: 0)
+00:52:26.62 WORK_COMPLETE (id: 1005; work-id: 124; ack: 0)
+00:52:30.62 WORK_COMPLETE (id: 1002; work-id: 126; ack: 0)
+00:52:31.42 ADAPT
+00:52:31.42 HALT_COMMAND (id: 1002)
+00:52:31.85 HALT_ACK (id: 1002; ack: 0)
+00:52:31.85 WORKER_OFFLINE (id: 1002)
+00:52:34.55 WORK_REQUEST (work-id: 128; load-size: 90.189; deadline: 3296.55)
+00:52:34.55 WORK_COMMAND (id: 1005; work-id: 128; load-size: 90.189)
+00:52:34.71 WORK_ACK (id: 1005; ack: 0)
+00:52:43.65 WORK_REQUEST (work-id: 129; load-size: 96.738; deadline: 3302.77)
+00:52:44.61 WORKER_OFF (id: 1002)
+00:52:49.67 WORK_REQUEST (work-id: 130; load-size: 97.021; deadline: 3315.26)
+00:52:51.51 ADAPT
+00:52:56.66 WORK_COMPLETE (id: 1001; work-id: 125; ack: 0)
+00:52:56.66 WORK_COMMAND (id: 1001; work-id: 127; load-size: 108.799)
+00:52:56.82 WORK_ACK (id: 1001; ack: 0)
+00:52:58.06 WORK_COMPLETE (id: 1005; work-id: 128; ack: 0)
+00:52:58.06 WORK_COMMAND (id: 1005; work-id: 129; load-size: 96.738)
+00:52:58.21 WORK_ACK (id: 1005; ack: 0)
+00:53:03.63 WORK_REQUEST (work-id: 131; load-size: 78.980; deadline: 3297.92)
+00:53:11.55 WORK_REQUEST (work-id: 132; load-size: 56.270; deadline: 3279.64)
+00:53:11.55 ADAPT
+00:53:16.52 WORK_REQUEST (work-id: 133; load-size: 52.937; deadline: 3273.72)
+00:53:21.62 WORK_REQUEST (work-id: 134; load-size: 194.389; deadline: 3394.07)
+00:53:23.32 WORK_COMPLETE (id: 1005; work-id: 129; ack: 0)
+00:53:23.32 WORK_COMMAND (id: 1005; work-id: 131; load-size: 78.980)
+00:53:23.47 WORK_ACK (id: 1005; ack: 0)
+00:53:25.17 WORK_COMPLETE (id: 1001; work-id: 127; ack: 0)
+00:53:25.17 WORK_COMMAND (id: 1001; work-id: 130; load-size: 97.021)
+00:53:25.34 WORK_ACK (id: 1001; ack: 0)
+00:53:31.56 ADAPT
+00:53:40.40 WORKER_ONLINE (id: 1003)
+00:53:41.65 WORK_REQUEST (work-id: 135; load-size: 218.389; deadline: 3432.42)
+00:53:41.65 WORK_COMMAND (id: 1003; work-id: 135; load-size: 218.389)
+00:53:41.81 WORK_ACK (id: 1003; ack: 0)
+00:53:44.59 WORK_COMPLETE (id: 1005; work-id: 131; ack: 0)
+00:53:44.59 WORK_COMMAND (id: 1005; work-id: 133; load-size: 52.937)
+00:53:44.74 WORK_ACK (id: 1005; ack: 0)
+00:53:50.81 WORK_COMPLETE (id: 1001; work-id: 130; ack: 0)
+00:53:50.81 WORK_COMMAND (id: 1001; work-id: 132; load-size: 56.270)
+00:53:50.96 WORK_ACK (id: 1001; ack: 0)
+00:53:51.58 ADAPT
+00:53:51.58 WORKER_ON (id: 1002)
+00:53:56.58 WORK_REQUEST (work-id: 136; load-size: 179.287; deadline: 3420.20)
+00:53:58.63 WORK_COMPLETE (id: 1005; work-id: 133; ack: 0)
+00:54:05.50 WORK_COMPLETE (id: 1001; work-id: 132; ack: 0)
+00:54:05.50 WORK_COMMAND (id: 1001; work-id: 134; load-size: 194.389)
+00:54:05.66 WORK_ACK (id: 1001; ack: 0)
+00:54:11.65 ADAPT
+00:54:28.58 WORK_REQUEST (work-id: 137; load-size: 150.043; deadline: 3416.11)
+00:54:28.58 WORK_COMMAND (id: 1005; work-id: 137; load-size: 150.043)
+00:54:28.74 WORK_ACK (id: 1005; ack: 0)
+00:54:31.75 ADAPT
+00:54:40.59 WORK_REQUEST (work-id: 138; load-size: 153.336; deadline: 3448.69)
+00:54:50.35 WORK_COMPLETE (id: 1003; work-id: 135; ack: 0)
+00:54:50.35 WORK_COMMAND (id: 1003; work-id: 136; load-size: 179.287)
+00:54:50.51 WORK_ACK (id: 1003; ack: 0)
+00:54:51.77 ADAPT
+00:54:56.19 WORK_COMPLETE (id: 1001; work-id: 134; ack: 0)
+00:54:56.19 WORK_COMMAND (id: 1001; work-id: 138; load-size: 153.336)
+00:54:56.35 WORK_ACK (id: 1001; ack: 0)
+00:54:59.66 WORK_REQUEST (work-id: 139; load-size: 156.754; deadline: 3461.03)
+00:55:07.73 WORK_COMPLETE (id: 1005; work-id: 137; ack: 0)
+00:55:11.84 ADAPT
+00:55:11.84 HALT_COMMAND (id: 1002)
+00:55:20.57 WORKER_ONLINE (id: 1002)
+00:55:21.69 WORK_REQUEST (work-id: 140; load-size: 121.429; deadline: 3440.43)
+00:55:21.69 WORK_COMMAND (id: 1002; work-id: 140; load-size: 121.429)
+00:55:21.85 WORK_ACK (id: 1002; ack: 0)
+00:55:31.85 ADAPT
+00:55:36.17 WORK_COMPLETE (id: 1001; work-id: 138; ack: 0)
+00:55:36.17 WORK_COMMAND (id: 1001; work-id: 139; load-size: 156.754)
+00:55:36.33 WORK_ACK (id: 1001; ack: 0)
+00:55:37.11 WORK_COMPLETE (id: 1003; work-id: 136; ack: 0)
+00:55:42.54 WORK_REQUEST (work-id: 141; load-size: 35.333; deadline: 3385.96)
+00:55:42.54 WORK_COMMAND (id: 1003; work-id: 141; load-size: 35.333)
+00:55:42.70 WORK_ACK (id: 1003; ack: 0)
+00:55:51.97 WORK_COMPLETE (id: 1003; work-id: 141; ack: 0)
+00:55:51.97 ADAPT
+00:55:51.97 HALT_COMMAND (id: 1003)
+00:55:52.24 HALT_ACK (id: 1003; ack: 0)
+00:55:52.24 WORKER_OFFLINE (id: 1003)
+00:55:58.63 WORK_REQUEST (work-id: 142; load-size: 180.176; deadline: 3528.80)
+00:55:58.63 WORK_COMMAND (id: 1005; work-id: 142; load-size: 180.176)
+00:55:58.80 WORK_ACK (id: 1005; ack: 0)
+00:56:01.03 WORK_COMPLETE (id: 1002; work-id: 140; ack: 0)
+00:56:05.19 WORKER_OFF (id: 1003)
+00:56:12.05 ADAPT
+00:56:16.56 WORK_REQUEST (work-id: 143; load-size: 160.577; deadline: 3552.80)
+00:56:16.56 WORK_COMMAND (id: 1002; work-id: 143; load-size: 160.577)
+00:56:16.73 WORK_ACK (id: 1002; ack: 0)
+00:56:16.88 WORK_COMPLETE (id: 1001; work-id: 139; ack: 0)
+00:56:32.12 ADAPT
+00:56:34.61 SCENARIO_DONE
+00:56:45.75 WORK_COMPLETE (id: 1005; work-id: 142; ack: 0)
+00:56:52.14 ADAPT
+00:56:52.14 HALT_COMMAND (id: 1001)
+00:56:52.41 HALT_ACK (id: 1001; ack: 0)
+00:56:52.41 WORKER_OFFLINE (id: 1001)
+00:57:00.66 WORK_COMPLETE (id: 1002; work-id: 143; ack: 0)
+00:57:05.31 WORKER_OFF (id: 1001)
+00:57:12.22 ADAPT
+00:57:32.28 ADAPT
+00:57:52.29 ADAPT
+00:58:12.40 ADAPT
+00:58:32.41 ADAPT
+00:58:52.47 ADAPT
+00:59:12.49 ADAPT
+00:59:32.54 ADAPT
+00:59:52.57 ADAPT
+01:00:12.73 ADAPT

@@ -135,6 +135,10 @@ svg {
 .marker-highlight { fill:#33f; }
 .dead { fill:#f33; }
 
+.marker { fill:#888; }
+.marker-highlight { fill:#33f; }
+.dead { fill:#f33; }
+
 .work-request {
 	/*shape-rendering: crispEdges;*/
 	fill:#777;
