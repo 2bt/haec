@@ -3,6 +3,6 @@
 /bytecode
 /obj
 *.swp
-status.log
-event.log
-cambri.log
+./status.log
+./event.log
+./cambri.log

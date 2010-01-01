@@ -444,60 +444,58 @@ $(document).ready(function() {
 
 	var domain = 21*60 + 10;
 
-	i = new Graph("x6", function(i){
+	var G, H;
 
+
+	i = new Graph("x6", function(i){
 		e.set_x_domain(0, domain);
 		i.set_x_domain(0, domain);
-
 		e.add_line(i.json.statuses, "red", "simple scheduler");
-
+		G();
 	}, "simple scheduler", "red");
 
-/*	g = new Graph("x4", function(g){
-
-		e.set_x_domain(0, domain);
-		i.set_x_domain(0, domain);
-		g.set_x_domain(0, domain);
-		e.add_line(g.json.statuses, "orange", "simple scheduler with adaptive switching of workers");
-
-	}, "simple scheduler with adaptive switching of workers");
-*/
-	h = new Graph("x2", function(h){
-
-		e.set_x_domain(0, domain);
-		i.set_x_domain(0, domain);
-//		g.set_x_domain(0, domain);
-		h.set_x_domain(0, domain);
-
-		e.add_line(h.json.statuses, "green", "load-consolidating scheduler with adaptive switching of workers");
-
-	}, "load-consolidating scheduler with adaptive switching of workers", "green");
+	G = function(){
+		g = new Graph("x4", function(g){
+			e.set_x_domain(0, domain);
+			i.set_x_domain(0, domain);
+			g.set_x_domain(0, domain);
+			e.add_line(g.json.statuses, "orange", "simple scheduler with adaptive switching of workers");
+			H();
+		}, "simple scheduler with adaptive switching of workers", "orange");
+	};
 
 
-/*	j = new Graph("d4", function(j){
+	H = function(){
+		h = new Graph("x2", function(h){
+			e.set_x_domain(0, domain);
+			i.set_x_domain(0, domain);
+			g.set_x_domain(0, domain);
+			h.set_x_domain(0, domain);
+			e.add_line(h.json.statuses, "green", "load-consolidating scheduler with adaptive switching of workers");
+		}, "load-consolidating scheduler with adaptive switching of workers", "green");
+	};
 
+
+/*
+	j = new Graph("d4", function(j){
 		e.set_x_domain(0, g.recording_length);
 		h.set_x_domain(0, g.recording_length);
 		g.set_x_domain(0, g.recording_length);
 		i.set_x_domain(0, g.recording_length);
 		j.set_x_domain(0, g.recording_length);
-
 		e.add_line(j.json.statuses, "#ff0", "run 4");
-
 	});
 
 	k = new Graph("d5", function(j){
-
 		e.set_x_domain(0, g.recording_length);
 		h.set_x_domain(0, g.recording_length);
 		g.set_x_domain(0, g.recording_length);
 		i.set_x_domain(0, g.recording_length);
 		j.set_x_domain(0, g.recording_length);
 		k.set_x_domain(0, g.recording_length);
-
 		e.add_line(k.json.statuses, "#777");
-
-	});*/ 
+	});
+*/
 
 });
 
