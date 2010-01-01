@@ -438,11 +438,13 @@ void server_run(int argc, char** argv) {
 		for (;;) {
 tryagain:
 			count = select(server.fdmax + 1, &fds, NULL, NULL, &timeout);
-			if (count == 0) server.running = 0;
+			if (count == 0) break;
 			if (count < 0) {
-				if (errno == EINTR) goto tryagain;
+				if (errno == EINTR) {
+					printf("EINTR\n");
+					goto tryagain;
+				}
 				perror("select");
-				server.running = 0;
 				break;
 			}
 			int i;
