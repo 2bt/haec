@@ -11,8 +11,10 @@
 #include "event.h"
 
 
+enum { NUM_CAMBRIS = 1 };
 
-static int cambri_fds[2];
+
+static int cambri_fds[NUM_CAMBRIS];
 static FILE* cambri_log_file;
 
 
@@ -33,7 +35,7 @@ int cambri_init(void) {
 	int ret = 0;
 
 	int c, i;
-	for (c = 0; c < 2; c++) {
+	for (c = 0; c < NUM_CAMBRIS; c++) {
 		const char* name = get_tty_name(c);
 		int fd = -1;
 		if (name) fd = open(name, O_RDWR | O_NOCTTY);
@@ -71,10 +73,10 @@ int cambri_init(void) {
 
 	cambri_log_file = fopen("cambri.log", "w");
 	fprintf(cambri_log_file, " time      ");
-	for (i = 0; i < 16; i++) fprintf(cambri_log_file, " | %4d", (i/8+1) * 1000 + i%8+1);
+	for (i = 0; i < NUM_CAMBRIS * 8; i++) fprintf(cambri_log_file, " | %4d", (i/8+1) * 1000 + i%8+1);
 	fprintf(cambri_log_file, "\n");
 	fprintf(cambri_log_file, "-----------");
-	for (i = 0; i < 16; i++) fprintf(cambri_log_file, "-+-----");
+	for (i = 0; i < NUM_CAMBRIS * 8; i++) fprintf(cambri_log_file, "-+-----");
 	fprintf(cambri_log_file, "\n");
 	fflush(cambri_log_file);
 
@@ -84,7 +86,7 @@ int cambri_init(void) {
 
 void cambri_kill(void) {
 	int c;
-	for (c = 0; c < 2; c++) {
+	for (c = 0; c < NUM_CAMBRIS; c++) {
 		if (cambri_fds[c]) close(cambri_fds[c]);
 	}
 	fclose(cambri_log_file);
@@ -92,7 +94,7 @@ void cambri_kill(void) {
 
 
 void cambri_write(int c, const char* fmt, ...) {
-	if (c < 0 || c >= 2 || !cambri_fds[c]) return;
+	if (c < 0 || c >= NUM_CAMBRIS || !cambri_fds[c]) return;
 
 	char buf[1024];
 	va_list args;
@@ -105,7 +107,7 @@ void cambri_write(int c, const char* fmt, ...) {
 
 
 int cambri_read(int c, char* buf, int len) {
-	if (c < 0 || c >= 2 || !cambri_fds[c]) return 0;
+	if (c < 0 || c >= NUM_CAMBRIS || !cambri_fds[c]) return 0;
 
 	int p = 0;
 	int i = 0;
@@ -127,7 +129,7 @@ int cambri_read(int c, char* buf, int len) {
 void cambri_log_current(double time) {
 	int i;
 
-	static int current_acc[16] = {};
+	static int current_acc[NUM_CAMBRIS * 8] = {};
 	static int sample_counter = 0;
 
 	static int next_second = -1;
@@ -138,7 +140,7 @@ void cambri_log_current(double time) {
 		while (time > next_second) {
 			fprintf(cambri_log_file, "%s", format_timestamp(next_second));
 			next_second++;
-			for (i = 0; i < 16; i++) {
+			for (i = 0; i < NUM_CAMBRIS * 8; i++) {
 				fprintf(cambri_log_file, " | %4d", current_acc[i] / sample_counter);
 			}
 			fprintf(cambri_log_file, "\n");
@@ -148,14 +150,14 @@ void cambri_log_current(double time) {
 		fflush(cambri_log_file);
 
 
-		for (i = 0; i < 16; i++) current_acc[i] = 0;
+		for (i = 0; i < NUM_CAMBRIS * 8; i++) current_acc[i] = 0;
 		sample_counter = 0;
 	}
 	sample_counter++;
 
 
 	int c;
-	for (c = 0; c < 2; c++) {
+	for (c = 0; c < NUM_CAMBRIS; c++) {
 		if (!cambri_fds[c]) continue;
 
 		char buf[1024] = {};
@@ -168,7 +170,7 @@ void cambri_log_current(double time) {
 			p = strchr(p, '\n');
 			if (!p) error(1, 0, "cambri_log_current2");
 			int current = atoi(p += 5);
-			current_acc[c*8 + i] += current;
+			current_acc[c * 8 + i] += current;
 		}
 	}
 }
@@ -176,7 +178,7 @@ void cambri_log_current(double time) {
 
 void cambri_set_mode(int id, int mode) {
 	int c = id / 1000 - 1;
-	if (c < 0 || c >= 2 || !cambri_fds[c]) return;
+	if (c < 0 || c >= NUM_CAMBRIS || !cambri_fds[c]) return;
 	cambri_write(c, "mode %c %d 4", mode, id % 10);
 	char buf[1024] = {};
 	cambri_read(c, buf, sizeof(buf));
