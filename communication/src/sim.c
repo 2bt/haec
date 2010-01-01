@@ -56,7 +56,8 @@ static WorkerState worker_states[NUM_CAMBRIS * 8] = {};
 
 static void sim_debug(void) {
 	printf("%s\n", format_timestamp(sim_time));
-	for (Worker* w = worker_next(NULL); w; w = worker_next(w)) {
+	Worker* w;
+	for (w = worker_next(NULL); w; w = worker_next(w)) {
 		int index = 8 * (w->id / 1000 - 1) + (w->id % 1000 - 1);
 		WorkerState* state = &worker_states[index];
 		if (w->is_switch) {
@@ -79,7 +80,8 @@ static void sim_debug(void) {
 static void sim(double dt) {
 	sim_time += dt;
 
-	for (int i = 0; i < NUM_CAMBRIS * 8; i++) {
+	int i;
+	for (i = 0; i < NUM_CAMBRIS * 8; i++) {
 		WorkerState* state = &worker_states[i];
 		if (state->worker->is_switch) continue;
 
@@ -197,7 +199,8 @@ extern int current_cache[NUM_CAMBRIS * 8];
 int		sim_cambri_init(void) {
 
 	// init workers
-	for (Worker* w = worker_next(NULL); w; w = worker_next(w)) {
+	Worker* w;
+	for (w = worker_next(NULL); w; w = worker_next(w)) {
 		int index = 8 * (w->id / 1000 - 1) + (w->id % 1000 - 1);
 		WorkerState* state = &worker_states[index];
 		state->worker = w;
@@ -208,7 +211,6 @@ int		sim_cambri_init(void) {
 		w->port = htons(w->id + 10000);
 		w->addr.s_addr = inet_addr("127.0.0.1");
 	}
-
 	int i;
 	cambri_log = fopen("cambri.log", "w");
 	fprintf(cambri_log, " time      ");
@@ -287,7 +289,8 @@ void sim_cambri_log_data(double time, char* scheduler) {
 		if (state->worker->is_switch) {
 			if (state->flag != OFF) {
 				current = 100;
-				for (int j = 0; j < NUM_CAMBRIS * 8; j++) {
+				int j;
+				for (j = 0; j < NUM_CAMBRIS * 8; j++) {
 					WorkerState* s = &worker_states[j];
 					if (s->flag != OFF && s->worker->parent_id == state->worker->id) {
 						current += 50;
