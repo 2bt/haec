@@ -68,28 +68,18 @@
           (let ((scheduler (ast-child 'scheduler n)))
             (cond
               ((eq? scheduler 'round-robbin)
-               (let* ((running-workers (att-value 'get-running-workers (ast-child 'Config n)))
-                      (worker
-                        (if (null? running-workers)
-                          #f
-                          (fold-left
-                            (lambda (w1 w2)
-                              (if (<=
-                                    (ast-num-children (ast-child 'Queue w1))
-                                    (ast-num-children (ast-child 'Queue w2)))
-                                w1
-                                w2))
-                            (car running-workers)
-                            (cdr running-workers)))))
-                 (if worker
-                   (let*
-                     ((queue (ast-child 'Queue worker))
-                      (worker-idle? (= 0 (ast-num-children queue))))
-                     (rewrite-add
-                       queue
-                       (create-ast 'Request (list work-id load-size time-due)))
-                     (when worker-idle? (assign-next-request worker)))
-                   (display "no worker running\n")))))))))
+               (let ((running-workers (att-value 'get-running-workers (ast-child 'Config n))))
+                 (if (null? running-workers)
+                   #f
+                   (fold-left
+                     (lambda (w1 w2)
+                       (if (<=
+                             (ast-num-children (ast-child 'Queue w1))
+                             (ast-num-children (ast-child 'Queue w2)))
+                         w1
+                         w2))
+                     (car running-workers)
+                     (cdr running-workers))))))))))
 
 
 
@@ -174,7 +164,16 @@
 
 (define event-work-request
   (lambda (time work-id load-size time-due)
-    (att-value 'schedule config time work-id load-size time-due)))
+    (let ((worker (att-value 'schedule config time work-id load-size time-due)))
+      (if worker
+        (let*
+          ((queue (ast-child 'Queue worker))
+           (worker-idle? (= 0 (ast-num-children queue))))
+          (rewrite-add
+            queue
+            (create-ast spec 'Request (list work-id load-size time-due)))
+          (when worker-idle? (assign-next-request worker)))
+        (display "no worker running\n")))))
 
 
 (define event-work-complete
@@ -189,7 +188,7 @@
         (begin
           (rewrite-delete request)
           (assign-next-request worker))
-        (display "no request with specified id found")))))
+        (display "no request with specified id found\n")))))
 
 
 ;;; the old stuff ;;;
@@ -381,6 +380,6 @@
 ;        (begin
 ;          (rewrite-delete request)
 ;          (assign-next-request worker))
-;        (display "no request with specified id found")))))
+;        (display "no request with specified id found\n")))))
 ;
 ;
