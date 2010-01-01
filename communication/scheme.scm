@@ -4,6 +4,7 @@
 ; - implement current accumulator
 ; - event reset-accumulator
 ; - event set-scheduler
+; - display stats on completed tasks for analysis
 ; Web:
 ; - select for scheduler
 ; - select for scenario
@@ -16,10 +17,11 @@
 
 (define predict-processing-timespan
   (lambda (load-size device-type)
+    (display "[FUNCTION] predict-processing-timespan\n")
     (* load-size
        (cdr (assq device-type
-                  '((CUBIEBOARD . 4)
-                    (SAMA5D3 .    2)))))))
+                  '((CUBIEBOARD . 1)
+                    (SAMA5D3 .    3.6)))))))
 
 
 (define spec (create-specification))
@@ -41,11 +43,13 @@
       lookup-worker
       (Worker
         (lambda (n id)
+          (display "[ATTRIBUTE on Worker] loopup-worker\n")
           (if (= id (ast-child 'id n))
             n
             #f)))
       (CompositeWorker
         (lambda (n id)
+          (display "[ATTRIBUTE on CompositeWorker] loopup-worker\n")
           (if (= id (ast-child 'id n))
             n
             (ast-find-child*
@@ -57,9 +61,11 @@
       get-filtered-workers
       (Worker
         (lambda (n check)
+          (display "[ATTRIBUTE on Worker] get-filtered-workers\n")
           (if (check n) (list n) (list))))
       (CompositeWorker
         (lambda (n check)
+          (display "[ATTRIBUTE on CompositeWorker] get-filtered-workers\n")
           (fold-left
             (lambda (a b)
               (append a (att-value 'get-filtered-workers b check)))
@@ -70,9 +76,9 @@
       schedule
       (Root
         (lambda (n time work-id load-size deadline)
+          (display "[ATTRIBUTE on Root] schedule\n")
           (let
             ((scheduler (ast-child 'scheduler n)))
-            (display ">Root schedule\n")
             (att-value scheduler (ast-child 'Config n) time work-id load-size deadline)))))
 
 
@@ -80,7 +86,7 @@
       schedule-robin
       (Config
         (lambda (n time work-id load-size deadline)
-          (display ">Config schedule-robin\n")
+          (display "[ATTRIBUTE on Config] schedule-robin\n")
           (let
             ((running-workers
                (att-value
@@ -88,7 +94,7 @@
                  n
                  (lambda (worker) (eq? (ast-child 'state worker) 'RUNNING)))))
             (if (null? running-workers)
-              (cons #f #f)
+              (cons #f "no worker running.")
               (let*
                 ((worker
                    (fold-left
@@ -108,6 +114,7 @@
       processing-timespan
       (Request
         (lambda (n)
+          (display "[ATTRIBUTE on Request] processing-timespan\n")
           (let*
             ((queue (ast-parent n))
              (worker (ast-parent queue))
@@ -118,6 +125,7 @@
       predicted-termination-time
       (Request
         (lambda (n)
+          (display "[ATTRIBUTE on Request] predicted-termination-time\n")
           (let*
             ((queue (ast-parent n))
              (worker (ast-parent queue))
@@ -133,6 +141,7 @@
       maximum-dispatch-deferment
       (Request
         (lambda (n)
+          (display "[ATTRIBUTE on Request] maximum-dispatch-deferment\n")
           (let*
             ((index (ast-child-index n))
              (queue-length (ast-num-children (ast-parent n)))
@@ -150,23 +159,33 @@
       find-insertion-position
       (Worker
         (lambda (n deadline)
+          (display "[ATTRIBUTE on Worker] find-insertion-position\n")
           (let*
             ((queue (ast-child 'Queue n))
              (queue-length (ast-num-children queue)))
             (if (= queue-length 0)
-              1
-              (let next ((index 2))
-                (if (> index (queue-length))
-                  index
-                  (let ((next-deadline (ast-child 'deadline (ast-child index n))))
-                    (if (> next-deadline deadline)
-                      index
-                      (next (+ index 1)))))))))))
+              (begin
+                (display "  CASE 1: queue length=0\n")
+                1)
+              (begin
+                (display "  CASE 2: queue length>0\n")
+                (let next ((index 2))
+                  (if (> index queue-length)
+                    (begin
+                      (display "    CASE 2 A: index > queue-length\n")
+                      index)
+                    (begin
+                      (display "    CASE 2 B: index <= queue-length\n")
+                      (let ((next-deadline (ast-child 'deadline (ast-child index (ast-child 'Queue n)))))
+                        (if (> next-deadline deadline)
+                          index
+                          (next (+ index 1)))))))))))))
 
     (ag-rule
       workload-heuristic
       (Worker
         (lambda (n)
+          (display "[ATTRIBUTE on Worker] workload-heuristic\n")
           (let*
             ((queue (ast-child 'Queue n))
              (queue-length (ast-num-children queue)))
@@ -177,6 +196,7 @@
                       (+ sum (att-value 'processing-timespan (ast-child i queue)))))))))
       (Switch
         (lambda (n)
+          (display "[ATTRIBUTE on Switch] workload-heuristic\n")
           (let*
             ((workers (ast-child 'Workers n))
              (num-workers (ast-num-children workers)))
@@ -190,10 +210,10 @@
       schedule-batman
       (Worker
         (lambda (n time work-id load-size deadline)
-          (display ">Worker schedule-batman\n")
+          (display "[ATTRIBUTE on Worker] schedule-batman\n")
           ; hint: worker must be in state RUNNING
           (if (not (eq? (ast-child 'state n) 'RUNNING))
-            (cons #f #f)
+            (cons #f (format "worker ~a is not running." (ast-child 'id n)))
             (let*
               ((queue (ast-child 'Queue n))
                (queue-length (ast-num-children queue))
@@ -203,27 +223,29 @@
                (dispatch-time
                  (if (= index 1)
                    time
-                   (att-value 'predict-termination-time (ast-child (- index 1) queue))))
+                   (att-value 'predicted-termination-time (ast-child (- index 1) queue))))
                (error
-                 (or
-                   (>
-                     (+ dispatch-time processing-timespan)
-                     deadline)
-                   (and
-                     (<= index queue-length)
-                     (let
-                       ((deferment (att-value 'maximum-dispatch-deferment (att-child index queue))))
-                       (> processing-timespan deferment))))))
+                 (cond
+                   (((> (+ dispatch-time processing-timespan) deadline)
+                     "deadline cannot be met.")
+                    (((and
+                        (<= index queue-length)
+                        (let
+                          ((deferment (att-value 'maximum-dispatch-deferment (ast-child index queue))))
+                          (> processing-timespan deferment)))
+                      "requests cannot be defered."
+                      ))
+                    (else #f)))))
               (if error
-                (cons #f #f)
+                (cons #f error)
                 (cons n index))))))
 
       (CompositeWorker
         (lambda (n time work-id load-size deadline)
-          (display ">CompositeWorker schedule-batman\n")
+          (display "[ATTRIBUTE on CompositeWorker] schedule-batman\n")
           ; hint: switch must be in state RUNNING
           (if (not (eq? (ast-child 'state n) 'RUNNING))
-            (cons #f #f)
+            (cons #f (format "composite worker ~a is not running." (ast-child 'id n)))
             (let*
               ((workers (ast-children (ast-child 'Workers n)))
                (sorted-workers
@@ -233,13 +255,15 @@
                        (att-value 'workload-heuristic a)
                        (att-value 'workload-heuristic b)))
                    workers)))
+              (display (length sorted-workers))
               (let next ((rest sorted-workers))
                 (if (null? rest)
-                  (cons #f #f)
+                  (cons #f (string-append "[e4] switch does not have running workers: " (number->string (ast-child 'id n))))
                   (let*
                     ((pair (att-value 'schedule-batman (car rest) time work-id load-size deadline))
                      (w (car pair))
                      (i (cdr pair)))
+                    (display i)
                     (if w
                       pair
                       (next (cdr rest)))))))))))
@@ -286,7 +310,7 @@
   (lambda (id parent-id time)
     (add-node-to-ast
       parent-id
-      (create-ast spec 'Switch (list id 'OFF time (create-ast-list (list)))))))
+      (create-ast spec 'Switch (list id 'RUNNING time (create-ast-list (list)))))))
 
 
 
@@ -402,7 +426,7 @@
             index
             (create-ast spec 'Request (list work-id load-size deadline #f)))
           (when worker-idle? (dispatch-next-request time worker)))
-        (display "no worker running\n")))))
+        (printf "[ERROR] ~a~n" index)))))
 
 
 (define event-work-complete
@@ -417,6 +441,6 @@
         (begin
           (rewrite-delete request)
           (dispatch-next-request time worker))
-        (display "no request with specified id found\n")))))
+        (display "[FATAL ERROR] no request with specified id found\n"))))) ; this should never happen
 
 
