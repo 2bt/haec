@@ -1,0 +1,113 @@
+#!/usr/bin/python
+
+import sys
+
+
+def format_timestamp(t):
+	s = t % 60
+	m = int(t / 60) % 60
+	h = int(t / 3600) % 99
+	return "%02d:%02d:%05.2f" % (h, m, s)
+
+
+def read_timestamp(f):
+	h, m, s = map(float, f.split(":"))
+	return s + m * 60 + h * 3600
+
+
+
+
+def main():
+	if len(sys.argv) != 4:
+		print "usage: %s recording xx:xx:xx yy:yy:yy" % sys.argv[0]
+		sys.exit()
+
+	recording, t1, t2 = sys.argv[1:]
+
+	t1 = read_timestamp(t1)
+	t2 = read_timestamp(t2)
+
+
+	cambri_out = file("cambri.log", "w")
+	cambri_in = file(recording + "/cambri.log")
+	cambri_out.write(cambri_in.readline())
+	cambri_out.write(cambri_in.readline())
+	for line in cambri_in:
+		t, r = line.split(" ", 1)
+		t = read_timestamp(t)
+		if t1 <= t <= t2:
+			t -= t1
+			cambri_out.write(format_timestamp(t) + " " + r)
+
+	status_out = file("status.log", "w")
+	status_in = file(recording + "/status.log")
+	first_line = True
+	for line in status_in:
+		t, r = line.split(" ", 1)
+		t = read_timestamp(t)
+
+		r = dict(item.split(":", 1) for item in r.split())
+		if t1 <= t <= t2:
+			t -= t1
+
+			if first_line:
+				first_line = False
+				energy = float(r["energy"])
+
+			r["energy"] = str(float(r["energy"]) - energy)
+			status_out.write(format_timestamp(t) +
+				" " + " ".join("%s:%s"%i for i in r.items()) +
+				"\n")
+
+
+
+	first_event = True
+	worker_states = {}
+
+	event_out = file("event.log", "w")
+	event_in = file(recording + "/event.log")
+	for line in event_in:
+		t, e = line.split(" ", 1)
+		if " " in e: e, r = e.split(" ", 1)
+		else:
+			e = e.strip()
+			r = ""
+		r = r.rstrip()
+
+		if r:
+			info = dict(item.split(": ", 1) for item in r[1:-1].split("; "))
+			if "deadline" in info:
+				info["deadline"] = str(float(info["deadline"]) - t1)
+				r = "(%s)" % "; ".join("%s: %s" % i for i in info.items())
+			r = " " + r
+
+		t = read_timestamp(t)
+
+		if t < t1:
+			if e == "WORKER_ON":		worker_states[info["id"]] = "ON"
+			if e == "WORKER_REBOOT":	worker_states[info["id"]] = "ON"
+			if e == "WORKER_ONLINE":	worker_states[info["id"]] = "ONLINE"
+			if e == "WORKER_OFFLINE":	worker_states[info["id"]] = "OFFLINE"
+			if e == "WORKER_OFF":		worker_states[info["id"]] = "OF"
+
+		if t1 <= t <= t2:
+			t -= t1
+
+			if first_event:
+				first_event = False
+				for wid, state in worker_states.items():
+					if state == "ON":
+						event_out.write(format_timestamp(t) + " WORKER_ON (id: %s)\n" % wid)
+					if state == "ONLINE":
+						event_out.write(format_timestamp(t) + " WORKER_ON (id: %s)\n" % wid)
+						event_out.write(format_timestamp(t) + " WORKER_ONLINE (id: %s)\n" % wid)
+
+
+
+			event_out.write(format_timestamp(t) + " " + e + r + "\n")
+
+
+
+
+if __name__ == "__main__":
+	main()
