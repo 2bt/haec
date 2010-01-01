@@ -37,7 +37,7 @@ static Scheme_Object* prim_add_event(int argc, Scheme_Object** argv) {
 		Event* e = event_append(EVENT_WORK_COMMAND);
 		e->worker = worker_find_by_id(SCHEME_INT_VAL(argv[1]));
 		e->work_id = SCHEME_INT_VAL(argv[2]);
-		e->load_size = SCHEME_INT_VAL(argv[3]);
+		e->load_size = SCHEME_DBL_VAL(argv[3]);
 		return scheme_true;
 	}
 	else if (strcmp(sym, "event-halt-command") == 0) {
