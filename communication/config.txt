@@ -2,10 +2,10 @@
 switch  1008  0000
 
 #       id    parent  ip-address    type
-worker  1004  1008    192.168.1.21  CUBIEBOARD
-worker  1005  1008    192.168.1.22  CUBIEBOARD
-worker  1006  1008    192.168.1.23  CUBIEBOARD
-worker  1003  1008    192.168.1.41  SAMA5D3
+worker  1003  1008    192.168.1.21  CUBIEBOARD
+worker  1004  1008    192.168.1.22  CUBIEBOARD
+worker  1005  1008    192.168.1.23  CUBIEBOARD
+worker  1006  1008    192.168.1.24  CUBIEBOARD
+worker  1001  1008    192.168.1.41  SAMA5D3
 worker  1002  1008    192.168.1.42  SAMA5D3
-worker  1001  1008    192.168.1.43  SAMA5D3
 

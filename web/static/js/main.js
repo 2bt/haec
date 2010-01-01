@@ -94,7 +94,7 @@ $(document).ready(function() {
 	var svg_areas = [];
 	var areas = [];
 
-	var lane_titles = ["Sama 3", "Sama 2", "Sama 1", "Cubie 3", "Cubie 2", "Cubie 1", "Master", "Switch", "9"];
+	var lane_titles = ["Sama 1", "Sama 2", "Cubie 1", "Cubie 2", "Cubie 3", "Cubie 4", "Master", "Switch"];
 
 	var colors = d3.scale.category10();
 
@@ -135,7 +135,7 @@ $(document).ready(function() {
 						.attr("height", margin.row)
 						.attr("y", (i + 1) * margin.row)
 						.style("fill", d3.rgb(c).brighter())
-						.style("fill-opacity", 0.5);
+						.style("fill-opacity", 0.1);
 
 						// lane titles
 						svg_event_titles.append("text")
@@ -181,7 +181,12 @@ $(document).ready(function() {
 					if (!{
 						"WORK_REQUEST": true,
 						"WORK_COMMAND": true,
-						"WORK_COMPLETE": true
+						"WORK_COMPLETE": true,
+						"WORKER_ON": true,
+						"WORKER_ONLINE": true,
+						"WORKER_OFF": true,
+						"WORKER_OFFLINE": true,
+						"WORKER_REBOOT": true
 					}[e.e]) return;
 
 
@@ -199,7 +204,7 @@ $(document).ready(function() {
 						.attr("points", "-3,20, 3,20, 0,0");
 
 					}
-					if (e.e == "WORK_COMMAND") {
+					else if (e.e == "WORK_COMMAND") {
 						events.push(e);
 
 						var d = e.info.id % 1000 - 1;
@@ -230,7 +235,21 @@ $(document).ready(function() {
 							}
 						});
 					}
-
+					else if (e.e == "WORKER_ON") {
+						// TODO
+					}
+					else if (e.e == "WORKER_ONLINE") {
+						// TODO
+					}
+					else if (e.e == "WORKER_OFF") {
+						// TODO
+					}
+					else if (e.e == "WORKER_OFFLINE") {
+						// TODO
+					}
+					else if (e.e == "WORKER_REBOOT") {
+						// TODO
+					}
 				});
 
 

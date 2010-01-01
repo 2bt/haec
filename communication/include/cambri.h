@@ -14,5 +14,7 @@ int		cambri_read(int c, char* buf, int len);
 void	cambri_log_current(double time);
 void	cambri_set_mode(int id, int mode);
 
+double  cambri_get_voltage(int cambri);
+
 int		cambri_get_current_integral(void);
 void	cambri_set_current_integral(int c);

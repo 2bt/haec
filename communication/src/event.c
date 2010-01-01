@@ -79,6 +79,7 @@ void event_print(const Event* e, double time) {
 	case EVENT_WORKER_ONLINE:
 	case EVENT_WORKER_OFFLINE:
 	case EVENT_WORKER_OFF:
+	case EVENT_WORKER_REBOOT:
 	case EVENT_HALT_COMMAND:
 	case EVENT_MEM_COMMAND:
 		server_log_event(" (id: %d)", e->worker->id);

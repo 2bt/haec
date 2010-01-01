@@ -15,6 +15,9 @@
 
 // TODO: move this to scheme
 #define TIME_HALTING 13.0
+#define TIME_REBOOTDELAY 5.0
+#define TIME_NOCURRENT 5.0
+
 
 Server server;
 
@@ -301,7 +304,7 @@ void server_process_events(void) {
 			break;
 
 		case EVENT_WORKER_ON:
-			if (w->state != WORKER_OFF) {
+			if (w->state != WORKER_OFF && w->state != WORKER_REBOOTING) {
 				printf("worker %d cannot be turned on as it is not off\n", w->id);
 				w->state = WORKER_ERROR;
 			}
@@ -337,6 +340,12 @@ void server_process_events(void) {
 			w->port = 0;
 			cambri_set_mode(w->id, CAMBRI_OFF);
 			racr_call_str("event-worker-off", "id", w->id, time);
+			break;
+
+		case EVENT_WORKER_REBOOT:
+			w->state = WORKER_REBOOTING;
+			w->timestamp = time;
+			cambri_set_mode(w->id, CAMBRI_OFF);
 			break;
 
 		case EVENT_WORK_REQUEST:
@@ -505,6 +514,33 @@ tryagain:
 			if (w->state == WORKER_HALTING
 			&& time - w->timestamp > TIME_HALTING) {
 				Event* e = event_append(EVENT_WORKER_OFF);
+				e->worker = w;
+			}
+			else if(w->state == WORKER_BOOTING
+			&& time - w->timestamp > TIME_NOCURRENT) {
+				char cmd[4096] = {};
+			 	sprintf(cmd, " state %d", w->id % 1000);
+				cambri_write(w->id / 1000 - 1, cmd);
+				char buf[4096] = {};
+				int ret = cambri_read(w->id / 1000 - 1, buf, sizeof(buf));
+
+				if (ret > 0) {
+					// printf("the buffer contains: %s\n", buf);
+					int current;
+					// remove first part
+					strtok(buf,",");
+					sscanf(strtok(NULL,","),"%d",&current);
+					// printf("the current is %d\n", current);
+					if(current == 0) {
+						printf("rebooting worker %di\n", w->id);
+						Event* e = event_append(EVENT_WORKER_REBOOT);
+						e->worker = w;
+					}
+				}
+			}
+			else if(w->state == WORKER_REBOOTING
+			&& time - w->timestamp > TIME_REBOOTDELAY) {
+				Event* e = event_append(EVENT_WORKER_ON);
 				e->worker = w;
 			}
 		}

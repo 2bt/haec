@@ -31,6 +31,7 @@ enum {
 	WORKER_OFF,
 	WORKER_BOOTING,
 	WORKER_RUNNING,
+	WORKER_REBOOTING,
 	WORKER_HALTING,
 	WORKER_ERROR,
 };
@@ -41,6 +42,7 @@ static inline const char* worker_state_string(int state) {
 		"OFF",
 		"BOOTING",
 		"RUNNING",
+		"REBOOTING",
 		"HALTING",
 		"ERROR",
 	};

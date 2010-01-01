@@ -27,6 +27,8 @@ enum {
 	EVENT_WORKER_OFFLINE,
 	EVENT_WORKER_OFF,
 
+	EVENT_WORKER_REBOOT,
+
 	EVENT_WORK_REQUEST,
 	EVENT_WORK_COMMAND,
 	EVENT_WORK_ACK,
@@ -54,6 +56,8 @@ static inline const char* event_type_string(int type) {
 		"WORKER_ONLINE",
 		"WORKER_OFFLINE",
 		"WORKER_OFF",
+
+		"WORKER_REBOOT",
 
 		"WORK_REQUEST",
 		"WORK_COMMAND",

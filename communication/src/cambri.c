@@ -132,6 +132,22 @@ int cambri_get_current_integral(void) { return current_integral; }
 void cambri_set_current_integral(int c) { current_integral = c; }
 
 
+double cambri_get_voltage(int cambri) {
+	cambri_write(cambri, "health");
+	char buf[4096] = {};
+	int ret = cambri_read(cambri, buf, sizeof(buf));
+
+	if (ret > 0) {
+		const char* substring = "5V Now:  ";
+		char* vstring = strtok(strstr(buf,substring) + 8, "\n");
+		double voltage = 0.0d;
+		sscanf(vstring, " %lf", &voltage);
+		return voltage;
+	}
+
+	return -1.0d;
+}
+
 void cambri_log_current(double time) {
 	int i;
 
@@ -167,6 +183,8 @@ void cambri_log_current(double time) {
 	int c;
 	for (c = 0; c < NUM_CAMBRIS; c++) {
 		if (!cambri_fds[c]) continue;
+
+		printf("Current Cambri Voltage: %lf\n", cambri_get_voltage(c));
 
 		char buf[1024] = {};
 		cambri_write(c, "state");

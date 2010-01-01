@@ -70,7 +70,7 @@
 (define ast
   (with-specification
     spec
-    (ast-rule 'Root->scheduler-Config)
+    (ast-rule 'Root->scheduler-backupworkers-Config)
     (ast-rule 'AbstractWorker->id-state-timestamp)
     (ast-rule 'CompositeWorker:AbstractWorker->AbstractWorker*<Workers)
     (ast-rule 'Config:CompositeWorker->)
@@ -314,8 +314,9 @@
     (create-ast
       'Root
       (list
-        ;'schedule-robin
-        'schedule-batman
+        'schedule-robin
+        1
+        ;'schedule-batman
         (create-ast
           'Config
           (list 0 'RUNNING 0 (create-ast-list (list))))))))
@@ -353,13 +354,17 @@
       (create-ast spec 'Switch (list id 'RUNNING time (create-ast-list (list)))))))
 
 
+(define setBackupWorkers
+  (lambda (number)
+    (rewrite-terminal 'backupworkers ast number)))
 
-
+; only the bootable workers can be considered.
 (define adapt
-  (lambda (num-backup-workers)
+  (lambda ()
     (display "[FUNCTION] adapt\n")
     (let*
-      ((key
+      ((num-backup-workers (ast-child 'backupworkers ast))
+       (key
          (lambda (worker)
            (cdr (assq (ast-child 'devicetype worker)
                       '((CUBIEBOARD . 1)
@@ -380,9 +385,15 @@
             (sorted-idle-workers
               (list-sort
                 (lambda (a b) (< (key a) (key b)))
-                idle-workers)))
-           (displayln ">>> HALT")
-           (let next ((i num-excess-workers) (rest sorted-idle-workers))
+                idle-workers))
+            (sorted-bootable-idle-workers
+              (filter
+                (lambda (x)
+                  (let* ((devicetype (ast-child 'devicetype x))
+                          (bootable (device-characteristic-bootable (hashtable-ref device-table devicetype "error!"))))
+                    (eq? bootable #t)))
+                  sorted-idle-workers)))
+           (let next ((i num-excess-workers) (rest sorted-bootable-idle-workers))
              (when (and (> i 0) (not (null? rest)))
                (let ((worker (car rest)))
                  (rewrite-terminal 'state worker 'HALTING)
@@ -402,9 +413,15 @@
               (list-sort
                 (lambda (a b) (> (key a) (key b)))
                 off-workers))
+            (sorted-bootable-off-workers
+              (filter
+                (lambda (x)
+                  (let* ((devicetype (ast-child 'devicetype x))
+                          (bootable (device-characteristic-bootable (hashtable-ref device-table devicetype "error!"))))
+                    (eq? bootable #t)))
+                  sorted-off-workers))
             (num-wanting-workers (- num-backup-workers num-idle-workers)))
-           (displayln ">>> BOOT")
-           (let next ((i num-wanting-workers) (rest sorted-off-workers))
+           (let next ((i num-wanting-workers) (rest sorted-bootable-off-workers))
              (when (and (> i 0) (not (null? rest)))
                (let ((worker (car rest)))
                  (rewrite-terminal 'state worker 'BOOTING)
@@ -469,7 +486,7 @@
             index
             (create-ast spec 'Request (list work-id load-size deadline #f)))
           (when worker-idle? (dispatch-next-request time worker))
-          (adapt 1))
+          adapt)
         (printf "[ERROR] ~a~n" index)))))
 
 
@@ -493,7 +510,7 @@
 
           (rewrite-delete request)
           (dispatch-next-request time worker)
-          (adapt 1))
+          adapt)
         (display "[FATAL ERROR] no request with specified id found\n"))))) ; this should never happen
 
 
