@@ -380,7 +380,7 @@ void server_process_events(void) {
 			break;
 
 		case EVENT_E_METER_RESET:
-			cambri_set_current_integral(0);
+			cambri_set_energy(0);
 			server.e_meter_timestamp = time;
 			break;
 
@@ -390,14 +390,6 @@ void server_process_events(void) {
 		}
 		free(e);
 	}
-}
-
-
-static void server_log_status(void) {
-	FILE* f = fopen("status.log", "w");
-	double energy = cambri_get_current_integral() * 5 * 0.001; // in Joule
-	fprintf(f, "energy: %.1lf\n", energy);
-	fclose(f);
 }
 
 
@@ -516,26 +508,11 @@ tryagain:
 				Event* e = event_append(EVENT_WORKER_OFF);
 				e->worker = w;
 			}
-			else if(w->state == WORKER_BOOTING
-			&& time - w->timestamp > TIME_NOCURRENT) {
-				char cmd[4096] = {};
-			 	sprintf(cmd, " state %d", w->id % 1000);
-				cambri_write(w->id / 1000 - 1, cmd);
-				char buf[4096] = {};
-				int ret = cambri_read(w->id / 1000 - 1, buf, sizeof(buf));
-
-				if (ret > 0) {
-					// printf("the buffer contains: %s\n", buf);
-					int current;
-					// remove first part
-					strtok(buf,",");
-					sscanf(strtok(NULL,","),"%d",&current);
-					// printf("the current is %d\n", current);
-					if(current == 0) {
-						printf("rebooting worker %di\n", w->id);
-						Event* e = event_append(EVENT_WORKER_REBOOT);
-						e->worker = w;
-					}
+			else if (w->state == WORKER_BOOTING && time - w->timestamp > TIME_NOCURRENT) {
+				if (cambri_get_current(w->id) == 0) {
+					printf("rebooting worker %di\n", w->id);
+					Event* e = event_append(EVENT_WORKER_REBOOT);
+					e->worker = w;
 				}
 			}
 			else if(w->state == WORKER_REBOOTING
@@ -545,8 +522,7 @@ tryagain:
 			}
 		}
 
-		cambri_log_current(time - server.timestamp);
-		server_log_status();
+		cambri_log_power(time - server.timestamp);
 	}
 
 	close(listener);

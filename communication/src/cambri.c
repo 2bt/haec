@@ -127,31 +127,18 @@ int cambri_read(int c, char* buf, int len) {
 }
 
 
-static int current_integral = 0;
-int cambri_get_current_integral(void) { return current_integral; }
-void cambri_set_current_integral(int c) { current_integral = c; }
+static double energy = 0;
+static int current_cache[NUM_CAMBRIS * 8] = {};
+
+int		cambri_get_current(int id) { return current_cache[id]; }
+double	cambri_get_energy(void) { return energy; }
+void	cambri_set_energy(double e) { energy = e; }
 
 
-double cambri_get_voltage(int cambri) {
-	cambri_write(cambri, "health");
-	char buf[4096] = {};
-	int ret = cambri_read(cambri, buf, sizeof(buf));
-
-	if (ret > 0) {
-		const char* substring = "5V Now:  ";
-		char* vstring = strtok(strstr(buf,substring) + 8, "\n");
-		double voltage = 0.0d;
-		sscanf(vstring, " %lf", &voltage);
-		return voltage;
-	}
-
-	return -1.0d;
-}
-
-void cambri_log_current(double time) {
+void cambri_log_power(double time) {
 	int i;
 
-	static int current_acc[NUM_CAMBRIS * 8] = {};
+	static double power_acc[NUM_CAMBRIS * 8] = {};
 	static int sample_counter = 0;
 
 	static int next_second = -1;
@@ -159,44 +146,62 @@ void cambri_log_current(double time) {
 
 	if (time > next_second) {
 
+		FILE* f = fopen("status.log", "w");
+		fprintf(f, "%s", format_timestamp(next_second));
+		fprintf(f, "energy:%.1f", cambri_get_energy());
+		fprintf(f, "\n");
+		fclose(f);
+
+
 		while (time > next_second) {
 			fprintf(cambri_log_file, "%s", format_timestamp(next_second));
 			next_second++;
 			for (i = 0; i < NUM_CAMBRIS * 8; i++) {
-				int current = current_acc[i] / sample_counter;
-				current_integral += current;
-				fprintf(cambri_log_file, " | %4d", current);
+				double power = power_acc[i] / sample_counter;
+				energy += power;
+				fprintf(cambri_log_file, " | %4.2f", power);
 			}
 			fprintf(cambri_log_file, "\n");
 		}
 
-
 		fflush(cambri_log_file);
 
 
-		for (i = 0; i < NUM_CAMBRIS * 8; i++) current_acc[i] = 0;
+		for (i = 0; i < NUM_CAMBRIS * 8; i++) power_acc[i] = 0;
 		sample_counter = 0;
 	}
 	sample_counter++;
 
 
+
 	int c;
 	for (c = 0; c < NUM_CAMBRIS; c++) {
 		if (!cambri_fds[c]) continue;
+		char buf[4096] = {};
 
-		printf("Current Cambri Voltage: %lf\n", cambri_get_voltage(c));
 
-		char buf[1024] = {};
-		cambri_write(c, "state");
+		// voltage
+		cambri_write(c, "health");
 		int ret = cambri_read(c, buf, sizeof(buf));
-		if (ret == 0) error(1, 0, "cambri_log_current");
-		char* p = buf;
+		if (ret == 0) error(1, 0, "cambri_log_power");
+		char* p = strstr(buf, "5V Now: ");
+		if (!p) error(1, 0, "cambri_log_power");
+		double voltage;
+		sscanf(p + 8, " %lf", &voltage);
+
+		// current
+		cambri_write(c, "state");
+		ret = cambri_read(c, buf, sizeof(buf));
+		if (ret == 0) error(1, 0, "cambri_log_power");
+		p = buf;
 
 		for (i = 0; i < 8; i++) {
 			p = strchr(p, '\n');
-			if (!p) error(1, 0, "cambri_log_current2");
-			int current = atoi(p += 5);
-			current_acc[c * 8 + i] += current;
+			if (!p) error(1, 0, "cambri_log_power");
+			int current = atoi(p += 5) * 0.001;
+			int id = c * 8 + i;
+			power_acc[id] += current * voltage;
+			current_cache[id] = current;
 		}
 	}
 }
