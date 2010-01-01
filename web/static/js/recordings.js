@@ -163,7 +163,18 @@ var Graph = function(recording_name, ready_function, recording_title, color) {
 				events.push(e);
 				e.svg.marker = svg_events_front_layer.append("polyline")
 				.attr("class", "marker")
-				.attr("points", "0,0 5,5 0,10 0,0");
+				.attr("points", "0,0 5,5 0,10 0,0")
+				.on("mouseover", function(){
+					e.svg.dead.style("visibility", "visible");
+					e.svg.marker.attr("class", "marker-highlight");
+					if (e.command) e.command.svg.rect.attr("class", "work-command-highlight");
+				})
+				.on("mouseout", function(){
+					e.svg.dead.style("visibility", "hidden");
+					e.svg.marker.attr("class", "marker");
+					if (e.command) e.command.svg.rect.attr("class", "work-command");
+				})
+
 
 			}
 			else if (e.e == "WORK_COMMAND") {
@@ -174,7 +185,22 @@ var Graph = function(recording_name, ready_function, recording_title, color) {
 				e.svg.rect = svg_events_front_layer.append("rect")
 				.attr("class", "work-command")
 				.attr("y", y_scale)
-				.attr("height", margin.row - 6);
+				.attr("height", margin.row - 6)
+				.on("mouseover", function(){
+					e.svg.rect.attr("class", "work-command-highlight");
+					if (e.request) {
+						e.request.svg.dead.style("visibility", "visible");
+						e.request.svg.marker.attr("class", "marker-highlight");
+					}
+				})
+				.on("mouseout", function(){
+					e.svg.rect.attr("class", "work-command");
+					if (e.request) {
+						e.request.svg.dead.style("visibility", "hidden");
+						e.request.svg.marker.attr("class", "marker");
+					}
+				})
+
 
 				events.forEach(function(f) {
 					if (f.e == "WORK_REQUEST" && f.info["work-id"] == e.info["work-id"]) {

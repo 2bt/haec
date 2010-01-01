@@ -113,9 +113,7 @@ svg {
 .axis line {
 	fill: none;
 	stroke: #000;
-/*
-	shape-rendering: crispEdges;
-*/
+/* shape-rendering: crispEdges; */
 }
 
 .work-command {
@@ -123,11 +121,15 @@ svg {
 	fill:#ddd;
 	stroke:#999;
 }
-
-.marker {
+.work-command-highlight {
+/*	shape-rendering: crispEdges; */
+	fill:#666;
 	stroke:#444;
-	fill:#444;
 }
+
+.marker { fill:#888; }
+.marker-highlight { fill:#33f; }
+.dead { fill:#f33; }
 
 .work-request {
 	/*shape-rendering: crispEdges;*/
