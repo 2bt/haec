@@ -54,14 +54,14 @@ static int server_command(char* cmd) {
 		printf("exiting...\n");
 	}
 	else if (strcmp(cmd, "status") == 0) {
-		printf(" id   | switch | address:port          | socket | state   | time\n");
+		printf(" id   | parent | address:port          | socket | state   | time\n");
 		printf("------+--------+-----------------------+--------+---------+-------------\n");
 		double time = timestamp();
 		for (w = worker_next(NULL); w; w = worker_next(w)) {
 			char s[INET_ADDRSTRLEN];
 			inet_ntop(AF_INET, &w->addr, s, sizeof(s));
 			printf(" %-4d | %-6d | %-15s:%05d | %6d | %-7s | %s\n",
-				w->id, w->switch_id, s, w->port, w->socket_fd,
+				w->id, w->parent_id, s, w->port, w->socket_fd,
 				worker_state_string(w->state), format_timestamp(time - w->timestamp));
 		}
 	}
@@ -399,6 +399,7 @@ void server_run(int argc, char** argv) {
 	if (bind(commander, (struct sockaddr*)&addr, sizeof(addr)) < 0) {
 		error(1, 0, "bind");
 	}
+
 
 
 	FD_ZERO(&server.fds);

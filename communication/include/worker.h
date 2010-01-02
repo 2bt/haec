@@ -5,29 +5,25 @@
 
 
 typedef struct {
-	struct in_addr addr;
-	int device_type;
 	int id;
-	int switch_id;
+	int parent_id;
+	int state;
+	double timestamp;
 
+	struct in_addr addr;
 	unsigned short port;
 	int socket_fd;
+	int device_type;
 
-	int state;
-	double timestamp;	// timestamp of the last state change
-
-/*
-	// config
-	int cpus;
-	int freq;
-	int map_threads;
-	int free_memory;
-*/
 } Worker;
 
 
 typedef struct {
 	int id;
+	int parent_id;
+	int state;
+	double timestamp;
+
 } Switch;
 
 

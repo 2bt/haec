@@ -41,7 +41,7 @@ int worker_init(void) {
 	char addr[256];
 	char type[256];
 	int id;
-	int switch_id;
+	int parent_id;
 
 	while (fgets(line, sizeof(line), f)) {
 		if (line[0] == '#') continue;
@@ -50,15 +50,15 @@ int worker_init(void) {
 		char* endl = strchr(line, '\n');
 		if (*endl) *endl = '\0';
 
-		if (sscanf(line, "worker %d %s %d %s",
-					&id, addr, &switch_id, type) == 4) {
+		if (sscanf(line, "worker %d %d %s %s",
+					&id, &parent_id, addr, type) == 4) {
 			worker_count++;
 			workers = realloc(workers, sizeof(Worker) * worker_count);
 			Worker* w = &workers[worker_count - 1];
 
 			inet_pton(AF_INET, addr, &w->addr);
 			w->id = id;
-			w->switch_id = switch_id;
+			w->parent_id = parent_id;
 
 			w->port = 0;
 			w->socket_fd = -1;
@@ -77,10 +77,20 @@ int worker_init(void) {
 				return -2;
 			}
 
-			racr_call_str("add-worker-to-ast", "idis", id, time, switch_id, type);
+			racr_call_str("add-worker-to-ast", "iisd", id, parent_id, type, time);
 		}
-		else if (sscanf(line, "switch %d", &id) == 1) {
-			racr_call_str("add-switch-to-ast", "id", id, time);
+		else if (sscanf(line, "switch %d %d", &id, &parent_id) == 2) {
+
+			switch_count++;
+			switches = realloc(workers, sizeof(Switch) * switch_count);
+			Switch* s = &switches[switch_count - 1];
+
+			s->id = id
+			s->parent_id = parent_id;
+			s->state = WORKER_OFF;
+			s->timestamp = time;
+			
+			racr_call_str("add-switch-to-ast", "iid", id, parent_id, time);
 		}
 		else {
 			fclose(f);
