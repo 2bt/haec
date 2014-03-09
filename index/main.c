@@ -12,33 +12,6 @@ enum {
 };
 
 
-int get_text(const char* filename, char** text) {
-	FILE* file = fopen(filename, "r");
-	if (!file) return -1;
-	fseek(file, 0, SEEK_END);
-	int size = ftell(file);
-	fseek(file, 0, SEEK_SET);
-	*text = malloc(size + 1);
-	fread(*text, 1, size, file);
-	(*text)[size] = '\0';
-	return size;
-}
-
-
-int get_pages(char* text, int len, char*** pages) {
-	int num_pages = 0;
-	char** p = NULL;
-	int i = 0;
-	while (i < len) {
-		num_pages++;
-		p = realloc(p, sizeof(char*) * num_pages);
-		p[num_pages - 1] = text + i;
-		while (i < len && text[i] != '\0') i++;
-		i++;
-	}
-	*pages = p;
-	return num_pages;
-}
 
 
 int isWS(char c) {
@@ -89,86 +62,140 @@ void print_table(void* table) {
 }
 
 
-// single-threaded
+FILE* pages_file;
 
-void** single_thread_map(char** pages, int num_pages) {
+pthread_mutex_t	worker_mutex;
+pthread_mutex_t	pages_mutex;
+pthread_mutex_t	tables_mutex;
+pthread_cond_t	tables_cond;
 
-	void** tables = malloc(sizeof(void*) * num_pages);
-	for (int i = 0; i < num_pages; i++) {
-		tables[i] = map(pages[i]);
+
+enum { BUFFER_MAX = 1 << 20 };
+char buffer[BUFFER_MAX];
+int buffer_pos = BUFFER_MAX;
+int buffer_size = BUFFER_MAX;
+
+int next_char(void) {
+	if (buffer_pos == buffer_size) {
+		if (buffer_size < BUFFER_MAX) return EOF;
+		buffer_size = fread(buffer, 1, BUFFER_MAX, pages_file);
+		buffer_pos = 0;
 	}
-
-	return tables;
+	return buffer[buffer_pos++];
 }
 
 
-void* single_thread_map_reduce(char** pages, int num_pages) {
+char* next_page(void) {
 
-	void** tables = malloc(sizeof(void*) * num_pages);
-	for (int i = 0; i < num_pages; i++) {
-		tables[i] = map(pages[i]);
+	pthread_mutex_lock(&pages_mutex);
+
+	int c = next_char();
+	if (c == EOF) {
+		pthread_mutex_unlock(&pages_mutex);
+		return NULL;
 	}
 
-	void* table = tables[0];
-	for (int i = 1; i < num_pages; i++) {
-		reduce(table, tables[i]);
-		int size;
-		JSLFA(size, tables[i]);
+	int		size = 1024;
+	char*	page = malloc(size);
+	int		i = 0;
+	for (;;) {
+		if (c == '\0' || c == EOF) {
+			page[i] = '\0';
+			pthread_mutex_unlock(&pages_mutex);
+			return page;
+		}
+		page[i] = c;
+		i++;
+		if (i >= size) {
+			size *= 2;
+			page = realloc(page, size);
+		}
+		c = next_char();
 	}
-	free(tables);
+}
+
+
+typedef struct TableList {
+	void* table;
+	struct TableList* next;
+} TableList;
+TableList*	tables;
+
+
+void push_table(void* table) {
+	TableList* n = malloc(sizeof(TableList));
+	pthread_mutex_lock(&tables_mutex);
+	n->next = tables;
+	n->table = table;
+	tables = n;
+	pthread_cond_signal(&tables_cond);
+	pthread_mutex_unlock(&tables_mutex);
+}
+
+void* pop_table(void) {
+	if (!tables) return NULL;
+	pthread_mutex_lock(&tables_mutex);
+	TableList* n = tables;
+	tables = n->next;
+	pthread_mutex_unlock(&tables_mutex);
+
+	void* table = n->table;
+	free(n);
+	return table;
+}
+
+
+
+void single_thread_map(void) {
+	char* page;
+	while ((page = next_page())) {
+		void* table = map(page);
+		free(page);
+		push_table(table);
+	}
+}
+
+
+void* single_thread_map_reduce(void) {
+	char* page;
+	while ((page = next_page())) {
+		void* table = map(page);
+		free(page);
+		push_table(table);
+	}
+
+	void* table = NULL;
+	void* table_b;
+	while ((table_b = pop_table())) {
+		if (!table) table = table_b;
+		else {
+			reduce(table, table_b);
+			int size;
+			JSLFA(size, table_b);
+		}
+	}
 
 	return table;
 }
 
 
 
-// multi-threaded
-
-char**	g_pages;
-int		g_num_pages;
-int		g_current_page;
-
-void**	g_tables;
-int		g_current_table;
-
-pthread_mutex_t	pages_mutex;
-pthread_mutex_t	tables_mutex;
-pthread_cond_t	tables_cond;
-
-char* next_page(void) {
-	char* res = NULL;
-	pthread_mutex_lock(&pages_mutex);
-	if (g_current_page < g_num_pages) {
-		res = g_pages[g_current_page];
-		g_current_page++;
-	}
-	pthread_mutex_unlock(&pages_mutex);
-	return res;
-}
-
-void add_table(void* table) {
-	pthread_mutex_lock(&tables_mutex);
-	g_tables[g_current_table] = table;
-	g_current_table++;
-
-	pthread_cond_signal(&tables_cond);
-
-	pthread_mutex_unlock(&tables_mutex);
-}
+int workers_working = NUM_THREADS;
 
 void* worker_map(void* arg) {
 	char* page;
-	while ((page = next_page())) add_table(map(page));
-	pthread_exit(NULL);
+	while ((page = next_page())) {
+		void* table = map(page);
+		free(page);
+		push_table(table);
+	}
+	pthread_mutex_lock(&tables_mutex);
+	workers_working--;
+	pthread_mutex_unlock(&tables_mutex);
+	return NULL;
 }
 
-void** multi_thread_map(char** pages, int num_pages) {
-	g_num_pages = num_pages;
-	g_pages = pages;
-	g_current_page = 0;
-
-	g_tables = calloc(g_num_pages, sizeof(void*));
-	g_current_table = 0;
+void multi_thread_map(void) {
 
 	pthread_mutex_init(&pages_mutex, NULL);
 	pthread_mutex_init(&tables_mutex, NULL);
@@ -187,18 +214,11 @@ void** multi_thread_map(char** pages, int num_pages) {
 	pthread_mutex_destroy(&pages_mutex);
 	pthread_mutex_destroy(&tables_mutex);
 
-	return g_tables;
 }
 
 
 
-void* multi_thread_map_reduce(char** pages, int num_pages) {
-	g_num_pages = num_pages;
-	g_pages = pages;
-	g_current_page = 0;
-
-	g_tables = calloc(g_num_pages, sizeof(void*));
-	g_current_table = 0;
+void* multi_thread_map_reduce(void) {
 
 	pthread_mutex_init(&pages_mutex, NULL);
 	pthread_mutex_init(&tables_mutex, NULL);
@@ -210,20 +230,19 @@ void* multi_thread_map_reduce(char** pages, int num_pages) {
 	}
 
 	void* table = NULL;
-	int i = 0;
 	pthread_mutex_lock(&tables_mutex);
-	while (i < g_num_pages) {
+	while (workers_working || tables) {
 		pthread_cond_wait(&tables_cond, &tables_mutex);
 		pthread_mutex_unlock(&tables_mutex);
 
-		while (i < g_current_table) {
-			if (i == 0) table = g_tables[0];
+		void* table_b;
+		while ((table_b = pop_table())) {
+			if (!table) table = table_b;
 			else {
-				reduce(table, g_tables[i]);
+				reduce(table, table_b);
 				int size;
-				JSLFA(size, g_tables[i]);
+				JSLFA(size, table_b);
 			}
-			i++;
 		}
 
 		pthread_mutex_lock(&tables_mutex);
@@ -238,14 +257,8 @@ void* multi_thread_map_reduce(char** pages, int num_pages) {
 	pthread_mutex_destroy(&tables_mutex);
 	pthread_cond_destroy(&tables_cond);
 
-	free(g_tables);
 	return table;
 }
-
-
-
-
-
 
 
 
@@ -257,51 +270,48 @@ void usage(int argc, char** argv) {
 
 
 int main(int argc, char** argv) {
+
+
 	if (argc != 3) usage(argc, argv);
 
-	char* text;
-	int text_len = get_text(argv[2], &text);
-	if (text_len <= 0) {
+	pages_file = fopen(argv[2], "r");
+	if (!pages_file) {
 		fprintf(stderr, "error opening file %s\n", argv[2]);
 		exit(1);
 	}
 
-	char** pages;
-	int num_pages = get_pages(text, text_len, &pages);
-
 	if (strcmp(argv[1], "m") == 0) {
-		void** tables = single_thread_map(pages, num_pages);
-		for (int i = 0; i < num_pages; i++) {
+		single_thread_map();
+		void* t;
+		while ((t = pop_table())) {
 			int size;
-			JSLFA(size, tables[i]);
+			JSLFA(size, t);
 		}
-		free(tables);
 	}
 	else if (strcmp(argv[1], "tm") == 0) {
-		void** tables = multi_thread_map(pages, num_pages);
-		for (int i = 0; i < num_pages; i++) {
+		multi_thread_map();
+		void* t;
+		while ((t = pop_table())) {
 			int size;
-			JSLFA(size, tables[i]);
+			JSLFA(size, t);
 		}
-		free(tables);
 	}
 	else if (strcmp(argv[1], "mr") == 0) {
-		void* table = single_thread_map_reduce(pages, num_pages);
-//		print_table(table);
+		void* table = single_thread_map_reduce();
+		print_table(table);
 		int size;
 		JSLFA(size, table);
 	}
 	else if (strcmp(argv[1], "tmr") == 0) {
-		void* table = multi_thread_map_reduce(pages, num_pages);
-//		print_table(table);
+		void* table = multi_thread_map_reduce();
+		print_table(table);
 		int size;
 		JSLFA(size, table);
 	}
 	else usage(argc, argv);
 
 
-	free(text);
-	free(pages);
+	fclose(pages_file);
 
 	return 0;
 }
