@@ -10,7 +10,7 @@
 
 enum {
 	NUM_THREADS = 1,
-	MAX_KEY_LEN = 1 << 12
+	MAX_KEY_LEN = 1024
 };
 
 
@@ -30,10 +30,13 @@ void* map(char* page) {
 	while (*p) {
 		char* start = p;
 		while (*p && !isWS(*p)) p++;
+		int len = p - start;
 		while (*p && isWS(*p)) *p++ = '\0';
-		int* value;
-		JSLI(value, table, (uint8_t*) start);
-		*value += 1;
+		if (len < MAX_KEY_LEN - 1) {
+			int* value;
+			JSLI(value, table, (uint8_t*) start);
+			*value += 1;
+		}
 	}
 	return table;
 }
