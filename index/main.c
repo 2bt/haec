@@ -1,6 +1,8 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <unistd.h>
+#include <time.h>
 #include <pthread.h>
 #include <Judy.h>
 
@@ -64,7 +66,6 @@ void print_table(void* table) {
 
 FILE* pages_file;
 
-pthread_mutex_t	worker_mutex;
 pthread_mutex_t	pages_mutex;
 pthread_mutex_t	tables_mutex;
 pthread_cond_t	tables_cond;
@@ -201,13 +202,14 @@ void multi_thread_map(void) {
 	pthread_mutex_init(&tables_mutex, NULL);
 
 	pthread_t threads[NUM_THREADS];
-	for (int i = 0; i < NUM_THREADS; i++) {
+	int i;
+	for (i = 0; i < NUM_THREADS; i++) {
 		pthread_create(&threads[i], NULL, worker_map, NULL);
 	}
 
 	worker_map(NULL);
 
-	for (int i = 0; i < NUM_THREADS; i++) {
+	for (i = 0; i < NUM_THREADS; i++) {
 		pthread_join(threads[i], NULL);
 	}
 
@@ -225,7 +227,8 @@ void* multi_thread_map_reduce(void) {
 	pthread_cond_init(&tables_cond, NULL);
 
 	pthread_t threads[NUM_THREADS];
-	for (int i = 0; i < NUM_THREADS; i++) {
+	int i;
+	for (i = 0; i < NUM_THREADS; i++) {
 		pthread_create(&threads[i], NULL, worker_map, NULL);
 	}
 
@@ -249,7 +252,7 @@ void* multi_thread_map_reduce(void) {
 	}
 	pthread_mutex_unlock(&tables_mutex);
 
-	for (int i = 0; i < NUM_THREADS; i++) {
+	for (i = 0; i < NUM_THREADS; i++) {
 		pthread_join(threads[i], NULL);
 	}
 
@@ -271,7 +274,6 @@ void usage(int argc, char** argv) {
 
 int main(int argc, char** argv) {
 
-
 	if (argc != 3) usage(argc, argv);
 
 	pages_file = fopen(argv[2], "r");
@@ -279,6 +281,9 @@ int main(int argc, char** argv) {
 		fprintf(stderr, "error opening file %s\n", argv[2]);
 		exit(1);
 	}
+
+	struct timespec t1, t2;
+	clock_gettime(CLOCK_REALTIME, &t1);
 
 	if (strcmp(argv[1], "m") == 0) {
 		single_thread_map();
@@ -298,20 +303,24 @@ int main(int argc, char** argv) {
 	}
 	else if (strcmp(argv[1], "mr") == 0) {
 		void* table = single_thread_map_reduce();
-		print_table(table);
+//		print_table(table);
 		int size;
 		JSLFA(size, table);
 	}
 	else if (strcmp(argv[1], "tmr") == 0) {
 		void* table = multi_thread_map_reduce();
-		print_table(table);
+//		print_table(table);
 		int size;
 		JSLFA(size, table);
 	}
 	else usage(argc, argv);
 
-
 	fclose(pages_file);
+
+
+	clock_gettime(CLOCK_REALTIME, &t2);
+	long mseconds = (t2.tv_nsec - t1.tv_nsec) / 1000000 + (t2.tv_sec - t1.tv_sec) * 1000;
+	printf("%ld.%03ld\n", mseconds / 1000, mseconds % 1000);
 
 	return 0;
 }
