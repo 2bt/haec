@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import sys, os, time, socket, serial
+import sys, os, time, socket
 
 PORT = 1337
 
@@ -56,6 +56,7 @@ def client(host):
 
 	s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 	s.connect((host, PORT))
+	import serial
 	cambri = serial.Serial("/dev/ttyUSB0", 115200, 8, "N", 1)
 
 	while 1:
