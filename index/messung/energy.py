@@ -11,36 +11,36 @@ def server():
 	s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 	s.bind(("", PORT))
 	s.listen(1)
-	conn, addr = s.accept()
-	print "connected by", addr
 	while 1:
-		data = conn.recv(1024)
-		if data == "": break
+		conn, addr = s.accept()
+		print "connected by", addr
+		while 1:
+			data = conn.recv(1024)
+			if data == "": break
 
-		print " cpus | threads | freq in MHz | input in MB | time in s"
-		print "------+---------+-------------+-------------+-----------"
+			print " cpus | threads | freq in MHz | input in MB | time in s"
+			print "------+---------+-------------+-------------+-----------"
 
-		cmd = eval(data)
-		cpus = cmd["cpus"]
-		mode = cmd["mode"]
-		freq = cmd["freq"]
-		input_len = cmd["input_len"]
+			cmd = eval(data)
+			cpus = cmd["cpus"]
+			mode = cmd["mode"]
+			freq = cmd["freq"]
+			input_len = cmd["input_len"]
 
-		os.system("cpufreq-set --governor userspace")
-		os.system("cpufreq-set --min %d" % freq)
-		os.system("cpufreq-set --max %d" % freq)
-		os.system("cpufreq-set --freq %d" % freq)
-		os.system("echo %d > /sys/devices/system/cpu/cpu1/online" % int(cpus == 2))
-		time.sleep(1)
+			os.system("cpufreq-set --governor userspace")
+			os.system("cpufreq-set --min %d" % freq)
+			os.system("cpufreq-set --max %d" % freq)
+			os.system("cpufreq-set --freq %d" % freq)
+			os.system("echo %d > /sys/devices/system/cpu/cpu1/online" % int(cpus == 2))
+			time.sleep(1)
 
-		conn.sendall("start") # tell client to begin tracking current
-		out = os.popen("../index %s ../wiki/test_%d.txt" % (mode, input_len)).read()
-		conn.sendall(out)
+			conn.sendall("start") # tell client to begin tracking current
+			out = os.popen("../index %s ../wiki/test_%d.txt" % (mode, input_len)).read()
+			conn.sendall(out)
 
-		print " %4d | %7d | %11d | %11d | %9.3f" % (
-			cpus, 1 + ("t" in mode), freq, input_len, float(out))
-
-	conn.close()
+			print " %4d | %7d | %11d | %11d | %9.3f" % (
+				cpus, 1 + ("t" in mode), freq, input_len, float(out))
+		conn.close()
 
 
 
