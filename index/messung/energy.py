@@ -7,8 +7,8 @@ PORT = 1337
 
 def server():
 	print "server"
-
 	s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+	s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 	s.bind(("", PORT))
 	s.listen(1)
 	conn, addr = s.accept()
@@ -61,7 +61,7 @@ def client(host):
 
 	while 1:
 		cpus = 2
-		mode = "trm"
+		mode = "tmr"
 		freq = 240
 		input_len = 50
 
@@ -85,8 +85,8 @@ def client(host):
 		c = sum(currents) / float(len(currents))
 		print " cpus | threads | freq in MHz | input in MB | time in s | current in mA"
 		print "------+---------+-------------+-------------+-----------+---------------"
-		print " %4d | %7d | %11d | %11d | %9.3f | %013.2f" % (
-			cpus, 1 + ("t" in mode), freq, input_len, float(out), c)
+		print " %4d | %7d | %11d | %11d | %9.3f | %13.2f" % (
+			cpus, 1 + ("t" in mode), freq, input_len, time, c)
 
 		break
 
@@ -96,5 +96,8 @@ def client(host):
 
 
 if __name__ == "__main__":
-	if len(sys.argv) > 1: client(sys.argv[1])
+	if len(sys.argv) > 1:
+		host = sys.argv[1]
+		if host == "-": host = "192.168.1.42"
+		client(host)
 	else: server()
