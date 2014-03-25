@@ -74,7 +74,7 @@ def client(host):
 
 	for cpus in [1, 2]:
 		modes = ["mr"]
-		if cpus == 2, modes.append("tmr")
+		if cpus == 2: modes.append("tmr")
 		for mode in modes:
 			for freq in freqs:
 				for input_len in 25, 50, 100:
