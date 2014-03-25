@@ -32,8 +32,8 @@ def server():
 			input_len = cmd["input_len"]
 
 			os.system("cpufreq-set --governor userspace")
-			os.system("cpufreq-set --min %d000" % freq)
-			os.system("cpufreq-set --max %d000" % freq)
+			os.system("cpufreq-set --min 30000")
+			os.system("cpufreq-set --max 1008000")
 			os.system("cpufreq-set --freq %d000" % freq)
 			os.system("echo %d > /sys/devices/system/cpu/cpu1/online" % int(cpus == 2))
 			time.sleep(1)
@@ -54,7 +54,7 @@ def server():
 ################################################################################
 
 class Tee(object):
-	def __init__(self, name="out", mode="w"):
+	def __init__(self, name="out", mode="a"):
 		self.file = open(name, mode)
 		self.stdout = sys.stdout
 		sys.stdout = self
@@ -90,7 +90,7 @@ def client(host):
 		if cpus == 2: modes.append("tmr")
 		for mode in modes:
 			for freq in freqs:
-				for input_len in 25, 50, 100:
+				for input_len in [25, 50, 100]:
 					time = 0
 					current = 0
 					for i in range(SAMPLES):
