@@ -1,2 +1,2 @@
 all:
-	gcc -Wall -O3 -lJudy -lpthread -lrt *.c -o index
+	gcc -Wall -O3 -pthread -lJudy -lpthread -lrt *.c -o index

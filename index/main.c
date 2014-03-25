@@ -10,7 +10,7 @@
 
 enum {
 	NUM_THREADS = 1,
-	MAX_KEY_LEN = 1024
+	MAX_KEY_LEN = 256
 };
 
 
@@ -127,8 +127,8 @@ TableList*	tables;
 
 
 void push_table(void* table) {
-	TableList* n = malloc(sizeof(TableList));
 	pthread_mutex_lock(&tables_mutex);
+	TableList* n = malloc(sizeof(TableList));
 	n->next = tables;
 	n->table = table;
 	tables = n;
@@ -141,10 +141,9 @@ void* pop_table(void) {
 	pthread_mutex_lock(&tables_mutex);
 	TableList* n = tables;
 	tables = n->next;
-	pthread_mutex_unlock(&tables_mutex);
-
 	void* table = n->table;
 	free(n);
+	pthread_mutex_unlock(&tables_mutex);
 	return table;
 }
 
