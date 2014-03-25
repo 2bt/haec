@@ -172,7 +172,7 @@ void* single_thread_map_reduce(void) {
 	while ((table_b = pop_table())) {
 		if (!table) table = table_b;
 		else {
-			reduce(table, table_b);
+			table = reduce(table, table_b);
 			int size;
 			JSLFA(size, table_b);
 		}
@@ -244,7 +244,7 @@ void* multi_thread_map_reduce(void) {
 		while ((table_b = pop_table())) {
 			if (!table) table = table_b;
 			else {
-				reduce(table, table_b);
+				table = reduce(table, table_b);
 				int size;
 				JSLFA(size, table_b);
 			}
