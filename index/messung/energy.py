@@ -44,7 +44,7 @@ def server():
 			if input_len > 0:
 				out = os.popen("../index %s ../wiki/test_%d.txt" % (mode, input_len)).read()
 				conn.sendall(out)
-			else
+			else:
 				time.sleep(30)
 				conn.sendall("30")
 
