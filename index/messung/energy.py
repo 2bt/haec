@@ -45,8 +45,9 @@ def server():
 				out = os.popen("../index %s ../wiki/test_%d.txt" % (mode, input_len)).read()
 				conn.sendall(out)
 			else:
-				time.sleep(30)
-				conn.sendall("30")
+				out = "30"
+				time.sleep(int(out))
+				conn.sendall(out)
 
 
 			print " %4d | %7d | %11d | %11d | %9.3f" % (
