@@ -15,7 +15,6 @@ enum {
 
 
 
-
 int isWS(char c) {
 	return c < '!' || c == ']' || c == '|' || c == '['
 	|| c == '=' || c == '\"' || c == '\'' || c == '<'
@@ -84,6 +83,7 @@ int next_char(void) {
 		if (buffer_size < BUFFER_MAX) return EOF;
 		buffer_size = fread(buffer, 1, BUFFER_MAX, pages_file);
 		buffer_pos = 0;
+		if (buffer_size == 0) return EOF;
 	}
 	return buffer[buffer_pos++];
 }
@@ -108,8 +108,7 @@ char* next_page(void) {
 			pthread_mutex_unlock(&pages_mutex);
 			return page;
 		}
-		page[i] = c;
-		i++;
+		page[i++] = c;
 		if (i >= size) {
 			size *= 2;
 			page = realloc(page, size);
