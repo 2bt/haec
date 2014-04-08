@@ -9,7 +9,7 @@
 
 
 enum {
-	NUM_THREADS = 1,
+	NUM_WORKERS = 1,
 	MAX_KEY_LEN = 256
 };
 
@@ -147,7 +147,6 @@ void* pop_table(void) {
 }
 
 
-
 void single_thread_map(void) {
 	char* page;
 	while ((page = next_page())) {
@@ -182,7 +181,13 @@ void* single_thread_map_reduce(void) {
 
 
 
-int workers_working = NUM_THREADS;
+int workers_working = NUM_WORKERS;
+
+int work_left(void) {
+	return tables != NULL || workers_working > 0;
+}
+
+
 
 void* worker_map(void* arg) {
 	char* page;
@@ -202,15 +207,15 @@ void multi_thread_map(void) {
 	pthread_mutex_init(&pages_mutex, NULL);
 	pthread_mutex_init(&tables_mutex, NULL);
 
-	pthread_t threads[NUM_THREADS];
+	pthread_t threads[NUM_WORKERS];
 	int i;
-	for (i = 0; i < NUM_THREADS; i++) {
+	for (i = 0; i < NUM_WORKERS; i++) {
 		pthread_create(&threads[i], NULL, worker_map, NULL);
 	}
 
 	worker_map(NULL);
 
-	for (i = 0; i < NUM_THREADS; i++) {
+	for (i = 0; i < NUM_WORKERS; i++) {
 		pthread_join(threads[i], NULL);
 	}
 
@@ -227,20 +232,22 @@ void* multi_thread_map_reduce(void) {
 	pthread_mutex_init(&tables_mutex, NULL);
 	pthread_cond_init(&tables_cond, NULL);
 
-	pthread_t threads[NUM_THREADS];
+	pthread_t threads[NUM_WORKERS];
 	int i;
-	for (i = 0; i < NUM_THREADS; i++) {
+	for (i = 0; i < NUM_WORKERS; i++) {
 		pthread_create(&threads[i], NULL, worker_map, NULL);
 	}
 
 	void* table = NULL;
 	pthread_mutex_lock(&tables_mutex);
-	while (workers_working || tables) {
+	while (work_left()) {
 		pthread_cond_wait(&tables_cond, &tables_mutex);
 		pthread_mutex_unlock(&tables_mutex);
-
+//		printf("%p\n", tables);
+//		printf("%d\n", workers_working);
 		void* table_b;
 		while ((table_b = pop_table())) {
+//			printf("%p\n", table_b);
 			if (!table) table = table_b;
 			else {
 				table = reduce(table, table_b);
@@ -253,7 +260,7 @@ void* multi_thread_map_reduce(void) {
 	}
 	pthread_mutex_unlock(&tables_mutex);
 
-	for (i = 0; i < NUM_THREADS; i++) {
+	for (i = 0; i < NUM_WORKERS; i++) {
 		pthread_join(threads[i], NULL);
 	}
 
