@@ -8,6 +8,7 @@ freqs = [ 30, 48, 60, 72, 84, 96, 120, 132, 144, 156, 168, 180, 192, 204,
 	216, 240, 264, 288, 336, 360, 384, 408, 480, 528, 600, 648, 672, 696,
 	720, 744, 768, 816, 864, 912, 960, 1008 ]
 
+SAMPLES = 1
 
 def server():
 	print "server"
@@ -22,12 +23,12 @@ def server():
 			data = conn.recv(1024)
 			if data == "": break
 
-			print " cpus | threads | freq in MHz | input in MB | time in s"
+			print " cpus | workers | freq in MHz | input in MB | time in s"
 			print "------+---------+-------------+-------------+-----------"
 
 			cmd = eval(data)
 			cpus = cmd["cpus"]
-			mode = cmd["mode"]
+			workers = cmd["workers"]
 			freq = cmd["freq"]
 			input_len = cmd["input_len"]
 
@@ -42,7 +43,7 @@ def server():
 
 			conn.sendall("start") # tell client to begin tracking current
 			if input_len > 0:
-				out = os.popen("../index %s ../wiki/test_%d.txt" % (mode, input_len)).read()
+				out = os.popen("../index mr %d ../wiki/test_%d.txt" % (workers, input_len)).read()
 				conn.sendall(out)
 			else:
 				out = "30"
@@ -51,7 +52,7 @@ def server():
 
 
 			print " %4d | %7d | %11d | %11d | %9.3f" % (
-				cpus, 1 + ("t" in mode), freq, input_len, float(out))
+				cpus, workers, freq, input_len, float(out))
 			print
 		conn.close()
 
@@ -88,21 +89,26 @@ def client(host):
 	import serial
 	cambri = serial.Serial("/dev/ttyUSB0", 115200, 8, "N", 1)
 
-	print " cpus | threads | freq in MHz | input in MB | time in s | current in mA"
+	print " cpus | workers | freq in MHz | input in MB | time in s | current in mA"
 	print "------+---------+-------------+-------------+-----------+---------------"
 
-	for cpus in [1, 2]:
-		modes = ["mr"]
-		if cpus == 2: modes.append("tmr")
-		for mode in modes:
+	#for cpus in [1, 2]:
+	for cpus in [2]:
+		for workers in [0, 1, 2]:
 			for freq in freqs:
-				for input_len in [25, 50, 100]:
+				#for input_len in [25, 50, 100]:
+				for input_len in [25]:
 					time = 0
 					current = 0
 					for i in range(SAMPLES):
 
 						# send command
-						s.sendall(repr({"cpus":cpus, "mode":mode, "freq":freq, "input_len":input_len}))
+						s.sendall(repr({
+							"cpus": cpus,
+							"workers": workers,
+							"freq": freq,
+							"input_len": input_len
+						}))
 						start = s.recv(1024)
 
 						# track current
@@ -113,13 +119,11 @@ def client(host):
 							try:
 								t = float(s.recv(1024))
 								break
-							except:
-								continue
+							except: continue
 						s.setblocking(1)
 
 						# estimate mean
 						c = sum(currents) / float(len(currents))
-
 
 
 						time += t
@@ -128,7 +132,7 @@ def client(host):
 					current /= SAMPLES
 
 					print " %4d | %7d | %11d | %11d | %9.3f | %13.2f" % (
-						cpus, 1 + ("t" in mode), freq, input_len, time, current)
+						cpus, workers, freq, input_len, time, current)
 
 	s.close()
 
