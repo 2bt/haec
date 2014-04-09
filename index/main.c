@@ -8,11 +8,7 @@
 
 
 
-enum {
-	NUM_WORKERS = 1,
-	MAX_KEY_LEN = 256
-};
-
+enum { MAX_KEY_LEN = 256 };
 
 
 int isWS(char c) {
@@ -70,7 +66,7 @@ FILE* pages_file;
 
 pthread_mutex_t	pages_mutex;
 pthread_mutex_t	tables_mutex;
-pthread_cond_t	tables_cond;
+//pthread_cond_t	tables_cond;
 
 
 enum { BUFFER_MAX = 1 << 20 };
@@ -131,7 +127,7 @@ void push_table(void* table) {
 	n->next = tables;
 	n->table = table;
 	tables = n;
-	pthread_cond_signal(&tables_cond);
+//	pthread_cond_signal(&tables_cond);
 	pthread_mutex_unlock(&tables_mutex);
 }
 
@@ -181,7 +177,8 @@ void* single_thread_map_reduce(void) {
 
 
 
-int workers_working = NUM_WORKERS;
+int num_workers = 1;
+int workers_working;
 
 int work_left(void) {
 	return tables != NULL || workers_working > 0;
@@ -207,21 +204,21 @@ void multi_thread_map(void) {
 	pthread_mutex_init(&pages_mutex, NULL);
 	pthread_mutex_init(&tables_mutex, NULL);
 
-	pthread_t threads[NUM_WORKERS];
+	workers_working = num_workers;
+	pthread_t threads[num_workers];
 	int i;
-	for (i = 0; i < NUM_WORKERS; i++) {
+	for (i = 0; i < num_workers; i++) {
 		pthread_create(&threads[i], NULL, worker_map, NULL);
 	}
 
 	worker_map(NULL);
 
-	for (i = 0; i < NUM_WORKERS; i++) {
+	for (i = 0; i < num_workers; i++) {
 		pthread_join(threads[i], NULL);
 	}
 
 	pthread_mutex_destroy(&pages_mutex);
 	pthread_mutex_destroy(&tables_mutex);
-
 }
 
 
@@ -230,21 +227,20 @@ void* multi_thread_map_reduce(void) {
 
 	pthread_mutex_init(&pages_mutex, NULL);
 	pthread_mutex_init(&tables_mutex, NULL);
-	pthread_cond_init(&tables_cond, NULL);
+//	pthread_cond_init(&tables_cond, NULL);
 
-	pthread_t threads[NUM_WORKERS];
+	workers_working = num_workers;
+	pthread_t threads[num_workers];
 	int i;
-	for (i = 0; i < NUM_WORKERS; i++) {
+	for (i = 0; i < num_workers; i++) {
 		pthread_create(&threads[i], NULL, worker_map, NULL);
 	}
 
 	void* table = NULL;
-	pthread_mutex_lock(&tables_mutex);
+//	pthread_mutex_lock(&tables_mutex);
 	while (work_left()) {
-		pthread_cond_wait(&tables_cond, &tables_mutex);
-		pthread_mutex_unlock(&tables_mutex);
-//		printf("%p\n", tables);
-//		printf("%d\n", workers_working);
+//		pthread_cond_wait(&tables_cond, &tables_mutex);
+//		pthread_mutex_unlock(&tables_mutex);
 		void* table_b;
 		while ((table_b = pop_table())) {
 //			printf("%p\n", table_b);
@@ -256,17 +252,17 @@ void* multi_thread_map_reduce(void) {
 			}
 		}
 
-		pthread_mutex_lock(&tables_mutex);
+//		pthread_mutex_lock(&tables_mutex);
 	}
-	pthread_mutex_unlock(&tables_mutex);
+//	pthread_mutex_unlock(&tables_mutex);
 
-	for (i = 0; i < NUM_WORKERS; i++) {
+	for (i = 0; i < num_workers; i++) {
 		pthread_join(threads[i], NULL);
 	}
 
 	pthread_mutex_destroy(&pages_mutex);
 	pthread_mutex_destroy(&tables_mutex);
-	pthread_cond_destroy(&tables_cond);
+//	pthread_cond_destroy(&tables_cond);
 
 	return table;
 }
@@ -275,53 +271,60 @@ void* multi_thread_map_reduce(void) {
 
 
 void usage(int argc, char** argv) {
-	printf("usage: %s [ m | mr | tm | tmr ] filename\n", argv[0]);
+	printf("usage: %s [ m | mr ] worker-count filename\n", argv[0]);
 	exit(0);
 }
 
 
 int main(int argc, char** argv) {
 
-	if (argc != 3) usage(argc, argv);
+	if (argc != 4) usage(argc, argv);
 
-	pages_file = fopen(argv[2], "r");
+	pages_file = fopen(argv[3], "r");
 	if (!pages_file) {
 		fprintf(stderr, "error opening file %s\n", argv[2]);
 		exit(1);
 	}
 
+	num_workers = atoi(argv[2]);
+
 	struct timespec t1, t2;
 	clock_gettime(CLOCK_REALTIME, &t1);
 
-	if (strcmp(argv[1], "m") == 0) {
-		single_thread_map();
-		void* t;
-		while ((t = pop_table())) {
-			int size;
-			JSLFA(size, t);
+	if (num_workers == 0) {
+		if (strcmp(argv[1], "m") == 0) {
+			single_thread_map();
+			void* t;
+			while ((t = pop_table())) {
+				int size;
+				JSLFA(size, t);
+			}
 		}
-	}
-	else if (strcmp(argv[1], "tm") == 0) {
-		multi_thread_map();
-		void* t;
-		while ((t = pop_table())) {
+		else if (strcmp(argv[1], "mr") == 0) {
+			void* table = single_thread_map_reduce();
+//			print_table(table);
 			int size;
-			JSLFA(size, t);
+			JSLFA(size, table);
 		}
+		else usage(argc, argv);
 	}
-	else if (strcmp(argv[1], "mr") == 0) {
-		void* table = single_thread_map_reduce();
-//		print_table(table);
-		int size;
-		JSLFA(size, table);
+	else {
+		if (strcmp(argv[1], "m") == 0) {
+			multi_thread_map();
+			void* t;
+			while ((t = pop_table())) {
+				int size;
+				JSLFA(size, t);
+			}
+		}
+		else if (strcmp(argv[1], "mr") == 0) {
+			void* table = multi_thread_map_reduce();
+//			print_table(table);
+			int size;
+			JSLFA(size, table);
+		}
+		else usage(argc, argv);
 	}
-	else if (strcmp(argv[1], "tmr") == 0) {
-		void* table = multi_thread_map_reduce();
-//		print_table(table);
-		int size;
-		JSLFA(size, table);
-	}
-	else usage(argc, argv);
 
 	fclose(pages_file);
 
