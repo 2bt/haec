@@ -8,7 +8,6 @@ freqs = [ 30, 48, 60, 72, 84, 96, 120, 132, 144, 156, 168, 180, 192, 204,
 	216, 240, 264, 288, 336, 360, 384, 408, 480, 528, 600, 648, 672, 696,
 	720, 744, 768, 816, 864, 912, 960, 1008 ]
 
-SAMPLES = 1
 
 def server():
 	print "server"
@@ -34,9 +33,12 @@ def server():
 
 			os.system("cpufreq-set --governor userspace")
 			os.system("cpufreq-set --min 30000")
-			os.system("cpufreq-set --max 1008000")
+			if socket.gethostname() == "raspberrypi":
+				os.system("cpufreq-set --max 700000")
+			else:
+				os.system("cpufreq-set --max 1008000")
+				os.system("echo %d > /sys/devices/system/cpu/cpu1/online" % int(cpus == 2))
 			os.system("cpufreq-set --freq %d000" % freq)
-			os.system("echo %d > /sys/devices/system/cpu/cpu1/online" % int(cpus == 2))
 			time.sleep(1)
 			f = int(file("/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_cur_freq").read()) / 1000
 			assert freq == f, "%d != %d" % (freq, f)
