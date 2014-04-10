@@ -17,5 +17,5 @@ obj/main.o: Makefile src/main.c
 	gcc -Wall -O2 src/main.c -c -o $@
 
 clean:
-	rm -rf obj index
+	rm -rf obj index index-unsafe
 
