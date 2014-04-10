@@ -9,6 +9,7 @@ freqs = [ 30, 48, 60, 72, 84, 96, 120, 132, 144, 156, 168, 180, 192, 204,
 	720, 744, 768, 816, 864, 912, 960, 1008 ]
 
 
+
 def server():
 	print "server"
 	s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -48,8 +49,8 @@ def server():
 				out = os.popen("../index mr %d ../wiki/test_%d.txt" % (workers, input_len)).read()
 				conn.sendall(out)
 			else:
-				out = "30"
-				time.sleep(int(out))
+				time.sleep(20)
+				out = "0"
 				conn.sendall(out)
 
 
@@ -94,12 +95,10 @@ def client(host):
 	print " cpus | workers | freq in MHz | input in MB | time in s | current in mA"
 	print "------+---------+-------------+-------------+-----------+---------------"
 
-	#for cpus in [1, 2]:
-	for cpus in [2]:
-		for workers in [0, 1, 2]:
-			for freq in freqs:
-				#for input_len in [25, 50, 100]:
-				for input_len in [25]:
+	for input_len in [0, 25, 50, 100]:
+		for cpus in [1, 2]:
+			for workers in [0, 1, 2] if input_len else [0]:
+				for freq in freqs:
 					time = 0
 					current = 0
 					for i in range(SAMPLES):
