@@ -37,7 +37,7 @@ static void my_free_hook(void *ptr, const void *caller) {
 
 	pthread_spin_unlock(&malloc_spin);
 }
-PTHREAD_PROCESS_SHARED
+
 static void my_init_hook(void) {
 	pthread_spin_init(&malloc_spin, 0);
 
