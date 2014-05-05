@@ -4,8 +4,10 @@ import sys, os, time, socket
 
 PORT = 1337
 SAMPLES = 3
-freqs = [ 30, 48, 60, 72, 84, 96, 120, 132, 144, 156, 168, 180, 192, 204,
-	216, 240, 264, 288, 336, 360, 384, 408, 480, 528, 600, 648, 672, 696,
+freqs = [
+	#30, 48, 60, 72, 84, 96, 120, 132, 144, 156, 168, 180, 192,
+	#204, 216,
+	240, 264, 288, 336, 360, 384, 408, 480, 528, 600, 648, 672, 696,
 	720, 744, 768, 816, 864, 912, 960, 1008 ]
 
 
@@ -95,9 +97,12 @@ def client(host):
 	print " cpus | workers | freq in MHz | input in MB | time in s | current in mA"
 	print "------+---------+-------------+-------------+-----------+---------------"
 
-	for input_len in [0, 25, 50, 100]:
-		for cpus in [1, 2]:
-			for workers in [0, 1, 2] if input_len else [0]:
+#	for input_len in [0, 25, 50, 100]:
+	for input_len in [100]:
+#		for cpus in [1, 2]:
+		for cpus in [2]:
+			#for workers in [0, 1, 2] if input_len else [0]:
+			for workers in [1, 2] if input_len else [0]:
 				for freq in freqs:
 					time = 0
 					current = 0
