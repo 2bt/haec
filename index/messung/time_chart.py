@@ -27,7 +27,7 @@ for q in Q:
 	Y = [x[4] for x in a if (x[0],x[1],x[3]) == q]
 	xticks = max(xticks, [0] + X, key=len)
 
-	pl.plot(X, Y, "o-", label="CPUS: %d, threads: %d, input: %d MB" % q)
+	pl.plot(X, Y, "o-", label="CPUS: %d, workers: %d, input: %d MB" % q)
 
 
 pl.xlabel(u"Taktfrequenz in MHz")

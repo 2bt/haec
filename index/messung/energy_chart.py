@@ -27,7 +27,7 @@ for q in Q:
 	Y = [x[5] for x in a if (x[0],x[1],x[3]) == q]
 	xticks = max(xticks, [0] + X, key=len)
 
-	pl.plot(X, Y, "o-", label="CPUS: %d, threads: %d, input: %d MB" % q)
+	pl.plot(X, Y, "o-", label="CPUS: %d, workers: %d, input: %d MB" % q)
 
 
 pl.xlabel(u"Taktfrequenz in MHz")
@@ -43,7 +43,7 @@ if RASPBERRY:
 else:
 	pl.xticks(xticks, [x if x%60==0 else "" for x in xticks])
 	pl.xlim(0, 1008)
-	pl.ylim(0, 400)
+	pl.ylim(0, 500)
 	pl.savefig("cubie-energy.svg", dpi=200)
 
 pl.show()
