@@ -282,7 +282,7 @@ int main(int argc, char** argv) {
 
 	pages_file = fopen(argv[3], "r");
 	if (!pages_file) {
-		fprintf(stderr, "error opening file %s\n", argv[2]);
+		fprintf(stderr, "error opening file %s\n", argv[3]);
 		exit(1);
 	}
 
