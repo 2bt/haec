@@ -1,3 +1,4 @@
+#define _LARGEFILE64_SOURCE
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -5,8 +6,6 @@
 #include <time.h>
 #include <pthread.h>
 #include <Judy.h>
-
-
 
 enum { MAX_KEY_LEN = 256 };
 
@@ -280,7 +279,7 @@ int main(int argc, char** argv) {
 
 	if (argc != 4) usage(argc, argv);
 
-	pages_file = fopen(argv[3], "r");
+	pages_file = fopen64(argv[3], "r");
 	if (!pages_file) {
 		fprintf(stderr, "error opening file %s\n", argv[3]);
 		exit(1);
