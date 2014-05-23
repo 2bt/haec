@@ -10,6 +10,7 @@
 
 
 enum { STDIN = 0 };
+enum { PORT = 1337 };
 
 
 Scheme_Object* eval_script(Scheme_Env* env, const char* filename) {
@@ -33,16 +34,12 @@ int main(int argc, char** argv) {
 
 	// tcp server code
 	int listener = socket(AF_INET, SOCK_STREAM, 0);
-	if (listener == -1) error(1, 0, "socket\n");
+	if (listener < 0) error(1, 0, "socket\n");
 	int yes = 1;
 	if (setsockopt(listener, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int)) < 0) {
 		error(1, 0, "setsockopt");
 	}
-	struct sockaddr_in server = {
-		AF_INET,
-		htons(1337),
-		{ INADDR_ANY }
-	};
+	struct sockaddr_in server = { AF_INET, htons(PORT), { INADDR_ANY } };
 	if (bind(listener, (struct sockaddr*)&server, sizeof(server)) < 0) {
 		error(1, 0, "bind");
 	}
@@ -55,7 +52,7 @@ int main(int argc, char** argv) {
 	int fdmax = listener;
 
 
-
+	printf("entering event loop.\n");
 	for (;;) {
 		fd_set readfds = master;
 		if (select(fdmax + 1, &readfds, NULL, NULL, NULL) < 0) {
@@ -65,17 +62,24 @@ int main(int argc, char** argv) {
 		int i;
 		for (i = 0; i <= fdmax; i++) {
 			if (FD_ISSET(i, &readfds)) {
+
 				if (i == STDIN) {
-					char msg[256];
+					char msg[1024];
 					fgets(msg, sizeof(msg), stdin);
 					printf("stdin: %s", msg);
+
+					msg[strlen(msg) - 1] = '\0';
+					send(fdmax, msg, strlen(msg) + 1, 0);
+
+
 				}
+
 				else if (i == listener) {
 					// handle new connection
 
 					struct sockaddr_in client;
 					socklen_t size = sizeof(client);
-					int newfd = accept(listener, (struct sockaddr *)&client, &size);
+					int newfd = accept(listener, (struct sockaddr*)&client, &size);
 					if (newfd < 0) {
 						perror("accept");
 					}
@@ -83,27 +87,30 @@ int main(int argc, char** argv) {
 						FD_SET(newfd, &master);
 						if (newfd > fdmax) fdmax = newfd;
 
-
 						char s[INET_ADDRSTRLEN];
 						inet_ntop(client.sin_family, &client.sin_addr, s, sizeof(s));
 						printf("new connection from %s on socket %d\n", s, newfd);
+
 					}
 				}
+
 				else {
 					// recv from client
 					char msg[1024];
-					int len = recv(i, msg, sizeof(msg), 0);
+					ssize_t len = recv(i, msg, sizeof(msg), 0);
 					if (len <= 0) {
 						close(i);
 						FD_CLR(i, &master);
 						printf("socket %d hung up\n", i);
 					}
 					else {
-						printf("received %d bytes from socket %d: %s\n", len, i, msg);
+						printf("received %d bytes from socket %d: %.*s\n", len, i, len, msg);
 
 
 					}
 				}
+
+
 			}
 		}
 
