@@ -10,7 +10,7 @@ LRACR += $(RACKET_PATH)/racket/src/build/racket/libmzgc.a
 CF = -Wall -O2
 LF =
 
-all: server client
+all: server worker
 
 server: Makefile obj/server.o
 	gcc $(LF) $(LRACR) obj/server.o -o $@
@@ -20,12 +20,12 @@ obj/server.o: Makefile src/server.c
 	gcc $(LC) $(CRACR) src/server.c -c -o $@
 
 
-client: Makefile obj/client.o
-	gcc $(LF) obj/client.o -o $@
+worker: Makefile obj/worker.o
+	gcc $(LF) obj/worker.o -o $@
 
-obj/client.o: Makefile src/client.c
+obj/worker.o: Makefile src/worker.c
 	@mkdir -p obj
-	gcc $(LC) src/client.c -c -o $@
+	gcc $(LC) src/worker.c -c -o $@
 
 bytecode:
 	@WD="$$PWD" &&\
@@ -33,6 +33,6 @@ bytecode:
 	cd $(RACR_PATH)/racr-c && ./bin/make_bc "`echo $$WD/bytecode`"
 
 clean:
-	rm -rf obj server client
+	rm -rf obj server worker
 
 .PHONY: clean bytecode
