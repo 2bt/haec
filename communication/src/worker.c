@@ -17,7 +17,7 @@ int sockfd;
 typedef struct {
 	int id;
 	int threads;
-	int size;
+	int input_len;
 } WorkArgs;
 
 
@@ -25,7 +25,7 @@ void* work_thread(WorkArgs* args) {
 	char line[1024];
 	snprintf(line, sizeof(line),
 		"../index/index mr %d ../index/wiki/dump_%04d.txt",
-		args->threads, args->size);
+		args->threads, args->input_len);
 
 	FILE* f = popen(line, "r");
 	size_t len = fread(line, 1, sizeof(line), f);
@@ -51,17 +51,36 @@ void handle_command(char* cmd) {
 	if (strcmp(cmd, "work") == 0) {
 		WorkArgs* args = malloc(sizeof(WorkArgs));
 		if (sscanf(p, "%d %d %d",
-			&args->id, &args->threads, &args->size) != 3) goto ERROR;
+			&args->id, &args->threads, &args->input_len) != 3) goto ERROR;
 		pthread_t work;
 		pthread_create(&work, NULL, work_thread, args);
 	}
 	else if (strcmp(cmd, "cpu") == 0) {
 		int cpus, freq;
 		if (sscanf(p, "%d %d", &cpus, &freq) != 2) goto ERROR;
-		// TODO...
+
+		// enable/disable 2nd cpu
+		if (cpus == 1 || cpus == 2) {
+			FILE* f = fopen("/sys/devices/system/cpu/cpu1/online", "w");
+			if (!f) {
+				printf("cpu error\n");
+				return;
+			}
+			fprintf(f, cpus == 2 ? "1\n" : "0\n");
+			fclose(f);
+		}
+		else goto ERROR;
+
+		// change cpu freq
+		printf("%d\n", system("cpufreq-set --governor userspace"));
+		printf("%d\n", system("cpufreq-set --min 30000"));
+		printf("%d\n", system("cpufreq-set --max 1008000"));
+		char line[256];
+		sprintf(line, "cpufreq-set --freq %d000", freq);
+		printf("%d\n", system(line));
 
 	}
-	else printf("unknown command\n");
+	else goto ERROR;
 	return;
 ERROR:
 	printf("error parsing command: %s\n", cmd);
