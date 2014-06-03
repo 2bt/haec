@@ -12,7 +12,20 @@
 
 
 enum { STDIN = 0 };
+
 enum { PORT = 1337 };
+
+
+typedef struct {
+	int cambri_port;
+	int socket_fd;
+
+
+} Worker;
+
+enum { WORKER_COUNT = 14 };
+
+Worker workers[WORKER_COUNT];
 
 
 Scheme_Object* eval_script(Scheme_Env* env, const char* filename) {
@@ -65,7 +78,10 @@ int main(int argc, char** argv) {
 		for (i = 0; i <= fdmax; i++) {
 			if (FD_ISSET(i, &readfds)) {
 
+
 				if (i == STDIN) {
+					// command from stdin
+
 					char msg[1024];
 					fgets(msg, sizeof(msg), stdin);
 					printf("stdin: %s", msg);
@@ -77,14 +93,12 @@ int main(int argc, char** argv) {
 				}
 
 				else if (i == listener) {
-					// handle new connection
+					// new connection
 
 					struct sockaddr_in client;
 					socklen_t size = sizeof(client);
 					int newfd = accept(listener, (struct sockaddr*)&client, &size);
-					if (newfd < 0) {
-						perror("accept");
-					}
+					if (newfd < 0) perror("accept");
 					else {
 						FD_SET(newfd, &master);
 						if (newfd > fdmax) fdmax = newfd;
@@ -92,7 +106,6 @@ int main(int argc, char** argv) {
 						char s[INET_ADDRSTRLEN];
 						inet_ntop(client.sin_family, &client.sin_addr, s, sizeof(s));
 						printf("new connection from %s on socket %d\n", s, newfd);
-
 					}
 				}
 
@@ -107,8 +120,6 @@ int main(int argc, char** argv) {
 					}
 					else {
 						printf("received %d bytes from socket %d: %.*s\n", len, i, len, msg);
-
-
 					}
 				}
 
