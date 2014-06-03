@@ -2,7 +2,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <error.h>
-
+#include <termios.h>
+#include <fcntl.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netdb.h>
@@ -41,13 +42,45 @@ Scheme_Object* eval_script(Scheme_Env* env, const char* filename) {
 }
 
 
-int main(int argc, char** argv) {
 
-	RACR_INIT(env, "bytecode", NULL);
-	eval_script(env, "scheme.scm");
+int cambri_fd;
+
+void cambri_init(void) {
+	cambri_fd = open("/dev/ttyUSB0", O_RDWR | O_NOCTTY);
+	if (cambri_fd < 0) error(1, 0, "open");
+
+	struct termios tty = {};
+	tcgetattr(cambri_fd, &tty);
+	tty.c_lflag = 0;
+	tty.c_oflag = 0;
+	tty.c_iflag = 0;
+	tty.c_cflag = CS8 | CLOCAL | CREAD;
+	tty.c_cc[VTIME] = 1; // 0.1 s read timeout
+	cfsetospeed(&tty, B115200);
+	cfsetispeed(&tty, B115200);
+	tcsetattr(cambri_fd, TCSANOW, &tty);
+}
+
+void cambri_kill(void) {
+	close(cambri_fd);
+}
+
+void cambri_write(char* cmd) {
+	write(cambri_fd, cmd, strlen(cmd));
+	write(cambri_fd, "\r\n", 2);
+}
+void cambri_read(char* buf) {
+	int i;
+	for (i = 0; i < 1000; i++) { // safety
+		int p = strlen(buf);
+		if (p >= 5 && strcmp(buf + p - 5, "\r\n>> ") == 0) break;
+		read(cambri_fd, buf + p, sizeof(buf) - p);
+	}
+}
 
 
-	// tcp server code
+void serve(void) {
+
 	int listener = socket(AF_INET, SOCK_STREAM, 0);
 	if (listener < 0) error(1, 0, "socket\n");
 	int yes = 1;
@@ -68,7 +101,8 @@ int main(int argc, char** argv) {
 
 
 	printf("entering event loop.\n");
-	for (;;) {
+	int running = 1;
+	while (running) {
 		fd_set readfds = master;
 		if (select(fdmax + 1, &readfds, NULL, NULL, NULL) < 0) {
 			error(1, 0, "select");
@@ -84,11 +118,18 @@ int main(int argc, char** argv) {
 
 					char msg[1024];
 					fgets(msg, sizeof(msg), stdin);
-					printf("stdin: %s", msg);
-
 					msg[strlen(msg) - 1] = '\0';
-					send(fdmax, msg, strlen(msg) + 1, 0);
+					printf("stdin: %s\n", msg);
 
+
+					if (strcmp(msg, "exit")) {
+						running = 0;
+						printf("exiting...\n");
+					}
+					else {
+						// TESTING
+						send(fdmax, msg, strlen(msg) + 1, 0);
+					}
 
 				}
 
@@ -119,16 +160,28 @@ int main(int argc, char** argv) {
 						printf("socket %d hung up\n", i);
 					}
 					else {
-						printf("received %d bytes from socket %d: %.*s\n", len, i, len, msg);
+						printf("received %d bytes from socket %d: %.*s\n",
+							len, i, len, msg);
 					}
 				}
-
-
 			}
 		}
-
 	}
 
+	close(listen);
+}
+
+
+int main(int argc, char** argv) {
+
+	RACR_INIT(env, "bytecode", NULL);
+	eval_script(env, "scheme.scm");
+
+	cambri_init();
+
+	serve();
+
+	cambri_kill();
 
 	return 0;
 }
