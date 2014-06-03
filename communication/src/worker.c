@@ -31,9 +31,9 @@ void* work_thread(WorkArgs* args) {
 	size_t len = fread(line, 1, sizeof(line), f);
 	if (len <= 0) printf("work %d error\n", args->id);
 	else printf("work %d output: %.*s", args->id, len, line);
-	pclose(f);
+	int ret = pclose(f);
 
-	snprintf(line, sizeof(line), "work %d done", args->id);
+	snprintf(line, sizeof(line), "work %d done %d", args->id, ret);
 	printf("%s\n", line);
 	send(sockfd, line, strlen(line) + 1, 0);
 
@@ -72,12 +72,16 @@ void handle_command(char* cmd) {
 		else goto ERROR;
 
 		// change cpu freq
-		printf("%d\n", system("cpufreq-set --governor userspace"));
-		printf("%d\n", system("cpufreq-set --min 30000"));
-		printf("%d\n", system("cpufreq-set --max 1008000"));
-		char line[256];
-		sprintf(line, "cpufreq-set --freq %d000", freq);
-		printf("%d\n", system(line));
+		char line[1024];
+		sprintf(line,
+			"cpufreq-set --governor userspace && "
+			"cpufreq-set --min 30000 && "
+			"cpufreq-set --max 1008000 && "
+			"cpufreq-set --freq %d000", freq);
+		if (system(line) != 0) {
+			printf("cpu error\n");
+			return;
+		}
 
 	}
 	else goto ERROR;
