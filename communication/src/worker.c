@@ -14,6 +14,7 @@ enum { PORT = 1337 };
 
 int sockfd;
 
+
 typedef struct {
 	int id;
 	int threads;
@@ -42,20 +43,35 @@ void* work_thread(WorkArgs* args) {
 }
 
 
+
+void send_ack(int e) {
+	char line[64];
+	snprintf(line, sizeof(line), "ack %d", e);
+	send(sockfd, line, strlen(line) + 1, 0);
+}
+
+
 void handle_command(char* cmd) {
 	char* p = strchr(cmd, ' ');
 	if (!p) goto ERROR;
 	*p++ = '\0';
 	printf("command: %s %s\n", cmd, p);
 
+
+
 	if (strcmp(cmd, "work") == 0) {
+
+		// spawn work thread
 		WorkArgs* args = malloc(sizeof(WorkArgs));
 		if (sscanf(p, "%d %d %d",
 			&args->id, &args->threads, &args->input_len) != 3) goto ERROR;
 		pthread_t work;
-		pthread_create(&work, NULL, work_thread, args);
+		int e = pthread_create(&work, NULL, work_thread, args);
+		if (e != 0) printf("work error %d\n", e);
+		send_ack(e);
 	}
 	else if (strcmp(cmd, "cpu") == 0) {
+
 		int cpus, freq;
 		if (sscanf(p, "%d %d", &cpus, &freq) != 2) goto ERROR;
 
@@ -63,7 +79,8 @@ void handle_command(char* cmd) {
 		if (cpus == 1 || cpus == 2) {
 			FILE* f = fopen("/sys/devices/system/cpu/cpu1/online", "w");
 			if (!f) {
-				printf("cpu error\n");
+				printf("cpu error 1\n");
+				send_ack(1);
 				return;
 			}
 			fprintf(f, cpus == 2 ? "1\n" : "0\n");
@@ -79,15 +96,23 @@ void handle_command(char* cmd) {
 			"cpufreq-set --max 1008000 && "
 			"cpufreq-set --freq %d000", freq);
 		if (system(line) != 0) {
-			printf("cpu error\n");
+			printf("cpu error 2\n");
+			send_ack(2);
 			return;
 		}
+		send_ack(0);
 
 	}
+	else if (strcmp(cmd, "off") == 0) {
+
+		send_ack(system("halt"));
+	}
+
 	else goto ERROR;
 	return;
 ERROR:
 	printf("error parsing command: %s\n", cmd);
+	send_ack(1337);
 }
 
 
