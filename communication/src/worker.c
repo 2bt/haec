@@ -52,16 +52,15 @@ void send_ack(int e) {
 
 
 void handle_command(char* cmd) {
+	printf("command: %s\n", cmd);
+
 	char* p = strchr(cmd, ' ');
-	if (!p) goto ERROR;
-	*p++ = '\0';
-	printf("command: %s %s\n", cmd, p);
-
-
+	if (p) *p++ = '\0';
 
 	if (strcmp(cmd, "work") == 0) {
 
 		// spawn work thread
+		if (!p) goto ERROR;
 		WorkArgs* args = malloc(sizeof(WorkArgs));
 		if (sscanf(p, "%d %d %d",
 			&args->id, &args->threads, &args->input_len) != 3) goto ERROR;
@@ -72,6 +71,7 @@ void handle_command(char* cmd) {
 	}
 	else if (strcmp(cmd, "cpu") == 0) {
 
+		if (!p) goto ERROR;
 		int cpus, freq;
 		if (sscanf(p, "%d %d", &cpus, &freq) != 2) goto ERROR;
 
@@ -103,7 +103,7 @@ void handle_command(char* cmd) {
 		send_ack(0);
 
 	}
-	else if (strcmp(cmd, "off") == 0) {
+	else if (strcmp(cmd, "halt") == 0) {
 
 		send_ack(system("halt"));
 	}
