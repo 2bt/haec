@@ -23,10 +23,11 @@ typedef struct {
 
 
 void* work_thread(WorkArgs* args) {
-	char line[1024];
+	const char* index_path = "/home/cubie/haec/communication";
+	char line[256];
 	snprintf(line, sizeof(line),
-		"../index/index mr %d ../index/wiki/dump_%04d.txt",
-		args->threads, args->input_len);
+		"%s/index mr %d %s/wiki/dump_%04d.txt",
+		index_path, args->threads, index_path, args->input_len);
 
 	FILE* f = popen(line, "r");
 	size_t len = fread(line, 1, sizeof(line), f);
@@ -76,17 +77,15 @@ void handle_command(char* cmd) {
 		if (sscanf(p, "%d %d", &cpus, &freq) != 2) goto ERROR;
 
 		// enable/disable 2nd cpu
-		if (cpus == 1 || cpus == 2) {
-			FILE* f = fopen("/sys/devices/system/cpu/cpu1/online", "w");
-			if (!f) {
-				printf("cpu error 1\n");
-				send_ack(1);
-				return;
-			}
-			fprintf(f, cpus == 2 ? "1\n" : "0\n");
-			fclose(f);
+		if (cpus != 1 && cpus != 2) goto ERROR;
+		FILE* f = fopen("/sys/devices/system/cpu/cpu1/online", "w");
+		if (!f) {
+			printf("cpu error 1\n");
+			send_ack(1);
+			return;
 		}
-		else goto ERROR;
+		fprintf(f, cpus == 2 ? "1\n" : "0\n");
+		fclose(f);
 
 		// change cpu freq
 		char line[1024];
