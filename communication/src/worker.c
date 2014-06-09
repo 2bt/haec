@@ -105,7 +105,9 @@ void handle_command(char* cmd) {
 	}
 	else if (strcmp(cmd, "halt") == 0) {
 
-		send_ack(system("halt"));
+		int e = system("halt");
+		if (e != 0) printf("halt error %d\n", e);
+		send_ack(e);
 	}
 
 	else goto ERROR;
