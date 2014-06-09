@@ -23,7 +23,7 @@ typedef struct {
 
 
 void* work_thread(WorkArgs* args) {
-	const char* index_path = "/home/cubie/haec/communication";
+	const char* index_path = "/home/cubie/haec/index";
 	char line[256];
 	snprintf(line, sizeof(line),
 		"%s/index mr %d %s/wiki/dump_%04d.txt",
