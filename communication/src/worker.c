@@ -23,11 +23,14 @@ typedef struct {
 
 
 void* work_thread(WorkArgs* args) {
-	const char* index_path = "/home/cubie/haec/index";
 	char line[256];
+//	const char* index_path = "/home/cubie/haec/index";
+//	snprintf(line, sizeof(line),
+//		"%s/index mr %d %s/wiki/dump_%04d.txt",
+//		index_path, args->threads, index_path, args->input_len);
 	snprintf(line, sizeof(line),
-		"%s/index mr %d %s/wiki/dump_%04d.txt",
-		index_path, args->threads, index_path, args->input_len);
+		"../index/index mr %d ../index/wiki/dump_%04d.txt",
+		args->threads, args->input_len);
 
 	FILE* f = popen(line, "r");
 	size_t len = fread(line, 1, sizeof(line), f);
