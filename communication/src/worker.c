@@ -107,6 +107,18 @@ void handle_command(char* cmd) {
 		send_ack(0);
 
 	}
+	else if (strcmp(cmd, "mem") == 0) {
+		FILE* f = popen("/usr/bin/free", "r");
+		if (!f) {
+			printf("mem error\n");
+			send_ack(-1);
+			return;
+		}
+		int mem = -1;
+		fscanf(f, "%*s %*s %*s %*s %*s %*s %*s %*d %*d %d", &mem);
+		fclose(f);
+		send_ack(mem);
+	}
 	else if (strcmp(cmd, "halt") == 0) {
 
 		int e = system("halt");
