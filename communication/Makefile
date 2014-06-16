@@ -7,17 +7,24 @@ LRACR += $(RACKET_PATH)/racket/src/build/racket/libracket.a
 LRACR += $(RACKET_PATH)/racket/src/build/racket/libmzgc.a
 
 
-CF = -Wall -O2
+CF = -Wall -O2 -Iinclude
 LF = -pthread
 
 all: server worker
 
-server: Makefile obj/server.o
-	gcc $(LF) $(LRACR) obj/server.o -o $@
 
-obj/server.o: Makefile src/server.c
+SERVERSRC = src/main.c src/server.c src/cambri.c
+SERVEROBJ = $(SERVERSRC:src/%.c=obj/%.o)
+
+server: Makefile $(SERVEROBJ)
+	gcc $(LF) $(LRACR) $(SERVEROBJ) -o $@
+
+
+obj/%.o: src/%.c Makefile
 	@mkdir -p obj
-	gcc $(LC) $(CRACR) src/server.c -c -o $@
+	gcc $(CF) $(CRACR) $< -c -o $@
+
+
 
 
 worker: Makefile obj/worker.o
@@ -25,7 +32,9 @@ worker: Makefile obj/worker.o
 
 obj/worker.o: Makefile src/worker.c
 	@mkdir -p obj
-	gcc $(LC) src/worker.c -c -o $@
+	gcc $(CF) src/worker.c -c -o $@
+
+
 
 bytecode:
 	@WD="$$PWD" &&\

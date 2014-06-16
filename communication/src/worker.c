@@ -3,6 +3,8 @@
 #include <string.h>
 #include <error.h>
 
+#include <unistd.h>
+#include <pthread.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netdb.h>
@@ -35,7 +37,7 @@ void* work_thread(WorkArgs* args) {
 	FILE* f = popen(line, "r");
 	size_t len = fread(line, 1, sizeof(line), f);
 	if (len <= 0) printf("work %d error\n", args->id);
-	else printf("work %d output: %.*s", args->id, len, line);
+	else printf("work %d output: %.*s", args->id, (int) len, line);
 	int ret = pclose(f);
 
 	snprintf(line, sizeof(line), "work %d done %d", args->id, ret);
@@ -69,7 +71,7 @@ void handle_command(char* cmd) {
 		if (sscanf(p, "%d %d %d",
 			&args->id, &args->threads, &args->input_len) != 3) goto ERROR;
 		pthread_t work;
-		int e = pthread_create(&work, NULL, work_thread, args);
+		int e = pthread_create(&work, NULL, (void*(*)(void*)) work_thread, args);
 		if (e != 0) printf("work error %d\n", e);
 		send_ack(e);
 	}
