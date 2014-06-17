@@ -1,3 +1,5 @@
+#include <stdio.h>
+#include <stdarg.h>
 #include <string.h>
 #include <error.h>
 #include <termios.h>
@@ -32,8 +34,13 @@ void cambri_kill(void) {
 }
 
 
-void cambri_write(char* cmd) {
-	write(cambri_fd, cmd, strlen(cmd));
+void cambri_write(const char* fmt, ...) {
+	char buf[256];
+	va_list args;
+	va_start(args, fmt);
+	vsprintf(buf, fmt, args);
+	va_end(args);
+	write(cambri_fd, buf, strlen(buf));
 	write(cambri_fd, "\r\n", 2);
 }
 
