@@ -7,13 +7,14 @@
 #include <unistd.h>
 
 #include "server.h"
+#include "cambri.h"
 
 
 enum { PORT = 1337 };
 
 // time in seconds
-const double TIME_BOOTING = 20.0; // STATE_BOOTING -> STATE_IDLE
-const double TIME_HALTING = 5.0; // STATE_HALTING -> STATE_OFF
+const double TIME_BOOTING = 54.7; // STATE_BOOTING -> STATE_IDLE
+const double TIME_HALTING = 12.1; // STATE_HALTING -> STATE_OFF
 
 
 enum {
@@ -33,6 +34,13 @@ const char* state_strings[] = {
 	"HALTING",
 	"ERROR",
 };
+
+
+double timestamp(void) {
+	struct timespec t;
+	clock_gettime(CLOCK_REALTIME, &t);
+	return t.tv_sec + t.tv_nsec * 1e-9;
+}
 
 
 typedef struct {
@@ -64,12 +72,6 @@ enum { WORKER_COUNT = 3 };
 
 Worker workers[WORKER_COUNT];
 
-
-double timestamp(void) {
-	struct timespec t;
-	clock_gettime(CLOCK_REALTIME, &t);
-	return t.tv_sec + t.tv_nsec * 1e-9;
-}
 
 static void init_workers(void) {
 	static const char* a[WORKER_COUNT] = {
@@ -119,26 +121,27 @@ Worker* get_worker_by_cambri_port(int i) {
 
 
 
-
 struct {
 	fd_set fds;
 	int fdmax;
 	int running;
 } server;
 
+
 static void server_command() {
 
 	char msg[1024];
 	fgets(msg, sizeof(msg), stdin);
 	msg[strlen(msg) - 1] = '\0';
-	printf("stdin: %s\n", msg);
 
+	int cambri_port;
 
 	if (strcmp(msg, "exit") == 0) {
 		server.running = 0;
 		printf("exiting...\n");
 	}
-	if (strcmp(msg, "status") == 0) {
+
+	else if (strcmp(msg, "status") == 0) {
 		printf(" cambri port | address:port          | socket | state   | since \n");
 		printf("-------------+-----------------------+--------+---------+-------\n");
 		int i;
@@ -152,18 +155,51 @@ static void server_command() {
 				state_strings[w->state], time - w->timestamp);
 		}
 	}
+
+	else if (sscanf(msg, "boot %d", &cambri_port) == 1) {
+		Worker* w = get_worker_by_cambri_port(cambri_port);
+		if (!w) {
+			printf("error: %s\n", msg);
+			return;
+		}
+		if (w->state != STATE_OFF) {
+			printf("error: worker %d is not OFF\n", w->cambri_port);
+			return;
+		}
+		w->state = STATE_BOOTING;
+		w->timestamp = timestamp();
+		cambri_write("set_profiles %d 4", w->cambri_port);
+		cambri_write("mode c %d 4", w->cambri_port);
+
+	}
+
+	else if (sscanf(msg, "halt %d", &cambri_port) == 1) {
+		Worker* w = get_worker_by_cambri_port(cambri_port);
+		if (!w) {
+			printf("error: %s\n", msg);
+			return;
+		}
+		if (w->state != STATE_IDLE) {
+			printf("error: worker %d is not IDLE\n", w->cambri_port);
+			return;
+		}
+		send(w->socket_fd, "halt", 5, 0);
+		w->state = STATE_HALTING;
+		w->timestamp = timestamp();
+	}
+
 	else {
 		// TESTING
-		int p = atoi(msg);
+		int cambri_port = atoi(msg);
 		char* s = strchr(msg, ' ');
 		if (!s) {
-			printf("command error\n");
+			printf("error: %s\n", msg);
 			return;
 		}
 		s++;
-		Worker* w = get_worker_by_cambri_port(p);
+		Worker* w = get_worker_by_cambri_port(cambri_port);
 		if (!w) {
-			printf("command error\n");
+			printf("error: %s\n", msg);
 			return;
 		}
 		send(w->socket_fd, s, strlen(s) + 1, 0);
@@ -190,10 +226,15 @@ static void server_new_connection(int s) {
 			FD_SET(newfd, &server.fds);
 			if (newfd > server.fdmax) server.fdmax = newfd;
 
+			double time = timestamp();
+			if (w->state == STATE_BOOTING) {
+				printf("worker %d booted successfully in %5.2f seconds\n", w->cambri_port, time - w->timestamp);
+			}
+
+			w->state = STATE_IDLE;
+			w->timestamp = time;
 			w->port = client.sin_port;
 			w->socket_fd = newfd;
-			w->state = STATE_IDLE;
-			w->timestamp = timestamp();
 
 			char s[INET_ADDRSTRLEN];
 			inet_ntop(AF_INET, &w->addr, s, sizeof(s));
@@ -213,10 +254,12 @@ static void server_receive(int s) {
 		close(s);
 		FD_CLR(s, &server.fds);
 		if (w) {
-			printf("worker %d hung up\n", w->cambri_port);
+			if (w->state != STATE_HALTING) {
+				printf("worker %d hung up unexpectedly\n", w->cambri_port);
+				w->state = STATE_ERROR;
+			}
 			w->socket_fd = -1;
 			w->port = 0;
-			w->state = STATE_HALTING;
 		}
 		return;
 	}
@@ -230,6 +273,8 @@ static void server_receive(int s) {
 enum { STDIN = 0 };
 
 void server_run(void) {
+
+	cambri_init();
 
 	int listener = socket(AF_INET, SOCK_STREAM, 0);
 	if (listener < 0) error(1, 0, "socket");
@@ -276,13 +321,19 @@ void server_run(void) {
 			if (w->state == STATE_HALTING
 			&& time - w->timestamp > TIME_HALTING) {
 				w->state = STATE_OFF;
-				// TODO: cambri power shutdown
+				w->timestamp = timestamp();
+				w->socket_fd = -1;
+				w->port = 0;
 
+				// cambri power shutdown
+				cambri_write("mode o %d", w->cambri_port);
 
 			}
 		}
 	}
 
 	close(listener);
+
+	cambri_kill();
 }
 

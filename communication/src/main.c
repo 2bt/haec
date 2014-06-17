@@ -5,8 +5,6 @@
 #include <racr/racr.h>
 
 #include "server.h"
-#include "cambri.h"
-
 
 
 Scheme_Object* eval_script(Scheme_Env* env, const char* filename) {
@@ -29,11 +27,7 @@ int main(int argc, char** argv) {
 	RACR_INIT(env, "bytecode", NULL);
 	eval_script(env, "scheme.scm");
 
-	//cambri_init();
-
 	server_run();
-
-	cambri_kill();
 
 	return 0;
 }
