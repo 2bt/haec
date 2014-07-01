@@ -13,7 +13,7 @@ LF = -pthread
 all: server worker
 
 
-SERVERSRC = src/main.c src/server.c src/cambri.c
+SERVERSRC = src/main.c src/server.c src/cambri.c src/event.c src/worker.c
 SERVEROBJ = $(SERVERSRC:src/%.c=obj/%.o)
 
 server: Makefile $(SERVEROBJ)
@@ -27,12 +27,12 @@ obj/%.o: src/%.c Makefile
 
 
 
-worker: Makefile obj/worker.o
-	gcc $(LF) obj/worker.o -o $@
+worker: Makefile obj/worker_main.o
+	gcc $(LF) obj/worker_main.o -o $@
 
-obj/worker.o: Makefile src/worker.c
+obj/worker_main.o: Makefile src/worker_main.c
 	@mkdir -p obj
-	gcc $(CF) src/worker.c -c -o $@
+	gcc $(CF) src/worker_main.c -c -o $@
 
 
 
