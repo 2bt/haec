@@ -63,15 +63,17 @@ void print_table(void* table) {
 
 FILE* pages_file;
 
-pthread_mutex_t	pages_mutex;
-pthread_mutex_t	tables_mutex;
-//pthread_cond_t	tables_cond;
+pthread_mutex_t pages_mutex;
+pthread_mutex_t tables_mutex;
+//pthread_cond_t tables_cond;
 
 
 enum { BUFFER_MAX = 1 << 20 };
 char buffer[BUFFER_MAX];
 int buffer_pos = BUFFER_MAX;
 int buffer_size = BUFFER_MAX;
+int chars_read = 0;
+int max_chars_read = 0;
 
 int next_char(void) {
 	if (buffer_pos == buffer_size) {
@@ -80,12 +82,12 @@ int next_char(void) {
 		buffer_pos = 0;
 		if (buffer_size == 0) return EOF;
 	}
+	chars_read++;
 	return buffer[buffer_pos++];
 }
 
 
 char* next_page(void) {
-
 	pthread_mutex_lock(&pages_mutex);
 
 	int c = next_char();
@@ -100,6 +102,10 @@ char* next_page(void) {
 	for (;;) {
 		if (c == '\0' || c == EOF) {
 			page[i] = '\0';
+			if (max_chars_read > 0 && chars_read > max_chars_read) {
+				free(page);
+				page = NULL;
+			}
 			pthread_mutex_unlock(&pages_mutex);
 			return page;
 		}
@@ -129,6 +135,7 @@ void push_table(void* table) {
 //	pthread_cond_signal(&tables_cond);
 	pthread_mutex_unlock(&tables_mutex);
 }
+
 
 void* pop_table(void) {
 	if (!tables) return NULL;
@@ -198,8 +205,8 @@ void* worker_map(void* arg) {
 	return NULL;
 }
 
-void multi_thread_map(void) {
 
+void multi_thread_map(void) {
 	pthread_mutex_init(&pages_mutex, NULL);
 	pthread_mutex_init(&tables_mutex, NULL);
 
@@ -221,9 +228,7 @@ void multi_thread_map(void) {
 }
 
 
-
 void* multi_thread_map_reduce(void) {
-
 	pthread_mutex_init(&pages_mutex, NULL);
 	pthread_mutex_init(&tables_mutex, NULL);
 //	pthread_cond_init(&tables_cond, NULL);
@@ -242,7 +247,6 @@ void* multi_thread_map_reduce(void) {
 //		pthread_mutex_unlock(&tables_mutex);
 		void* table_b;
 		while ((table_b = pop_table())) {
-//			printf("%p\n", table_b);
 			if (!table) table = table_b;
 			else {
 				table = reduce(table, table_b);
@@ -267,17 +271,16 @@ void* multi_thread_map_reduce(void) {
 }
 
 
-
-
 void usage(int argc, char** argv) {
-	printf("usage: %s [ m | mr ] worker-count filename\n", argv[0]);
+	printf("usage: %s (m | mr) worker-count filename [max-input-size]\n", argv[0]);
 	exit(0);
 }
 
 
 int main(int argc, char** argv) {
+	if (argc != 4 && argc != 5) usage(argc, argv);
 
-	if (argc != 4) usage(argc, argv);
+	if (argc == 5) max_chars_read = atoi(argv[4]);
 
 	pages_file = fopen64(argv[3], "r");
 	if (!pages_file) {
@@ -332,6 +335,7 @@ int main(int argc, char** argv) {
 	long mseconds = (t2.tv_nsec - t1.tv_nsec) / 1000000 + (t2.tv_sec - t1.tv_sec) * 1000;
 	printf("%ld.%03ld\n", mseconds / 1000, mseconds % 1000);
 
+	printf("%d\n", chars_read);
 	return 0;
 }
 
