@@ -263,7 +263,7 @@ class Win(wx.Frame):
 
 		hbox = wx.BoxSizer(wx.HORIZONTAL)
 		hbox.Add(wx.StaticText(panel, label="Total time:"))
-		self.total_time_tc = wx.TextCtrl(panel, style=wx.TE_PROCESS_ENTER)
+		self.total_time_tc = wx.TextCtrl(panel, style=wx.TE_PROCESS_ENTER, size=(60, -1))
 		self.total_time_tc.Bind(wx.EVT_TEXT_ENTER, self.OnTotalTimeTextEnter)
 		hbox.Add(self.total_time_tc, flag=wx.LEFT, border=10)
 		hbox.Add((-1, -1), proportion=1)
