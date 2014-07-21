@@ -6,6 +6,7 @@ double timestamp(void);
 
 enum {
 	EVENT_WORKER_ONLINE,
+	EVENT_WORKER_OFFLINE,
 	EVENT_WORKER_OFF,
 	EVENT_WORK_REQUEST,
 	EVENT_WORK_DONE,
@@ -25,5 +26,5 @@ struct Event {
 };
 
 
-Event* queue_append(void);
+Event* queue_append(int type);
 Event* queue_pop(void);

@@ -14,15 +14,13 @@ enum {
 	WORKER_WORKING,
 	WORKER_HALTING,
 	WORKER_ERROR,
-
-
-	WORKER_COUNT = 3
 };
 
 
 typedef struct {
-	int cambri_port;
 	struct in_addr addr;
+	int cambri_port;
+	int switch_id;
 
 	unsigned short port;
 	int socket_fd;
@@ -44,9 +42,17 @@ typedef struct {
 } Worker;
 
 
-void Worker_initialize(void);
-Worker* Worker_find_by_address(struct in_addr a, unsigned short p);
-Worker* Worker_find_by_socket(int s);
-Worker* Worker_find_by_cambri_port(int i);
-const char* Worker_get_state_string(const Worker* w);
+typedef struct {
+	int id;
+	int cambri_port;
+} Switch;
+
+
+void worker_init(void);
+void worker_kill(void);
+Worker* worker_next(Worker* w);
+Worker* worker_find_by_address(struct in_addr a, unsigned short p);
+Worker* worker_find_by_socket(int s);
+Worker* worker_find_by_cambri_port(int p);
+const char* worker_state_string(const Worker* w);
 

@@ -15,11 +15,13 @@ typedef struct {
 	Event* first;
 	Event* last;
 } Queue;
-Queue queue = { NULL, NULL };
+
+static Queue queue = { NULL, NULL };
 
 
-Event* queue_append(void) {
+Event* queue_append(int type) {
 	Event*e = calloc(1, sizeof(Event));
+	e->type = type;
 	if (queue.last) {
 		queue.last->next = e;
 		queue.last = e;

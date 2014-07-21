@@ -28,22 +28,21 @@ static void server_command() {
 	}
 
 	else if (strcmp(msg, "status") == 0) {
-		printf(" cambri port | address:port          | socket | state   | since \n");
-		printf("-------------+-----------------------+--------+---------+-------\n");
-		int i;
-		for (i = 0; i < WORKER_COUNT; i++) {
-			double time = timestamp();
-			Worker* w = Worker_find_by_cambri_port(i + 1);
+		printf(" cambri | switch | address:port          | socket | state   | since \n");
+		printf("--------+--------+-----------------------+--------+---------+-------\n");
+		double time = timestamp();
+		Worker* w;
+		for (w = worker_next(NULL); w; w = worker_next(w)) {
 			char s[INET_ADDRSTRLEN];
 			inet_ntop(AF_INET, &w->addr, s, sizeof(s));
-			printf("%12d | %-15s:%05d | %6d | %-7s | %5.2f\n",
-				w->cambri_port, s, w->port, w->socket_fd,
-				Worker_get_state_string(w), time - w->timestamp);
+			printf("%7d | %6d | %-15s:%05d | %6d | %-7s | %5.2f\n",
+				w->cambri_port, w->switch_id, s, w->port, w->socket_fd,
+				worker_state_string(w), time - w->timestamp);
 		}
 	}
 
 	else if (sscanf(msg, "boot %d", &cambri_port) == 1) {
-		Worker* w = Worker_find_by_cambri_port(cambri_port);
+		Worker* w = worker_find_by_cambri_port(cambri_port);
 		if (!w) {
 			printf("error: %s\n", msg);
 			return;
@@ -60,7 +59,7 @@ static void server_command() {
 	}
 
 	else if (sscanf(msg, "halt %d", &cambri_port) == 1) {
-		Worker* w = Worker_find_by_cambri_port(cambri_port);
+		Worker* w = worker_find_by_cambri_port(cambri_port);
 		if (!w) {
 			printf("error: %s\n", msg);
 			return;
@@ -83,7 +82,7 @@ static void server_command() {
 			return;
 		}
 		s++;
-		Worker* w = Worker_find_by_cambri_port(cambri_port);
+		Worker* w = worker_find_by_cambri_port(cambri_port);
 		if (!w) {
 			printf("error: %s\n", msg);
 			return;
@@ -99,63 +98,51 @@ static void server_new_connection(int s) {
 	int newfd = accept(s, (struct sockaddr*) &client, &size);
 	if (newfd < 0) perror("accept");
 	else {
-
-		// check for worker ip address
-		Worker* w = Worker_find_by_address(client.sin_addr, 0);
+		Worker* w = worker_find_by_address(client.sin_addr, 0);
 		if (!w) {
 			char s[INET_ADDRSTRLEN];
 			inet_ntop(AF_INET, &client.sin_addr, s, sizeof(s));
 			printf("unexpected connection from %s:%d\n", s, client.sin_port);
 			close(newfd);
+			return;
 		}
-		else {
-			FD_SET(newfd, &server.fds);
-			if (newfd > server.fdmax) server.fdmax = newfd;
 
-			double time = timestamp();
-			if (w->state == WORKER_BOOTING) {
-				printf("worker %d booted successfully in %5.2f seconds\n", w->cambri_port, time - w->timestamp);
-			}
+		FD_SET(newfd, &server.fds);
+		if (newfd > server.fdmax) server.fdmax = newfd;
 
-			Event* e = queue_append();
+		w->port = client.sin_port;
+		w->socket_fd = newfd;
 
+		Event* e = queue_append(EVENT_WORKER_ONLINE);
+		e->worker = w;
 
-			w->state = WORKER_IDLE;
-			w->timestamp = time;
-			w->port = client.sin_port;
-			w->socket_fd = newfd;
-
-			char s[INET_ADDRSTRLEN];
-			inet_ntop(AF_INET, &w->addr, s, sizeof(s));
-			printf("worker %d connected from %s:%d on socket %d\n", w->cambri_port, s, w->port, w->socket_fd);
-		}
 	}
 }
 
 
 static void server_receive(int s) {
-	Worker* w = Worker_find_by_socket(s);
-	if (!w) printf("unknown receiver socker: %d\n", s);
-
 	char msg[1024];
 	size_t len = recv(s, msg, sizeof(msg), 0);
-	if (len <= 0) {
-		close(s);
-		FD_CLR(s, &server.fds);
-		if (w) {
-			if (w->state != WORKER_HALTING) {
-				printf("worker %d hung up unexpectedly\n", w->cambri_port);
-				w->state = WORKER_ERROR;
-			}
-			w->socket_fd = -1;
-			w->port = 0;
-		}
+
+	Worker* w = worker_find_by_socket(s);
+	if (!w) {
+		printf("unknown receiver socker: %d\n", s);
 		return;
 	}
 
-	if (w) {
-		printf("received %d bytes from worker %d: %.*s\n", (int) len, w->cambri_port, (int) len, msg);
+	if (len <= 0) {
+		close(s);
+		FD_CLR(s, &server.fds);
+
+		w->socket_fd = -1;
+		w->port = 0;
+
+		Event* e = queue_append(EVENT_WORKER_OFFLINE);
+		e->worker = w;
+		return;
 	}
+
+	printf("received %d bytes from worker %d: %.*s\n", (int) len, w->cambri_port, (int) len, msg);
 }
 
 
@@ -164,7 +151,31 @@ static void server_receive(int s) {
 void server_event_loop(void) {
 	Event* e;
 	while ((e = queue_pop())) {
+		printf("Event %d\n", e->type);
+
 		switch (e->type) {
+		case EVENT_WORKER_ONLINE: {
+				double time = timestamp();
+				Worker* w = e->worker;
+				if (w->state == WORKER_BOOTING) {
+					printf("worker %d booted successfully in %5.2f seconds\n", w->cambri_port, time - w->timestamp);
+				}
+				w->state = WORKER_IDLE;
+				w->timestamp = time;
+
+				char s[INET_ADDRSTRLEN];
+				inet_ntop(AF_INET, &w->addr, s, sizeof(s));
+				printf("worker %d connected from %s:%d on socket %d\n", w->cambri_port, s, w->port, w->socket_fd);
+			}
+			break;
+
+		case EVENT_WORKER_OFFLINE:
+			if (e->worker->state != WORKER_HALTING) {
+				printf("worker %d hung up unexpectedly\n", e->worker->cambri_port);
+				e->worker->state = WORKER_ERROR;
+				e->worker->timestamp = timestamp();
+			}
+			break;
 
 		case EVENT_WORKER_OFF:
 			e->worker->state = WORKER_OFF;
@@ -178,7 +189,6 @@ void server_event_loop(void) {
 
 
 		default:
-			printf("Event %d\n", e->type);
 			break;
 		}
 		free(e);
@@ -191,7 +201,7 @@ void server_event_loop(void) {
 void server_run(void) {
 
 	//cambri_init();
-	Worker_initialize();
+	worker_init();
 
 
 
@@ -233,14 +243,11 @@ void server_run(void) {
 		}
 
 		double time = timestamp();
-		for (i = 0; i < WORKER_COUNT; i++) {
-			Worker* w = Worker_find_by_cambri_port(i + 1);
-
+		Worker* w;
+		for (w = worker_next(NULL); w; w = worker_next(w)) {
 			if (w->state == WORKER_HALTING
 			&& time - w->timestamp > TIME_HALTING) {
-
-				Event* e = queue_append();
-				e->type = EVENT_WORKER_OFF;
+				Event* e = queue_append(EVENT_WORKER_OFF);
 				e->worker = w;
 			}
 		}
@@ -252,5 +259,6 @@ void server_run(void) {
 	close(listener);
 
 	cambri_kill();
+	worker_kill();
 }
 
