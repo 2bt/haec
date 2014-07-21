@@ -1,0 +1,9 @@
+#       ip-address  cambri-port  switch-id
+worker  127.0.0.1   1001         1
+worker  127.0.0.1   1002         1
+worker  127.0.0.1   1003         1
+
+
+##      switch-id  cambri-port
+#switch 1          1005
+#switch 2          1006
