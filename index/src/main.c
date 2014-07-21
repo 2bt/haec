@@ -335,7 +335,6 @@ int main(int argc, char** argv) {
 	long mseconds = (t2.tv_nsec - t1.tv_nsec) / 1000000 + (t2.tv_sec - t1.tv_sec) * 1000;
 	printf("%ld.%03ld\n", mseconds / 1000, mseconds % 1000);
 
-	printf("%d\n", chars_read);
 	return 0;
 }
 
