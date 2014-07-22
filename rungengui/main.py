@@ -60,15 +60,13 @@ class Chart(wx.Panel):
 		self.y_range_tc = wx.TextCtrl(parent, style=wx.TE_PROCESS_ENTER, size=(60, -1))
 		self.y_range_tc.Bind(wx.EVT_TEXT_ENTER, self.OnYRangeTextEnter)
 
+		self.data = [(0, 0.5), (1, 0.5)]
+
 		if type != "freq":
-			self.data = [(0, 0), (1, 1)]
 			self.dispersion_tc = wx.TextCtrl(parent, style=wx.TE_PROCESS_ENTER, size=(35, -1))
 			self.dispersion_tc.SetValue("0")
 		else:
-			self.data = [(0, 0.5), (1, 0.5)]
 			self.dispersion_tc = None
-
-		self.set_x_range(60 * 60)
 
 		self.type = type
 		if type == "freq":
@@ -81,10 +79,11 @@ class Chart(wx.Panel):
 			self.y_inc = 32
 		else:
 			self.color = "#0000ff"
-			self.y_range = 60 * 60
-			self.y_inc = 60 * 10
+			self.y_range = 30 * 60
+			self.y_inc = 60 * 5
 
 		self.set_y_range(self.y_range)
+		self.set_x_range(60 * 60)
 
 	def set_y_range(self, v):
 		self.y_range = v
