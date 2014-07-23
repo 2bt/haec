@@ -50,8 +50,8 @@ void worker_init(void) {
 		char* endl = strchr(line, '\n');
 		if (*endl) *endl = '\0';
 
-		if (sscanf(line, "worker %s %d %d",
-					addr, &id, &switch_id) == 3) {
+		if (sscanf(line, "worker %d %s %d",
+					&id, addr, &switch_id) == 3) {
 			worker_count++;
 			workers = realloc(workers, sizeof(Worker) * worker_count);
 			Worker* w = &workers[worker_count - 1];
@@ -69,7 +69,9 @@ void worker_init(void) {
 
 			continue;
 		}
-		// TODO: switch
+		if (sscanf(line, "switch %d", &id) == 1) {
+			racr_call_str("add-switch-to-ast", "idi", id, time);
+		}
 
 		printf("error reading config: %s\n", line);
 	}

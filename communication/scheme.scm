@@ -31,9 +31,12 @@
 (define add-worker-to-ast
  (lambda (id time switch_id)
   (rewrite-add workers
-   (create-ast spec 'Worker (list id 'OFF time (create-ast-list (list)))))
-  (display-ast)))
+   (create-ast spec 'Worker (list id 'OFF time (create-ast-list (list)))))))
 
+(define add-switch-to-ast
+ (lambda (id time)
+  (rewrite-add switches
+   (create-ast spec 'Switch (list id 'OFF time)))))
 
 
 
