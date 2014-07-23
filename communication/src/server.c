@@ -5,6 +5,8 @@
 #include <arpa/inet.h>
 #include <unistd.h>
 
+#include <racr/racr.h>
+
 #include "server.h"
 #include "worker.h"
 #include "event.h"
@@ -20,52 +22,59 @@ static void server_command() {
 	fgets(msg, sizeof(msg), stdin);
 	msg[strlen(msg) - 1] = '\0';
 
-	int cambri_port;
+	int id, size, time;
+	Worker* w;
 
 	if (strcmp(msg, "exit") == 0) {
 		server.running = 0;
 		printf("exiting...\n");
 	}
-
 	else if (strcmp(msg, "status") == 0) {
-		printf(" cambri | switch | address:port          | socket | state   | since \n");
-		printf("--------+--------+-----------------------+--------+---------+-------\n");
+		printf(" id   | switch | address:port          | socket | state   | since \n");
+		printf("------+--------+-----------------------+--------+---------+-------\n");
 		double time = timestamp();
-		Worker* w;
 		for (w = worker_next(NULL); w; w = worker_next(w)) {
 			char s[INET_ADDRSTRLEN];
 			inet_ntop(AF_INET, &w->addr, s, sizeof(s));
-			printf("%7d | %6d | %-15s:%05d | %6d | %-7s | %5.2f\n",
-				w->cambri_port, w->switch_id, s, w->port, w->socket_fd,
+			printf(" %-4d | %-6d | %-15s:%05d | %6d | %-7s | %5.2f\n",
+				w->id, w->switch_id, s, w->port, w->socket_fd,
 				worker_state_string(w), time - w->timestamp);
 		}
 	}
+	else if (sscanf(msg, "work %d %d", &size, &time) == 2) {
+		Event* e = queue_append(EVENT_WORK_REQUEST);
+		e->load_size = size;
+		e->time_due = time;
 
-	else if (sscanf(msg, "boot %d", &cambri_port) == 1) {
-		Worker* w = worker_find_by_cambri_port(cambri_port);
+	}
+
+
+	// testing...
+	else if (sscanf(msg, "boot %d", &id) == 1) {
+		w = worker_find_by_id(id);
 		if (!w) {
 			printf("error: %s\n", msg);
 			return;
 		}
 		if (w->state != WORKER_OFF) {
-			printf("error: worker %d is not OFF\n", w->cambri_port);
+			printf("error: worker %d is not OFF\n", w->id);
 			return;
 		}
 		w->state = WORKER_BOOTING;
 		w->timestamp = timestamp();
-		cambri_write("set_profiles %d 4", w->cambri_port);
-		cambri_write("mode c %d 4", w->cambri_port);
+		cambri_write("set_profiles %d 4", w->id);
+		cambri_write("mode c %d 4", w->id);
 
 	}
 
-	else if (sscanf(msg, "halt %d", &cambri_port) == 1) {
-		Worker* w = worker_find_by_cambri_port(cambri_port);
+	else if (sscanf(msg, "halt %d", &id) == 1) {
+		w = worker_find_by_id(id);
 		if (!w) {
 			printf("error: %s\n", msg);
 			return;
 		}
 		if (w->state != WORKER_IDLE) {
-			printf("error: worker %d is not IDLE\n", w->cambri_port);
+			printf("error: worker %d is not IDLE\n", w->id);
 			return;
 		}
 		send(w->socket_fd, "halt", 5, 0);
@@ -75,14 +84,14 @@ static void server_command() {
 
 	else {
 		// TESTING
-		int cambri_port = atoi(msg);
+		int id = atoi(msg);
 		char* s = strchr(msg, ' ');
 		if (!s) {
 			printf("error: %s\n", msg);
 			return;
 		}
 		s++;
-		Worker* w = worker_find_by_cambri_port(cambri_port);
+		w = worker_find_by_id(id);
 		if (!w) {
 			printf("error: %s\n", msg);
 			return;
@@ -142,67 +151,69 @@ static void server_receive(int s) {
 		return;
 	}
 
-	printf("received %d bytes from worker %d: %.*s\n", (int) len, w->cambri_port, (int) len, msg);
+	printf("received %d bytes from worker %d: %.*s\n", (int) len, w->id, (int) len, msg);
 }
 
 
-
-
-void server_event_loop(void) {
+void server_process_events(void) {
 	Event* e;
+	double time = timestamp();
 	while ((e = queue_pop())) {
-		printf("Event %d\n", e->type);
-
 		switch (e->type) {
 		case EVENT_WORKER_ONLINE: {
-				double time = timestamp();
 				Worker* w = e->worker;
 				if (w->state == WORKER_BOOTING) {
-					printf("worker %d booted successfully in %5.2f seconds\n", w->cambri_port, time - w->timestamp);
+					printf("worker %d booted successfully in %5.2f seconds\n", w->id, time - w->timestamp);
 				}
 				w->state = WORKER_IDLE;
 				w->timestamp = time;
+				racr_call_str("event-worker-online", "id", w->id, time);
 
 				char s[INET_ADDRSTRLEN];
 				inet_ntop(AF_INET, &w->addr, s, sizeof(s));
-				printf("worker %d connected from %s:%d on socket %d\n", w->cambri_port, s, w->port, w->socket_fd);
+				printf("worker %d connected from %s:%d on socket %d\n", w->id, s, w->port, w->socket_fd);
 			}
 			break;
 
 		case EVENT_WORKER_OFFLINE:
 			if (e->worker->state != WORKER_HALTING) {
-				printf("worker %d hung up unexpectedly\n", e->worker->cambri_port);
+				printf("worker %d hung up unexpectedly\n", e->worker->id);
 				e->worker->state = WORKER_ERROR;
-				e->worker->timestamp = timestamp();
+				e->worker->timestamp = time;
 			}
 			break;
 
-		case EVENT_WORKER_OFF:
-			e->worker->state = WORKER_OFF;
-			e->worker->timestamp = timestamp();
-			e->worker->socket_fd = -1;
-			e->worker->port = 0;
+		case EVENT_WORKER_OFF: {
+				Worker* w = e->worker;
+				w->state = WORKER_OFF;
+				w->timestamp = time;
+				w->socket_fd = -1;
+				w->port = 0;
 
-			// cambri power shutdown
-			cambri_write("mode o %d", e->worker->cambri_port);
+				// cambri power shutdown
+				cambri_write("mode o %d", w->id);
+
+				racr_call_str("event-worker-off", "id", w->id, time);
+			}
 			break;
 
+		case EVENT_WORK_REQUEST:
+			racr_call_str("event-work-request", "ii", e->load_size, e->time_due);
+			break;
 
 		default:
+			printf("unknown event: %d\n", e->type);
 			break;
 		}
 		free(e);
 	}
-
 }
-
 
 
 void server_run(void) {
 
 	//cambri_init();
 	worker_init();
-
 
 
 	int listener = socket(AF_INET, SOCK_STREAM, 0);
@@ -253,7 +264,7 @@ void server_run(void) {
 		}
 
 
-		server_event_loop();
+		server_process_events();
 	}
 
 	close(listener);

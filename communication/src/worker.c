@@ -3,6 +3,8 @@
 #include <error.h>
 #include <string.h>
 
+#include <racr/racr.h>
+
 #include "event.h"
 #include "worker.h"
 
@@ -38,7 +40,7 @@ void worker_init(void) {
 	double time = timestamp();
 	char line[256];
 	char addr[256];
-	int cambri_port;
+	int id;
 	int switch_id;
 
 	while (fgets(line, sizeof(line), f)) {
@@ -49,19 +51,22 @@ void worker_init(void) {
 		if (*endl) *endl = '\0';
 
 		if (sscanf(line, "worker %s %d %d",
-					addr, &cambri_port, &switch_id) == 3) {
+					addr, &id, &switch_id) == 3) {
 			worker_count++;
 			workers = realloc(workers, sizeof(Worker) * worker_count);
 			Worker* w = &workers[worker_count - 1];
 
 			inet_pton(AF_INET, addr, &w->addr);
-			w->cambri_port = cambri_port;
+			w->id = id;
 			w->switch_id = switch_id;
 
 			w->port = 0;
 			w->socket_fd = -1;
 			w->state = WORKER_OFF;
 			w->timestamp = time;
+
+			racr_call_str("add-worker-to-ast", "idi", id, time, switch_id);
+
 			continue;
 		}
 		// TODO: switch
@@ -100,11 +105,11 @@ Worker* worker_find_by_socket(int s) {
 }
 
 
-Worker* worker_find_by_cambri_port(int p) {
+Worker* worker_find_by_id(int id) {
 	int i;
 	for (i = 0; i < worker_count; i++) {
 		Worker* w = &workers[i];
-		if (w->cambri_port == p) return w;
+		if (w->id == id) return w;
 	}
 	return NULL;
 }

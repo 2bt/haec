@@ -9,7 +9,8 @@ enum {
 	EVENT_WORKER_OFFLINE,
 	EVENT_WORKER_OFF,
 	EVENT_WORK_REQUEST,
-	EVENT_WORK_DONE,
+	EVENT_WORK_ASSIGN,
+	EVENT_WORK_COMPLETE,
 };
 
 typedef struct Event Event;
@@ -19,8 +20,8 @@ struct Event {
 
 	// validity of fields depends on type
 	Worker* worker;
-	size_t	load_size;
-	double	time_due;
+	int		load_size;
+	int		time_due;
 	int		work_id;
 
 };

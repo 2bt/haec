@@ -8,7 +8,7 @@
 #include "event.h"
 
 
-Scheme_Object* eval_script(Scheme_Env* env, const char* filename) {
+static Scheme_Object* eval_script(Scheme_Env* env, const char* filename) {
 	FILE* f = fopen(filename, "r");
 	if (!f) error(1, 0, "script");
 	fseek(f, 0, SEEK_END);
@@ -21,7 +21,7 @@ Scheme_Object* eval_script(Scheme_Env* env, const char* filename) {
 }
 
 
-Scheme_Object* prim_timestamp(int argc, Scheme_Object** argv) {
+static Scheme_Object* prim_timestamp(int argc, Scheme_Object** argv) {
 	return scheme_make_double(timestamp());
 }
 

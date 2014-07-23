@@ -19,7 +19,7 @@ enum {
 
 typedef struct {
 	struct in_addr addr;
-	int cambri_port;
+	int id;
 	int switch_id;
 
 	unsigned short port;
@@ -44,7 +44,6 @@ typedef struct {
 
 typedef struct {
 	int id;
-	int cambri_port;
 } Switch;
 
 
@@ -53,6 +52,6 @@ void worker_kill(void);
 Worker* worker_next(Worker* w);
 Worker* worker_find_by_address(struct in_addr a, unsigned short p);
 Worker* worker_find_by_socket(int s);
-Worker* worker_find_by_cambri_port(int p);
+Worker* worker_find_by_id(int id);
 const char* worker_state_string(const Worker* w);
 
