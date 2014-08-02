@@ -4,6 +4,6 @@ worker  1002  127.0.0.1   1005
 worker  1003  127.0.0.1   1005
 
 
-##       id
-#switch  1005
-#switch  1006
+#       id
+switch  1005
+switch  1006

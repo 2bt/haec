@@ -66,14 +66,13 @@ void worker_init(void) {
 			w->timestamp = time;
 
 			racr_call_str("add-worker-to-ast", "idi", id, time, switch_id);
-
-			continue;
 		}
-		if (sscanf(line, "switch %d", &id) == 1) {
-			racr_call_str("add-switch-to-ast", "idi", id, time);
+		else if (sscanf(line, "switch %d", &id) == 1) {
+			racr_call_str("add-switch-to-ast", "id", id, time);
 		}
-
-		printf("error reading config: %s\n", line);
+		else {
+			printf("error reading config: %s\n", line);
+		}
 	}
 	fclose(f);
 

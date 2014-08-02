@@ -8,7 +8,10 @@
 #include "event.h"
 
 
-static Scheme_Object* eval_script(Scheme_Env* env, const char* filename) {
+static Scheme_Env* global_env;
+
+
+static Scheme_Object* eval_script(const char* filename) {
 	FILE* f = fopen(filename, "r");
 	if (!f) error(1, 0, "script");
 	fseek(f, 0, SEEK_END);
@@ -17,7 +20,7 @@ static Scheme_Object* eval_script(Scheme_Env* env, const char* filename) {
 	char source[size + 1];
 	fread(source, 1, size, f);
 	source[size] = '\0';
-	return scheme_eval_string_all(source, env, 1);
+	return scheme_eval_string_all(source, global_env, 1);
 }
 
 
@@ -26,16 +29,61 @@ static Scheme_Object* prim_timestamp(int argc, Scheme_Object** argv) {
 }
 
 
+static Scheme_Object* prim_add_event(int argc, Scheme_Object** argv) {
+	if (!SCHEME_SYMBOLP(argv[0])) error(1, 0, "prim_add_event");
+	const char* sym = SCHEME_SYM_VAL(argv[0]);
+
+	if (strcmp(sym, "event-work-assign") == 0) {
+		Event* e = queue_append(EVENT_WORK_ASSIGN);
+		e->worker = worker_find_by_id(SCHEME_INT_VAL(argv[1]));
+		e->work_id = SCHEME_INT_VAL(argv[2]);
+		e->threads = SCHEME_INT_VAL(argv[3]);
+		e->load_size = SCHEME_INT_VAL(argv[4]);
+	}
+
+	return scheme_true;
+}
+
+
+int eval_string(const char* str) {
+
+	Scheme_Config* config = scheme_current_config();
+	Scheme_Object* curout = scheme_get_param(config, MZCONFIG_OUTPUT_PORT);
+
+	mz_jmp_buf fresh;
+	mz_jmp_buf* volatile save = scheme_current_thread->error_buf;
+	scheme_current_thread->error_buf = &fresh;
+	if (scheme_setjmp(scheme_error_buf)) {
+		scheme_current_thread->error_buf = save;
+		return -1;
+	}
+	else {
+		Scheme_Object* v = scheme_eval_string_all(str, global_env, 1);
+		scheme_display(v, curout);
+		scheme_display(scheme_make_char('\n'), curout);
+		scheme_current_thread->error_buf = save;
+	}
+
+	return 0;
+}
+
+
 int main(int argc, char** argv) {
 
 	RACR_INIT(env, "bytecode", NULL);
 
+	global_env = env;
 	scheme_add_global(
 		"timestamp",
 		scheme_make_prim_w_arity(prim_timestamp, "timestamp", 0, 0),
 		env);
 
-	eval_script(env, "scheme.scm");
+	scheme_add_global(
+		"add-event",
+		scheme_make_prim_w_arity(prim_add_event, "add-event", 1, 5),
+		env);
+
+	eval_script("scheme.scm");
 
 	server_run();
 

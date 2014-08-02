@@ -14,6 +14,17 @@
 
 
 
+void eval_string(const char* str);
+
+
+ssize_t sendf(int s, const char* format, ...) {
+	char line[256];
+	va_list args;
+	va_start(args, format);
+	vsnprintf(line, sizeof(line), format, args);
+	va_end(args);
+	return send(s, line, strlen(line) + 1, 0);
+}
 
 
 static void server_command() {
@@ -22,7 +33,7 @@ static void server_command() {
 	fgets(msg, sizeof(msg), stdin);
 	msg[strlen(msg) - 1] = '\0';
 
-	int id, size, time;
+	int id, size, time, threads, work_id;
 	Worker* w;
 
 	if (strcmp(msg, "exit") == 0) {
@@ -43,13 +54,15 @@ static void server_command() {
 	}
 	else if (sscanf(msg, "work %d %d", &size, &time) == 2) {
 		Event* e = queue_append(EVENT_WORK_REQUEST);
+		e->work_id = server.work_counter++;
 		e->load_size = size;
 		e->time_due = time;
-
 	}
 
 
 	// testing...
+	else if (msg[0] == '(') eval_string(msg);
+
 	else if (sscanf(msg, "boot %d", &id) == 1) {
 		w = worker_find_by_id(id);
 		if (!w) {
@@ -77,9 +90,23 @@ static void server_command() {
 			printf("error: worker %d is not IDLE\n", w->id);
 			return;
 		}
-		send(w->socket_fd, "halt", 5, 0);
+		sendf(w->socket_fd, "halt");
 		w->state = WORKER_HALTING;
 		w->timestamp = timestamp();
+	}
+
+	else if (sscanf(msg, "work-assign %d %d %d %d", &id, &work_id, &threads, &size) == 4) {
+		w = worker_find_by_id(id);
+		if (!w) {
+			printf("error: %s\n", msg);
+			return;
+		}
+		Event* e = queue_append(EVENT_WORK_ASSIGN);
+		e->worker = w;
+		e->work_id = work_id;
+		e->load_size = size;
+		e->threads = threads;
+
 	}
 
 	else {
@@ -96,7 +123,7 @@ static void server_command() {
 			printf("error: %s\n", msg);
 			return;
 		}
-		send(w->socket_fd, s, strlen(s) + 1, 0);
+		sendf(w->socket_fd, s);
 	}
 }
 
@@ -131,7 +158,7 @@ static void server_new_connection(int s) {
 
 static void server_receive(int s) {
 	char msg[1024];
-	size_t len = recv(s, msg, sizeof(msg), 0);
+	ssize_t len = recv(s, msg, sizeof(msg), 0);
 
 	Worker* w = worker_find_by_socket(s);
 	if (!w) {
@@ -151,7 +178,30 @@ static void server_receive(int s) {
 		return;
 	}
 
-	printf("received %d bytes from worker %d: %.*s\n", (int) len, w->id, (int) len, msg);
+	//printf("received %d bytes from worker %d: %.*s\n", (int) len, w->id, (int) len, msg);
+
+	char* p = strchr(msg, ' ');
+	if (p) *p++ = '\0';
+	int id, ret;
+
+	if (strcmp(msg, "work-complete") == 0) {
+		if (sscanf(p, "%d %d", &id, &ret) != 2) goto ERROR;
+		Event* e = queue_append(EVENT_WORK_COMPLETE);
+		e->worker = w;
+		e->work_id = id;
+	}
+	else if (strcmp(msg, "work-ack") == 0) {
+	}
+	else if (strcmp(msg, "cpu-ack") == 0) {
+	}
+	else if (strcmp(msg, "halt-ack") == 0) {
+	}
+	else if (strcmp(msg, "mem-ack") == 0) {
+	}
+	else goto ERROR;
+	return;
+ERROR:
+	error(1, 0, "server_receive");
 }
 
 
@@ -159,9 +209,9 @@ void server_process_events(void) {
 	Event* e;
 	double time = timestamp();
 	while ((e = queue_pop())) {
+		Worker* w = e->worker;
 		switch (e->type) {
 		case EVENT_WORKER_ONLINE: {
-				Worker* w = e->worker;
 				if (w->state == WORKER_BOOTING) {
 					printf("worker %d booted successfully in %5.2f seconds\n", w->id, time - w->timestamp);
 				}
@@ -176,29 +226,36 @@ void server_process_events(void) {
 			break;
 
 		case EVENT_WORKER_OFFLINE:
-			if (e->worker->state != WORKER_HALTING) {
-				printf("worker %d hung up unexpectedly\n", e->worker->id);
-				e->worker->state = WORKER_ERROR;
-				e->worker->timestamp = time;
+			if (w->state != WORKER_HALTING) {
+				printf("worker %d hung up unexpectedly\n", w->id);
+				w->state = WORKER_ERROR;
+				w->timestamp = time;
 			}
+			racr_call_str("event-worker-off", "id", w->id, time);
 			break;
 
-		case EVENT_WORKER_OFF: {
-				Worker* w = e->worker;
-				w->state = WORKER_OFF;
-				w->timestamp = time;
-				w->socket_fd = -1;
-				w->port = 0;
+		case EVENT_WORKER_OFF:
+			w->state = WORKER_OFF;
+			w->timestamp = time;
+			w->socket_fd = -1;
+			w->port = 0;
 
-				// cambri power shutdown
-				cambri_write("mode o %d", w->id);
+			// cambri power shutdown
+			cambri_write("mode o %d", w->id);
 
-				racr_call_str("event-worker-off", "id", w->id, time);
-			}
+			racr_call_str("event-worker-off", "id", w->id, time);
 			break;
 
 		case EVENT_WORK_REQUEST:
-			racr_call_str("event-work-request", "ii", e->load_size, e->time_due);
+			racr_call_str("event-work-request", "diid", time, e->work_id, e->load_size, e->time_due);
+			break;
+
+		case EVENT_WORK_ASSIGN:
+			sendf(w->socket_fd, "work %d %d %d", e->work_id, e->threads, e->load_size);
+			break;
+
+		case EVENT_WORK_COMPLETE:
+			racr_call_str("event-work-complete", "idi", w->id, time, e->work_id);
 			break;
 
 		default:
@@ -233,7 +290,7 @@ void server_run(void) {
 	FD_SET(listener, &server.fds);
 	server.fdmax = listener;
 	server.running = 1;
-
+	server.work_counter = 0;
 
 
 	printf("entering server loop.\n");

@@ -8,9 +8,11 @@ enum {
 
 
 struct {
+	int running;
+	int work_counter;
+
 	fd_set fds;
 	int fdmax;
-	int running;
 } server;
 
 
