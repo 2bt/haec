@@ -93,22 +93,43 @@
       (rewrite-terminal 'timestamp worker time))))
 
 
+;(define round-robbin
+;  (let ((pos 0))
+;    (lambda ()
+;      (let ((running-workers (list)))
+;        (ast-for-each-child
+;          (lambda (i worker)
+;            (if (eq? (ast-child 'state worker) 'RUNNING)
+;              (set! running-workers (append running-workers (list worker)))))
+;          workers)
+;        (set! pos
+;          (if (< pos (length running-workers))
+;            (+ pos 1)
+;            1))
+;        (if (= 0 (length running-workers))
+;          #f
+;          (list-ref running-workers (- pos 1)))))))
+
+
 (define round-robbin
-  (let ((pos 0))
-    (lambda ()
-      (let ((running-workers (list)))
-        (ast-for-each-child
-          (lambda (i worker)
-            (if (eq? (ast-child 'state worker) 'RUNNING)
-              (set! running-workers (append running-workers (list worker)))))
-          workers)
-        (set! pos
-          (if (< pos (length running-workers))
-            (+ pos 1)
-            1))
-        (if (= 0 (length running-workers))
-          #f
-          (list-ref running-workers (- pos 1)))))))
+  (lambda ()
+    (let
+      ((running-workers
+         (filter
+           (lambda (worker) (eq? (ast-child 'state worker) 'RUNNING))
+           (ast-children workers))))
+      (fold-left
+        (lambda (w1 w2)
+          (if
+            (<=
+              (ast-num-children (ast-child 'Queue w1))
+              (ast-num-children (ast-child 'Queue w2)))
+            w1
+            w2))
+        (car running-workers)
+        (cdr running-workers)))))
+
+
 
 
 (define assign-next-request
@@ -117,7 +138,7 @@
       (if (not (= 0 (ast-num-children queue)))
         (let ((request (ast-child 1 queue)))
           (add-event
-            'event-work-assign
+            'event-work-command
             (ast-child 'id worker)
             (ast-child 'id request)
             1
@@ -136,8 +157,7 @@
           (rewrite-add
             queue
             (create-ast spec 'Request (list work-id load-size time-due)))
-          (when worker-idle?
-            (add-event 'event-work-assign (ast-child 'id worker) work-id 1 load-size)))
+          (when worker-idle? (assign-next-request worker)))
         (display "no worker running\n")))))
 
 
