@@ -33,8 +33,8 @@ static Scheme_Object* prim_add_event(int argc, Scheme_Object** argv) {
 	if (!SCHEME_SYMBOLP(argv[0])) error(1, 0, "prim_add_event");
 	const char* sym = SCHEME_SYM_VAL(argv[0]);
 
-	if (strcmp(sym, "event-work-assign") == 0) {
-		Event* e = queue_append(EVENT_WORK_ASSIGN);
+	if (strcmp(sym, "event-work-command") == 0) {
+		Event* e = queue_append(EVENT_WORK_COMMAND);
 		e->worker = worker_find_by_id(SCHEME_INT_VAL(argv[1]));
 		e->work_id = SCHEME_INT_VAL(argv[2]);
 		e->threads = SCHEME_INT_VAL(argv[3]);

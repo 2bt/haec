@@ -95,13 +95,13 @@ static void server_command() {
 		w->timestamp = timestamp();
 	}
 
-	else if (sscanf(msg, "work-assign %d %d %d %d", &id, &work_id, &threads, &size) == 4) {
+	else if (sscanf(msg, "work-command %d %d %d %d", &id, &work_id, &threads, &size) == 4) {
 		w = worker_find_by_id(id);
 		if (!w) {
 			printf("error: %s\n", msg);
 			return;
 		}
-		Event* e = queue_append(EVENT_WORK_ASSIGN);
+		Event* e = queue_append(EVENT_WORK_COMMAND);
 		e->worker = w;
 		e->work_id = work_id;
 		e->load_size = size;
@@ -182,21 +182,35 @@ static void server_receive(int s) {
 
 	char* p = strchr(msg, ' ');
 	if (p) *p++ = '\0';
-	int id, ret;
+	int ack;
 
 	if (strcmp(msg, "work-complete") == 0) {
-		if (sscanf(p, "%d %d", &id, &ret) != 2) goto ERROR;
+		int id;
+		if (sscanf(p, "%d %d", &id, &ack) != 2) goto ERROR;
 		Event* e = queue_append(EVENT_WORK_COMPLETE);
 		e->worker = w;
 		e->work_id = id;
+		e->ack = ack;
 	}
 	else if (strcmp(msg, "work-ack") == 0) {
-	}
-	else if (strcmp(msg, "cpu-ack") == 0) {
+		if (sscanf(p, "%d", &ack) != 1) goto ERROR;
+		Event* e = queue_append(EVENT_WORK_ACK);
+		e->worker = w;
+		e->ack = ack;
 	}
 	else if (strcmp(msg, "halt-ack") == 0) {
+		if (sscanf(p, "%d", &ack) != 1) goto ERROR;
+		Event* e = queue_append(EVENT_HALT_ACK);
+		e->worker = w;
+		e->ack = ack;
 	}
 	else if (strcmp(msg, "mem-ack") == 0) {
+		if (sscanf(p, "%d", &ack) != 1) goto ERROR;
+		Event* e = queue_append(EVENT_MEM_ACK);
+		e->worker = w;
+		e->ack = ack;
+	}
+	else if (strcmp(msg, "cpu-ack") == 0) {
 	}
 	else goto ERROR;
 	return;
@@ -250,12 +264,29 @@ void server_process_events(void) {
 			racr_call_str("event-work-request", "diid", time, e->work_id, e->load_size, e->time_due);
 			break;
 
-		case EVENT_WORK_ASSIGN:
+		case EVENT_WORK_COMMAND:
 			sendf(w->socket_fd, "work %d %d %d", e->work_id, e->threads, e->load_size);
+			break;
+
+		case EVENT_WORK_ACK:
 			break;
 
 		case EVENT_WORK_COMPLETE:
 			racr_call_str("event-work-complete", "idi", w->id, time, e->work_id);
+			break;
+
+		case EVENT_MEM_COMMAND:
+			sendf(w->socket_fd, "mem");
+			break;
+
+		case EVENT_MEM_ACK:
+			break;
+
+		case EVENT_HALT_COMMAND:
+			sendf(w->socket_fd, "halt");
+			break;
+
+		case EVENT_HALT_ACK:
 			break;
 
 		default:
