@@ -2,7 +2,21 @@
 
 #include "worker.h"
 
-double timestamp(void);
+
+typedef struct Event Event;
+struct Event {
+	Event*	next;
+	int		type;
+
+	// validity of fields depends on type
+	Worker* worker;
+	int		load_size;
+	double	time_due;
+	int		work_id;
+	int		threads;
+	int		ack;
+};
+
 
 enum {
 	EVENT_WORKER_ONLINE,
@@ -21,21 +35,30 @@ enum {
 	EVENT_MEM_ACK,
 };
 
-typedef struct Event Event;
-struct Event {
-	Event*	next;
-	int		type;
 
-	// validity of fields depends on type
-	Worker* worker;
-	int		load_size;
-	double	time_due;
-	int		work_id;
-	int		threads;
-	int		ack;
+static inline const char* event_type_string(Event* e) {
+	static const char* strings[] = {
+		"WORKER_ONLINE",
+		"WORKER_OFFLINE",
+		"WORKER_OFF",
 
-};
+		"WORK_REQUEST",
+		"WORK_COMMAND",
+		"WORK_ACK",
+		"WORK_COMPLETE",
+
+		"HALT_COMMAND",
+		"HALT_ACK",
+
+		"MEM_COMMAND",
+		"MEM_ACK"
+	};
+	return strings[e->type];
+}
 
 
-Event* queue_append(int type);
-Event* queue_pop(void);
+Event* event_append(int type);
+Event* event_pop(void);
+
+
+double timestamp(void);

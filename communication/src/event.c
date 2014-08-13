@@ -1,8 +1,8 @@
 #include <stdlib.h>
 #include <time.h>
 
-
 #include "event.h"
+
 
 double timestamp(void) {
 	struct timespec t;
@@ -16,10 +16,11 @@ typedef struct {
 	Event* last;
 } Queue;
 
+
 static Queue queue = { NULL, NULL };
 
 
-Event* queue_append(int type) {
+Event* event_append(int type) {
 	Event*e = calloc(1, sizeof(Event));
 	e->type = type;
 	if (queue.last) {
@@ -33,7 +34,8 @@ Event* queue_append(int type) {
 	return e;
 }
 
-Event* queue_pop(void) {
+
+Event* event_pop(void) {
 	Event* e = queue.first;
 	if (queue.first == queue.last) {
 		queue.first = NULL;
@@ -43,4 +45,3 @@ Event* queue_pop(void) {
 	if (e) e->next = NULL;
 	return e;
 }
-
