@@ -115,16 +115,3 @@ Worker* worker_find_by_id(int id) {
 	return NULL;
 }
 
-
-const char* worker_state_string(const Worker* w) {
-	static const char* state_strings[] = {
-		"OFF",
-		"BOOTING",
-		"IDLE",
-		"WORKING",
-		"HALTING",
-		"ERROR",
-	};
-	return state_strings[w->state];
-}
-
