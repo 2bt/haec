@@ -118,18 +118,18 @@
          (filter
            (lambda (worker) (eq? (ast-child 'state worker) 'RUNNING))
            (ast-children workers))))
-      (fold-left
-        (lambda (w1 w2)
-          (if
-            (<=
-              (ast-num-children (ast-child 'Queue w1))
-              (ast-num-children (ast-child 'Queue w2)))
-            w1
-            w2))
-        (car running-workers)
-        (cdr running-workers)))))
-
-
+      (if (null? running-workers)
+        #f
+        (fold-left
+          (lambda (w1 w2)
+            (if
+              (<=
+                (ast-num-children (ast-child 'Queue w1))
+                (ast-num-children (ast-child 'Queue w2)))
+              w1
+              w2))
+          (car running-workers)
+          (cdr running-workers))))))
 
 
 (define assign-next-request
