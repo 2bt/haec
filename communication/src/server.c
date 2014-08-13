@@ -53,7 +53,7 @@ static void server_command() {
 		}
 	}
 	else if (sscanf(msg, "work %d %d", &size, &time) == 2) {
-		Event* e = queue_append(EVENT_WORK_REQUEST);
+		Event* e = event_append(EVENT_WORK_REQUEST);
 		e->work_id = server.work_counter++;
 		e->load_size = size;
 		e->time_due = time;
@@ -101,7 +101,7 @@ static void server_command() {
 			printf("error: %s\n", msg);
 			return;
 		}
-		Event* e = queue_append(EVENT_WORK_COMMAND);
+		Event* e = event_append(EVENT_WORK_COMMAND);
 		e->worker = w;
 		e->work_id = work_id;
 		e->load_size = size;
@@ -149,7 +149,7 @@ static void server_new_connection(int s) {
 		w->port = client.sin_port;
 		w->socket_fd = newfd;
 
-		Event* e = queue_append(EVENT_WORKER_ONLINE);
+		Event* e = event_append(EVENT_WORKER_ONLINE);
 		e->worker = w;
 
 	}
@@ -173,7 +173,7 @@ static void server_receive(int s) {
 		w->socket_fd = -1;
 		w->port = 0;
 
-		Event* e = queue_append(EVENT_WORKER_OFFLINE);
+		Event* e = event_append(EVENT_WORKER_OFFLINE);
 		e->worker = w;
 		return;
 	}
@@ -187,26 +187,26 @@ static void server_receive(int s) {
 	if (strcmp(msg, "work-complete") == 0) {
 		int id;
 		if (sscanf(p, "%d %d", &id, &ack) != 2) goto ERROR;
-		Event* e = queue_append(EVENT_WORK_COMPLETE);
+		Event* e = event_append(EVENT_WORK_COMPLETE);
 		e->worker = w;
 		e->work_id = id;
 		e->ack = ack;
 	}
 	else if (strcmp(msg, "work-ack") == 0) {
 		if (sscanf(p, "%d", &ack) != 1) goto ERROR;
-		Event* e = queue_append(EVENT_WORK_ACK);
+		Event* e = event_append(EVENT_WORK_ACK);
 		e->worker = w;
 		e->ack = ack;
 	}
 	else if (strcmp(msg, "halt-ack") == 0) {
 		if (sscanf(p, "%d", &ack) != 1) goto ERROR;
-		Event* e = queue_append(EVENT_HALT_ACK);
+		Event* e = event_append(EVENT_HALT_ACK);
 		e->worker = w;
 		e->ack = ack;
 	}
 	else if (strcmp(msg, "mem-ack") == 0) {
 		if (sscanf(p, "%d", &ack) != 1) goto ERROR;
-		Event* e = queue_append(EVENT_MEM_ACK);
+		Event* e = event_append(EVENT_MEM_ACK);
 		e->worker = w;
 		e->ack = ack;
 	}
@@ -222,7 +222,11 @@ ERROR:
 void server_process_events(void) {
 	Event* e;
 	double time = timestamp();
-	while ((e = queue_pop())) {
+	while ((e = event_pop())) {
+
+		printf("%5.2f event %s\n", time - server.timestamp, event_type_string(e));
+
+
 		Worker* w = e->worker;
 		switch (e->type) {
 		case EVENT_WORKER_ONLINE: {
@@ -324,6 +328,9 @@ void server_run(void) {
 	server.work_counter = 0;
 
 
+	server.timestamp = timestamp();
+
+
 	printf("entering server loop.\n");
 	while (server.running) {
 		fd_set fds = server.fds;
@@ -346,7 +353,7 @@ void server_run(void) {
 		for (w = worker_next(NULL); w; w = worker_next(w)) {
 			if (w->state == WORKER_HALTING
 			&& time - w->timestamp > TIME_HALTING) {
-				Event* e = queue_append(EVENT_WORKER_OFF);
+				Event* e = event_append(EVENT_WORKER_OFF);
 				e->worker = w;
 			}
 		}
