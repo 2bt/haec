@@ -32,7 +32,7 @@ typedef struct { int id; int threads; int input_len; } WorkArgs;
 void* work_thread(WorkArgs* args) {
 	char line[256];
 	snprintf(line, sizeof(line),
-		"../index/index mr %d ../index/wiki/dump_0400.txt %d",
+		"../index/index mr %d ../index/wiki/dump.txt %d",
 		args->threads, args->input_len);
 
 	FILE* f = popen(line, "r");
