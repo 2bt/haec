@@ -114,4 +114,3 @@ Worker* worker_find_by_id(int id) {
 	}
 	return NULL;
 }
-

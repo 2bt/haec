@@ -38,7 +38,6 @@ typedef struct {
 } Switch;
 
 
-
 enum {
 	WORKER_OFF,
 	WORKER_BOOTING,
@@ -60,7 +59,6 @@ static inline const char* worker_state_string(const Worker* w) {
 	};
 	return strings[w->state];
 }
-
 
 
 void worker_init(void);
