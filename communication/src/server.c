@@ -41,13 +41,13 @@ static void server_command() {
 		printf("exiting...\n");
 	}
 	else if (strcmp(msg, "status") == 0) {
-		printf(" id   | switch | address:port          | socket | state   | since \n");
-		printf("------+--------+-----------------------+--------+---------+-------\n");
+		printf(" id   | switch | address:port          | socket | state   | since\n");
+		printf("------+--------+-----------------------+--------+---------+----------\n");
 		double time = timestamp();
 		for (w = worker_next(NULL); w; w = worker_next(w)) {
 			char s[INET_ADDRSTRLEN];
 			inet_ntop(AF_INET, &w->addr, s, sizeof(s));
-			printf(" %-4d | %-6d | %-15s:%05d | %6d | %-7s | %5.2f\n",
+			printf(" %-4d | %-6d | %-15s:%05d | %6d | %-7s | %8.2f\n",
 				w->id, w->switch_id, s, w->port, w->socket_fd,
 				worker_state_string(w), time - w->timestamp);
 		}
@@ -224,14 +224,14 @@ void server_process_events(void) {
 	double time = timestamp();
 	while ((e = event_pop())) {
 
-		printf("%5.2f event %s\n", time - server.timestamp, event_type_string(e));
+		printf("%8.2f event %s\n", time - server.timestamp, event_type_string(e));
 
 
 		Worker* w = e->worker;
 		switch (e->type) {
 		case EVENT_WORKER_ONLINE: {
 				if (w->state == WORKER_BOOTING) {
-					printf("worker %d booted successfully in %5.2f seconds\n", w->id, time - w->timestamp);
+					printf("worker %d booted successfully in %8.2f seconds\n", w->id, time - w->timestamp);
 				}
 				w->state = WORKER_IDLE;
 				w->timestamp = time;
