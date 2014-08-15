@@ -36,7 +36,7 @@ enum {
 };
 
 
-static inline const char* event_type_string(Event* e) {
+static inline const char* event_type_string(const Event* e) {
 	static const char* strings[] = {
 		"WORKER_ONLINE",
 		"WORKER_OFFLINE",
@@ -57,8 +57,8 @@ static inline const char* event_type_string(Event* e) {
 }
 
 
-Event* event_append(int type);
-Event* event_pop(void);
+Event*	event_append(int type);
+Event*	event_pop(void);
 
 
-double timestamp(void);
+double	timestamp(void);

@@ -86,10 +86,6 @@ static void server_command() {
 			printf("error: %s\n", msg);
 			return;
 		}
-		if (w->state != WORKER_IDLE) {
-			printf("error: worker %d is not IDLE\n", w->id);
-			return;
-		}
 		sendf(w->socket_fd, "halt");
 		w->state = WORKER_HALTING;
 		w->timestamp = timestamp();
@@ -110,7 +106,7 @@ static void server_command() {
 	}
 
 	else {
-		// TESTING
+		// some more testing
 		int id = atoi(msg);
 		char* s = strchr(msg, ' ');
 		if (!s) {
@@ -219,13 +215,42 @@ ERROR:
 }
 
 
+void event_print(const Event* e, double time) {
+	printf("%8.2f event %s", time - server.timestamp, event_type_string(e));
+	switch (e->type) {
+	case EVENT_WORKER_ONLINE:
+	case EVENT_WORKER_OFFLINE:
+	case EVENT_WORKER_OFF:
+	case EVENT_HALT_COMMAND:
+	case EVENT_MEM_COMMAND:
+		printf(" (id: %d)", e->worker->id);
+		break;
+	case EVENT_MEM_ACK:
+	case EVENT_WORK_ACK:
+	case EVENT_HALT_ACK:
+		printf(" (id: %d; ack: %d)", e->worker->id, e->ack);
+		break;
+	case EVENT_WORK_REQUEST:
+		printf(" (work-id: %d; load-size: %d; time-due: %.2f)", e->work_id, e->load_size, e->time_due);
+		break;
+	case EVENT_WORK_COMMAND:
+		printf(" (work-id: %d; threads: %d; load-size: %d)", e->work_id, e->threads, e->load_size);
+		break;
+	case EVENT_WORK_COMPLETE:
+		printf(" (id: %d; work-id: %d; ack: %d)", e->worker->id, e->work_id, e->ack);
+		break;
+	default: break;
+	}
+	printf("\n");
+}
+
+
 void server_process_events(void) {
 	Event* e;
 	double time = timestamp();
 	while ((e = event_pop())) {
 
-		printf("%8.2f event %s\n", time - server.timestamp, event_type_string(e));
-
+		event_print(e, time);
 
 		Worker* w = e->worker;
 		switch (e->type) {
@@ -233,13 +258,9 @@ void server_process_events(void) {
 				if (w->state == WORKER_BOOTING) {
 					printf("worker %d booted successfully in %8.2f seconds\n", w->id, time - w->timestamp);
 				}
-				w->state = WORKER_IDLE;
+				w->state = WORKER_RUNNING;
 				w->timestamp = time;
 				racr_call_str("event-worker-online", "id", w->id, time);
-
-				char s[INET_ADDRSTRLEN];
-				inet_ntop(AF_INET, &w->addr, s, sizeof(s));
-				printf("worker %d connected from %s:%d on socket %d\n", w->id, s, w->port, w->socket_fd);
 			}
 			break;
 

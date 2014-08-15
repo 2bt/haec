@@ -41,8 +41,7 @@ typedef struct {
 enum {
 	WORKER_OFF,
 	WORKER_BOOTING,
-	WORKER_IDLE,
-	WORKER_WORKING,
+	WORKER_RUNNING,
 	WORKER_HALTING,
 	WORKER_ERROR,
 };
@@ -52,8 +51,7 @@ static inline const char* worker_state_string(const Worker* w) {
 	static const char* strings[] = {
 		"OFF",
 		"BOOTING",
-		"IDLE",
-		"WORKING",
+		"RUNNING",
 		"HALTING",
 		"ERROR",
 	};
