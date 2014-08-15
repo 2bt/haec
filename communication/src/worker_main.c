@@ -24,10 +24,12 @@ ssize_t sendf(int s, const char* format, ...) {
 	return send(s, line, strlen(line) + 1, 0);
 }
 
+
 int socket_fd;
 
 
 typedef struct { int id; int threads; int input_len; } WorkArgs;
+
 
 void* work_thread(WorkArgs* args) {
 	char line[256];
@@ -46,6 +48,9 @@ void* work_thread(WorkArgs* args) {
 	free(args);
 	return NULL;
 }
+
+
+int running = 1;
 
 
 void handle_command(char* cmd) {
@@ -109,6 +114,7 @@ void handle_command(char* cmd) {
 	else if (strcmp(cmd, "halt") == 0) {
 		int e = system("halt");
 		sendf(socket_fd, "halt-ack %d", e);
+		if (e == 0) running = 0;
 	}
 
 	else goto ERROR;
@@ -136,7 +142,7 @@ int main(int argc, char** argv) {
 		error(1, 0, "connect");
 	}
 
-	for (;;) {
+	while (running) {
 		char msg[1024];
 		ssize_t len = recv(socket_fd, msg, sizeof(msg), 0);
 		if (len <= 0) {
@@ -156,6 +162,7 @@ int main(int argc, char** argv) {
 		}
 
 	}
+	close(socket_fd);
 
 	return 0;
 }
