@@ -79,18 +79,6 @@
 
 
 
-(define event-worker-online
-  (lambda (id time)
-    (let ((worker (get-worker id)))
-      (rewrite-terminal 'state worker 'RUNNING)
-      (rewrite-terminal 'timestamp worker time))))
-
-
-(define event-worker-off
-  (lambda (id time)
-    (let ((worker (get-worker id)))
-      (rewrite-terminal 'state worker 'OFF)
-      (rewrite-terminal 'timestamp worker time))))
 
 
 ;(define round-robbin
@@ -141,10 +129,24 @@
             'event-work-command
             (ast-child 'id worker)
             (ast-child 'id request)
-            1
+            0
             (ast-child 'size request)))
         #f))))
 
+
+(define event-worker-online
+  (lambda (id time)
+    (let ((worker (get-worker id)))
+      (rewrite-terminal 'state worker 'RUNNING)
+      (rewrite-terminal 'timestamp worker time)
+      (assign-next-request worker))))
+
+
+(define event-worker-off
+  (lambda (id time)
+    (let ((worker (get-worker id)))
+      (rewrite-terminal 'state worker 'OFF)
+      (rewrite-terminal 'timestamp worker time))))
 
 
 (define event-work-request

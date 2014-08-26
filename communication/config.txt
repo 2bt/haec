@@ -1,7 +1,8 @@
-#       id    ip-address  switch-id
-worker  1001  127.0.0.1   1005
-worker  1002  127.0.0.1   1005
-worker  1003  127.0.0.1   1005
+#       id    ip-address    switch-id
+worker  1001  127.0.0.1     1005
+worker  1002  127.0.0.1     1005
+worker  1003  192.168.1.41  1005
+worker  1004  192.168.1.21  1005
 
 
 #       id
