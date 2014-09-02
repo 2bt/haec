@@ -268,7 +268,7 @@ void server_process_events(void) {
 				w->state = WORKER_ERROR;
 				w->timestamp = time;
 			}
-			racr_call_str("event-worker-off", "id", w->id, time);
+			racr_call_str("event-worker-offline", "id", w->id, time);
 			break;
 
 		case EVENT_WORKER_OFF:
@@ -304,6 +304,8 @@ void server_process_events(void) {
 
 		case EVENT_HALT_COMMAND:
 			sendf(w->socket_fd, "halt");
+			w->state = WORKER_HALTING;
+			w->timestamp = timestamp();
 			break;
 
 		case EVENT_HALT_ACK:

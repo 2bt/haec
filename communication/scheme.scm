@@ -142,6 +142,15 @@
       (assign-next-request worker))))
 
 
+(define event-worker-offline
+  (lambda (id time)
+    (let ((worker (get-worker id)))
+      (when (not (eq? (ast-child 'state worker) 'HALTING))
+        (begin
+          (rewrite-terminal 'state worker 'OFF)
+          (rewrite-terminal 'timestamp worker time))))))
+
+
 (define event-worker-off
   (lambda (id time)
     (let ((worker (get-worker id)))
