@@ -75,9 +75,7 @@ static void server_command() {
 		}
 		w->state = WORKER_BOOTING;
 		w->timestamp = timestamp();
-		cambri_write("set_profiles %d 4", w->id);
-		cambri_write("mode c %d 4", w->id);
-
+		cambri_set_mode(w->id, CAMBRI_CHARGE);
 	}
 
 	else if (sscanf(msg, "halt %d", &id) == 1) {
@@ -278,10 +276,7 @@ void server_process_events(void) {
 			w->timestamp = time;
 			w->socket_fd = -1;
 			w->port = 0;
-
-			// cambri power shutdown
-			cambri_write("mode o %d", w->id);
-
+			cambri_set_mode(w->id, CAMBRI_OFF);
 			racr_call_str("event-worker-off", "id", w->id, time);
 			break;
 
@@ -380,15 +375,10 @@ void server_run(void) {
 				e->worker = w;
 			}
 		}
-	
-
-		cambri_write("state");
-		char buf[1024] = {};
-		cambri_read(buf, sizeof(buf));
-		puts(buf);
-
 
 		server_process_events();
+
+		cambri_log_current(time - server.timestamp);
 	}
 
 	close(listener);
