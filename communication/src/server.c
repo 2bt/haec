@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <signal.h>
 #include <string.h>
 #include <error.h>
 #include <arpa/inet.h>
@@ -320,6 +321,8 @@ void server_process_events(void) {
 }
 
 
+static void server_done(int sig) { server.running = 0; }
+
 void server_run(void) {
 
 	cambri_init();
@@ -342,13 +345,10 @@ void server_run(void) {
 	FD_SET(STDIN, &server.fds);
 	FD_SET(listener, &server.fds);
 	server.fdmax = listener;
-	server.running = 1;
 	server.work_counter = 0;
-
-
 	server.timestamp = timestamp();
-
-
+	server.running = 1;
+	signal(SIGINT, server_done);
 
 	printf("entering server loop.\n");
 	while (server.running) {
