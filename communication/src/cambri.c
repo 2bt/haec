@@ -14,7 +14,7 @@ static int cambri_fd;
 
 void cambri_init(void) {
 	cambri_fd = open("/dev/ttyUSB0", O_RDWR | O_NOCTTY);
-	if (cambri_fd < 0) error(1, 0, "cambri");
+	if (cambri_fd < 0) error(1, 0, "cambri_init");
 
 	struct termios tty = {};
 	tcgetattr(cambri_fd, &tty);
@@ -45,12 +45,13 @@ void cambri_write(const char* fmt, ...) {
 }
 
 
-void cambri_read(char* buf) {
+int cambri_read(char* buf, int len) {
 	int i;
-	for (i = 0; i < 1000; i++) { // safety
-		int p = strlen(buf);
-		if (p >= 5 && strcmp(buf + p - 5, "\r\n>> ") == 0) break;
-		read(cambri_fd, buf + p, sizeof(buf) - p);
+	int p = 0;
+	for (i = 0; i < 200; i++) { // safety
+		if (p >= 5 && strcmp(buf + p - 5, "\r\n>> ") == 0) return p;
+		p += read(cambri_fd, buf + p, len - p);
 	}
+	return 0;
 }
 

@@ -325,7 +325,7 @@ void server_process_events(void) {
 
 void server_run(void) {
 
-	//cambri_init();
+	cambri_init();
 	worker_init();
 
 
@@ -352,20 +352,22 @@ void server_run(void) {
 	server.timestamp = timestamp();
 
 
+
 	printf("entering server loop.\n");
 	while (server.running) {
 		fd_set fds = server.fds;
 		struct timeval timeout = { 0, 100000 };
 		int count = select(server.fdmax + 1, &fds, NULL, NULL, &timeout);
 		if (count < 0) error(1, 0, "select");
-		if (count == 0) continue;
+		if (count > 0) {
 
-		int i;
-		for (i = 0; i <= server.fdmax; i++) {
-			if (FD_ISSET(i, &fds)) {
-				if (i == STDIN) server_command();
-				else if (i == listener) server_new_connection(listener);
-				else server_receive(i);
+			int i;
+			for (i = 0; i <= server.fdmax; i++) {
+				if (FD_ISSET(i, &fds)) {
+					if (i == STDIN) server_command();
+					else if (i == listener) server_new_connection(listener);
+					else server_receive(i);
+				}
 			}
 		}
 
@@ -378,6 +380,12 @@ void server_run(void) {
 				e->worker = w;
 			}
 		}
+	
+
+		cambri_write("state");
+		char buf[1024] = {};
+		cambri_read(buf, sizeof(buf));
+		puts(buf);
 
 
 		server_process_events();
