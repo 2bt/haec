@@ -4,6 +4,7 @@ import wx
 import math
 import re
 import random
+import sys
 
 
 def formated_time_to_seconds(t):
@@ -324,19 +325,21 @@ class Win(wx.Frame):
 		if dialog.ShowModal() == wx.ID_OK: generate(dialog.GetPath(), data, disp)
 		dialog.Destroy()
 
+	def loadScenario(self, path):
+		f = open(path)
+		for c in self.charts:
+			x, y, d, disp = eval(f.readline())
+			c.x_range = x
+			c.data = d
+			c.set_y_range(y)
+			if c.dispersion_tc:
+				c.dispersion_tc.SetValue("%d" % disp)
+		f.close()
+		self.total_time_tc.SetValue(seconds_to_formated_time(self.charts[0].x_range))
+
 	def OnOpen(self, event):
 		dialog = wx.FileDialog(self, "Open scenario", "", "", "*.scenario", wx.FD_OPEN)
-		if dialog.ShowModal() == wx.ID_OK:
-			f = open(dialog.GetPath())
-			for c in self.charts:
-				x, y, d, disp = eval(f.readline())
-				c.x_range = x
-				c.data = d
-				c.set_y_range(y)
-				if c.dispersion_tc:
-					c.dispersion_tc.SetValue("%d" % disp)
-			f.close()
-			self.total_time_tc.SetValue(seconds_to_formated_time(self.charts[0].x_range))
+		if dialog.ShowModal() == wx.ID_OK: self.loadScenario(dialog.GetPath())
 		dialog.Destroy()
 
 	def OnSave(self, event):
@@ -356,5 +359,6 @@ class Win(wx.Frame):
 
 if __name__ == "__main__":
 	app = wx.App()
-	Win()
+	w = Win()
+	if len(sys.argv) > 1: w.loadScenario(sys.argv[1])
 	app.MainLoop()
