@@ -8,6 +8,7 @@
 #include <unistd.h>
 
 #include "cambri.h"
+#include "event.h"
 
 
 
@@ -33,11 +34,11 @@ void cambri_init(void) {
 
 
 	cambri_log_file = fopen("cambri.log", "w");
-	fprintf(cambri_log_file, " time   ");
+	fprintf(cambri_log_file, " time      ");
 	int i;
 	for (i = 1; i <= 8; i++) fprintf(cambri_log_file, " | %4d", 1000 + i);
 	fprintf(cambri_log_file, "\n");
-	fprintf(cambri_log_file, "--------");
+	fprintf(cambri_log_file, "-----------");
 	for (i = 1; i <= 8; i++) fprintf(cambri_log_file, "-+-----");
 	fprintf(cambri_log_file, "\n");
 	fflush(cambri_log_file);
@@ -72,13 +73,13 @@ static int cambri_read(char* buf, int len) {
 }
 
 
-void cambri_log_current(double time) {
+void cambri_log_current(const char* time) {
 	cambri_write("state");
 	char buf[1024] = {};
 	int ret = cambri_read(buf, sizeof(buf));
 	if (ret == 0) error(1, 0, "cambri_log_current");
 
-	fprintf(cambri_log_file, "%8.2f", time);
+	fprintf(cambri_log_file, "%s", time);
 
 	char* p = buf;
 	int i;

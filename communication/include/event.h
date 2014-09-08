@@ -63,5 +63,6 @@ Event*	event_append(int type);
 Event*	event_pop(void);
 void	event_print(const Event* e, double time);
 
-
 double	timestamp(void);
+const char* format_timestamp(double t);
+double read_timestamp(const char* t);

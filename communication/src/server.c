@@ -55,15 +55,15 @@ static void server_command() {
 		printf("exiting...\n");
 	}
 	else if (strcmp(msg, "status") == 0) {
-		printf(" id   | switch | address:port          | socket | state   | since\n");
-		printf("------+--------+-----------------------+--------+---------+----------\n");
+		printf(" id   | switch | address:port          | socket | state   | time\n");
+		printf("------+--------+-----------------------+--------+---------+-------------\n");
 		double time = timestamp();
 		for (w = worker_next(NULL); w; w = worker_next(w)) {
 			char s[INET_ADDRSTRLEN];
 			inet_ntop(AF_INET, &w->addr, s, sizeof(s));
-			printf(" %-4d | %-6d | %-15s:%05d | %6d | %-7s | %8.2f\n",
+			printf(" %-4d | %-6d | %-15s:%05d | %6d | %-7s | %s\n",
 				w->id, w->switch_id, s, w->port, w->socket_fd,
-				worker_state_string(w), time - w->timestamp);
+				worker_state_string(w), format_timestamp(time - w->timestamp));
 		}
 	}
 	else if (sscanf(msg, "work %d %d", &size, &time) == 2) {
@@ -238,7 +238,7 @@ void server_process_events(void) {
 		switch (e->type) {
 		case EVENT_WORKER_ONLINE: {
 				if (w->state == WORKER_BOOTING) {
-					printf("worker %d booted successfully in %8.2f seconds\n", w->id, time - w->timestamp);
+					printf("worker %d booted successfully in %.2f seconds\n", w->id, time - w->timestamp);
 				}
 				w->state = WORKER_RUNNING;
 				w->timestamp = time;
@@ -364,7 +364,7 @@ void server_run(void) {
 
 		server_process_events();
 
-		cambri_log_current(time - server.timestamp);
+		cambri_log_current(format_timestamp(time - server.timestamp));
 	}
 
 	close(listener);

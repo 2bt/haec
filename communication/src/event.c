@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <time.h>
+#include <math.h>
 
 #include "event.h"
 #include "server.h"
@@ -11,6 +12,24 @@ double timestamp(void) {
 	struct timespec t;
 	clock_gettime(CLOCK_REALTIME, &t);
 	return t.tv_sec + t.tv_nsec * 1e-9;
+}
+
+
+const char* format_timestamp(double t) {
+	double s = fmod(t, 60);
+	int m = (int)(t / 60) % 60;
+	int h = m / 60 % 99;
+	static char buf[12];
+	snprintf(buf, sizeof(buf), "%02d:%02d:%05.2f", h, m, s);
+	return buf;
+}
+
+
+double read_timestamp(const char* t) {
+	int h, m;
+	double s;
+	sscanf(t, "%d:%d:%lf", &h, &m, &s);
+	return s + m * 60 + h * 3600;
 }
 
 
@@ -51,7 +70,7 @@ Event* event_pop(void) {
 
 
 void event_print(const Event* e, double time) {
-	server_log("%8.2f event %s", time - server.timestamp, event_type_string(e));
+	server_log("%s event %s", format_timestamp(time - server.timestamp), event_type_string(e));
 	switch (e->type) {
 	case EVENT_WORKER_ONLINE:
 	case EVENT_WORKER_OFFLINE:
