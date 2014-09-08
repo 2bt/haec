@@ -38,6 +38,7 @@ void server_log(const char* fmt, ...) {
 	va_end(args);
 	printf("%s", buf);
 	fprintf(server.log, "%s", buf);
+	fflush(server.log);
 }
 
 
@@ -49,6 +50,7 @@ static void server_command() {
 
 	int id, size, time, threads, work_id;
 	Worker* w;
+	char run[1024];
 
 	if (strcmp(msg, "exit") == 0) {
 		server.running = 0;
@@ -71,6 +73,10 @@ static void server_command() {
 		e->work_id = server.work_counter++;
 		e->load_size = size;
 		e->time_due = time;
+	}
+	else if (sscanf(msg, "run %s", run) == 1) {
+		Event* e = event_append(EVENT_RUN_START);
+		e->run = strdup(run);
 	}
 
 
@@ -236,14 +242,21 @@ void server_process_events(void) {
 
 		Worker* w = e->worker;
 		switch (e->type) {
-		case EVENT_WORKER_ONLINE: {
-				if (w->state == WORKER_BOOTING) {
-					printf("worker %d booted successfully in %.2f seconds\n", w->id, time - w->timestamp);
-				}
-				w->state = WORKER_RUNNING;
-				w->timestamp = time;
-				racr_call_str("event-worker-online", "id", w->id, time);
+		case EVENT_RUN_START:
+			free(e->run);
+			e->run = NULL;
+			break;
+
+		case EVENT_RUN_END:
+			break;
+
+		case EVENT_WORKER_ONLINE:
+			if (w->state == WORKER_BOOTING) {
+				printf("worker %d booted successfully in %.2f seconds\n", w->id, time - w->timestamp);
 			}
+			w->state = WORKER_RUNNING;
+			w->timestamp = time;
+			racr_call_str("event-worker-online", "id", w->id, time);
 			break;
 
 		case EVENT_WORKER_OFFLINE:
@@ -306,10 +319,17 @@ void server_process_events(void) {
 
 static void server_done(int sig) { server.running = 0; }
 
-void server_run(void) {
+
+void server_run(int argc, char** argv) {
+
+	if (argc == 2) {
+		Event* e = event_append(EVENT_RUN_START);
+		e->run = strdup(argv[1]);
+	}
+
 	server.log = fopen("server.log", "w");
 
-	cambri_init();
+	//cambri_init();
 	worker_init();
 
 
@@ -336,12 +356,16 @@ void server_run(void) {
 
 	printf("entering server loop.\n");
 	while (server.running) {
+
+
+		server_process_events();
+
+
 		fd_set fds = server.fds;
 		struct timeval timeout = { 0, 100000 };
 		int count = select(server.fdmax + 1, &fds, NULL, NULL, &timeout);
-		if (count < 0) error(1, 0, "select");
+		if (count < 0) break;
 		if (count > 0) {
-
 			int i;
 			for (i = 0; i <= server.fdmax; i++) {
 				if (FD_ISSET(i, &fds)) {
@@ -362,7 +386,6 @@ void server_run(void) {
 			}
 		}
 
-		server_process_events();
 
 		cambri_log_current(format_timestamp(time - server.timestamp));
 	}

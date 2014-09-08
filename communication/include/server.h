@@ -20,5 +20,5 @@ typedef struct {
 
 extern Server server;
 
-void server_run(void);
+void server_run(int argc, char** argv);
 void server_log(const char* fmt, ...);

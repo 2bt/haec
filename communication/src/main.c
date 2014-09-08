@@ -39,9 +39,13 @@ static Scheme_Object* prim_add_event(int argc, Scheme_Object** argv) {
 		e->work_id = SCHEME_INT_VAL(argv[2]);
 		e->threads = SCHEME_INT_VAL(argv[3]);
 		e->load_size = SCHEME_INT_VAL(argv[4]);
+		return scheme_true;
+	}
+	else if (strcmp(sym, "event-halt-command") == 0) {
+		return scheme_true;
 	}
 
-	return scheme_true;
+	return scheme_false;
 }
 
 
@@ -85,7 +89,7 @@ int main(int argc, char** argv) {
 
 	eval_script("scheme.scm");
 
-	server_run();
+	server_run(argc, argv);
 
 	return 0;
 }

@@ -72,6 +72,9 @@ Event* event_pop(void) {
 void event_print(const Event* e, double time) {
 	server_log("%s event %s", format_timestamp(time - server.timestamp), event_type_string(e));
 	switch (e->type) {
+	case EVENT_RUN_START:
+		server_log(" (file: %s)", e->run);
+		break;
 	case EVENT_WORKER_ONLINE:
 	case EVENT_WORKER_OFFLINE:
 	case EVENT_WORKER_OFF:
@@ -93,6 +96,7 @@ void event_print(const Event* e, double time) {
 	case EVENT_WORK_COMPLETE:
 		server_log(" (id: %d; work-id: %d; ack: %d)", e->worker->id, e->work_id, e->ack);
 		break;
+	case EVENT_RUN_END:
 	default: break;
 	}
 	server_log("\n");
