@@ -3,6 +3,7 @@
 #include <stdarg.h>
 #include <string.h>
 #include <error.h>
+#include <errno.h>
 
 #include <unistd.h>
 #include <pthread.h>
@@ -13,6 +14,7 @@
 
 
 enum { PORT = 1337 };
+
 
 ssize_t sendf(int s, const char* format, ...) {
 	char line[256];
@@ -124,32 +126,52 @@ ERROR:
 }
 
 
-
 int main(int argc, char** argv) {
 
 	if (argc > 2) {
 		printf("usage: %s server-address\n", argv[0]);
 		return 0;
 	}
+	const char* addr = argc == 2 ? argv[1] : "127.0.0.1";
+	struct sockaddr_in server = { AF_INET, htons(PORT), { inet_addr(addr) } };
 
+
+	int connected = 0;
 	socket_fd = socket(AF_INET, SOCK_STREAM, 0);
 	if (socket_fd < 0) error(1, 0, "socket\n");
-	struct sockaddr_in server = { AF_INET, htons(PORT),
-		{ inet_addr(argc == 2 ? argv[1] : "127.0.0.1" ) }
-	};
-	if (connect(socket_fd, (struct sockaddr*)&server, sizeof(server)) < 0) {
-		close(socket_fd);
-		error(1, 0, "connect");
-	}
+
 
 	while (running) {
+
+		while (!connected) {
+			printf("trying to connect to server at %s\n", addr);
+			if (connect(socket_fd, (struct sockaddr*) &server, sizeof(server)) < 0) {
+				if (errno == ECONNREFUSED) {
+					printf("connection refused\n");
+					sleep(1);
+				}
+				else {
+					close(socket_fd);
+					perror("main");
+					error(1, 0, "connect");
+				}
+			}
+			else connected = 1;
+		}
+
 		char msg[1024];
 		ssize_t len = recv(socket_fd, msg, sizeof(msg), 0);
 		if (len <= 0) {
 			printf("server hung up\n");
 			close(socket_fd);
-			break;
+			connected = 0;
+
+			socket_fd = socket(AF_INET, SOCK_STREAM, 0);
+			if (socket_fd < 0) error(1, 0, "socket\n");
+
+			continue;
 		}
+
 		// parse commands
 		msg[len] = '\0';
 		char* cmd = msg;
@@ -157,10 +179,10 @@ int main(int argc, char** argv) {
 		while (pos < len) {
 			ssize_t cmd_len = strlen(cmd);
 			handle_command(cmd);
+			fflush(stdout);
 			cmd += cmd_len + 1;
 			pos += cmd_len + 1;
 		}
-
 	}
 	close(socket_fd);
 
