@@ -26,7 +26,7 @@ void cambri_init(void) {
 	tty.c_iflag = 0;
 	tty.c_cflag = CS8 | CLOCAL | CREAD;
 	tty.c_cc[VTIME] = 1; // 0.1 s read timeout
-	tty.c_cc[VMIN] = 1; // read at least 1 byte (block)
+	tty.c_cc[VMIN] = 0; // non-blocking
 	cfsetospeed(&tty, B115200);
 	cfsetispeed(&tty, B115200);
 	tcsetattr(cambri_fd, TCSANOW, &tty);
@@ -40,6 +40,7 @@ void cambri_init(void) {
 	fprintf(cambri_log_file, "--------");
 	for (i = 1; i <= 8; i++) fprintf(cambri_log_file, "-+-----");
 	fprintf(cambri_log_file, "\n");
+	fflush(cambri_log_file);
 }
 
 
@@ -50,12 +51,12 @@ void cambri_kill(void) {
 
 
 static void cambri_write(const char* fmt, ...) {
-	char buf[256];
+	char buf[1024];
 	va_list args;
 	va_start(args, fmt);
-	vsprintf(buf, fmt, args);
+	int len = vsprintf(buf, fmt, args);
 	va_end(args);
-	write(cambri_fd, buf, strlen(buf));
+	write(cambri_fd, buf, len);
 	write(cambri_fd, "\r\n", 2);
 }
 
@@ -74,7 +75,8 @@ static int cambri_read(char* buf, int len) {
 void cambri_log_current(double time) {
 	cambri_write("state");
 	char buf[1024] = {};
-	cambri_read(buf, sizeof(buf));
+	int ret = cambri_read(buf, sizeof(buf));
+	if (ret == 0) error(1, 0, "cambri_log_current");
 
 	fprintf(cambri_log_file, "%8.2f", time);
 
@@ -86,6 +88,7 @@ void cambri_log_current(double time) {
 		fprintf(cambri_log_file, " | %4d", current);
 	}
 	fprintf(cambri_log_file, "\n");
+	fflush(cambri_log_file);
 }
 
 
