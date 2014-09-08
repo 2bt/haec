@@ -15,7 +15,9 @@ typedef struct {
 	fd_set fds;
 	int fdmax;
 
-	FILE* log;
+	FILE* log_fd;
+	FILE* run_fd;
+	double run_timestamp;
 } Server;
 
 extern Server server;

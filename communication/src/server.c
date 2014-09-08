@@ -37,26 +37,26 @@ void server_log(const char* fmt, ...) {
 	vsprintf(buf, fmt, args);
 	va_end(args);
 	printf("%s", buf);
-	fprintf(server.log, "%s", buf);
-	fflush(server.log);
+	fprintf(server.log_fd, "%s", buf);
+	fflush(server.log_fd);
 }
 
 
 static void server_command() {
 
-	char msg[1024];
-	fgets(msg, sizeof(msg), stdin);
-	msg[strlen(msg) - 1] = '\0';
+	char cmd[1024];
+	fgets(cmd, sizeof(cmd), stdin);
+	cmd[strlen(cmd) - 1] = '\0';
 
 	int id, size, time, threads, work_id;
 	Worker* w;
 	char run[1024];
 
-	if (strcmp(msg, "exit") == 0) {
+	if (strcmp(cmd, "exit") == 0) {
 		server.running = 0;
 		printf("exiting...\n");
 	}
-	else if (strcmp(msg, "status") == 0) {
+	else if (strcmp(cmd, "status") == 0) {
 		printf(" id   | switch | address:port          | socket | state   | time\n");
 		printf("------+--------+-----------------------+--------+---------+-------------\n");
 		double time = timestamp();
@@ -68,25 +68,25 @@ static void server_command() {
 				worker_state_string(w), format_timestamp(time - w->timestamp));
 		}
 	}
-	else if (sscanf(msg, "work %d %d", &size, &time) == 2) {
+	else if (sscanf(cmd, "work %d %d", &size, &time) == 2) {
 		Event* e = event_append(EVENT_WORK_REQUEST);
 		e->work_id = server.work_counter++;
 		e->load_size = size;
 		e->time_due = time;
 	}
-	else if (sscanf(msg, "run %s", run) == 1) {
+	else if (sscanf(cmd, "run %s", run) == 1) {
 		Event* e = event_append(EVENT_RUN_START);
 		e->run = strdup(run);
 	}
 
 
 	// testing...
-	else if (msg[0] == '(') eval_string(msg);
+	else if (cmd[0] == '(') eval_string(cmd);
 
-	else if (sscanf(msg, "boot %d", &id) == 1) {
+	else if (sscanf(cmd, "boot %d", &id) == 1) {
 		w = worker_find_by_id(id);
 		if (!w) {
-			printf("error: %s\n", msg);
+			printf("error: %s\n", cmd);
 			return;
 		}
 		if (w->state != WORKER_OFF) {
@@ -98,10 +98,10 @@ static void server_command() {
 		cambri_set_mode(w->id, CAMBRI_CHARGE);
 	}
 
-	else if (sscanf(msg, "halt %d", &id) == 1) {
+	else if (sscanf(cmd, "halt %d", &id) == 1) {
 		w = worker_find_by_id(id);
 		if (!w) {
-			printf("error: %s\n", msg);
+			printf("error: %s\n", cmd);
 			return;
 		}
 		sendf(w->socket_fd, "halt");
@@ -109,10 +109,10 @@ static void server_command() {
 		w->timestamp = timestamp();
 	}
 
-	else if (sscanf(msg, "work-command %d %d %d %d", &id, &work_id, &threads, &size) == 4) {
+	else if (sscanf(cmd, "work-command %d %d %d %d", &id, &work_id, &threads, &size) == 4) {
 		w = worker_find_by_id(id);
 		if (!w) {
-			printf("error: %s\n", msg);
+			printf("error: %s\n", cmd);
 			return;
 		}
 		Event* e = event_append(EVENT_WORK_COMMAND);
@@ -125,16 +125,16 @@ static void server_command() {
 
 	else {
 		// some more testing
-		int id = atoi(msg);
-		char* s = strchr(msg, ' ');
+		int id = atoi(cmd);
+		char* s = strchr(cmd, ' ');
 		if (!s) {
-			printf("error: %s\n", msg);
+			printf("error: %s\n", cmd);
 			return;
 		}
 		s++;
 		w = worker_find_by_id(id);
 		if (!w) {
-			printf("error: %s\n", msg);
+			printf("error: %s\n", cmd);
 			return;
 		}
 		sendf(w->socket_fd, s);
@@ -243,6 +243,10 @@ void server_process_events(void) {
 		Worker* w = e->worker;
 		switch (e->type) {
 		case EVENT_RUN_START:
+			if (server.run_fd) fclose(server.run_fd);
+			server.run_fd = fopen(e->run, "r");
+			if (server.run_fd) server.run_timestamp = time;
+			else printf("could not open run %s\n", e->run);
 			free(e->run);
 			e->run = NULL;
 			break;
@@ -327,7 +331,7 @@ void server_run(int argc, char** argv) {
 		e->run = strdup(argv[1]);
 	}
 
-	server.log = fopen("server.log", "w");
+	server.log_fd = fopen("server.log", "w");
 
 	//cambri_init();
 	worker_init();
@@ -359,6 +363,9 @@ void server_run(int argc, char** argv) {
 
 
 		server_process_events();
+
+
+		// TODO: check for commands from run
 
 
 		fd_set fds = server.fds;
@@ -394,5 +401,5 @@ void server_run(int argc, char** argv) {
 
 	cambri_kill();
 	worker_kill();
-	fclose(server.log);
+	fclose(server.log_fd);
 }
