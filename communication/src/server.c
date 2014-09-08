@@ -30,6 +30,17 @@ ssize_t sendf(int s, const char* format, ...) {
 }
 
 
+void server_log(const char* fmt, ...) {
+	char buf[1024];
+	va_list args;
+	va_start(args, fmt);
+	vsprintf(buf, fmt, args);
+	va_end(args);
+	printf("%s", buf);
+	fprintf(server.log, "%s", buf);
+}
+
+
 static void server_command() {
 
 	char msg[1024];
@@ -296,6 +307,7 @@ void server_process_events(void) {
 static void server_done(int sig) { server.running = 0; }
 
 void server_run(void) {
+	server.log = fopen("server.log", "w");
 
 	cambri_init();
 	worker_init();
@@ -359,5 +371,5 @@ void server_run(void) {
 
 	cambri_kill();
 	worker_kill();
+	fclose(server.log);
 }
-

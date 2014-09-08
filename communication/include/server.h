@@ -14,8 +14,11 @@ typedef struct {
 
 	fd_set fds;
 	int fdmax;
+
+	FILE* log;
 } Server;
 
 extern Server server;
 
 void server_run(void);
+void server_log(const char* fmt, ...);
