@@ -19,6 +19,7 @@ struct Event {
 
 
 enum {
+	EVENT_WORKER_ON,
 	EVENT_WORKER_ONLINE,
 	EVENT_WORKER_OFFLINE,
 	EVENT_WORKER_OFF,
@@ -38,6 +39,7 @@ enum {
 
 static inline const char* event_type_string(const Event* e) {
 	static const char* strings[] = {
+		"WORKER_ON",
 		"WORKER_ONLINE",
 		"WORKER_OFFLINE",
 		"WORKER_OFF",
@@ -51,7 +53,7 @@ static inline const char* event_type_string(const Event* e) {
 		"HALT_ACK",
 
 		"MEM_COMMAND",
-		"MEM_ACK"
+		"MEM_ACK",
 	};
 	return strings[e->type];
 }
@@ -59,6 +61,7 @@ static inline const char* event_type_string(const Event* e) {
 
 Event*	event_append(int type);
 Event*	event_pop(void);
+void	event_print(const Event* e, double time);
 
 
 double	timestamp(void);

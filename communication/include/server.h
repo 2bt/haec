@@ -7,14 +7,15 @@ enum {
 };
 
 
-struct {
+typedef struct {
 	int running;
 	int work_counter;
 	double timestamp;
 
 	fd_set fds;
 	int fdmax;
-} server;
+} Server;
 
+extern Server server;
 
 void server_run(void);

@@ -1,7 +1,10 @@
 #include <stdlib.h>
+#include <stdio.h>
 #include <time.h>
 
 #include "event.h"
+#include "server.h"
+
 
 
 double timestamp(void) {
@@ -45,3 +48,35 @@ Event* event_pop(void) {
 	if (e) e->next = NULL;
 	return e;
 }
+
+
+void event_print(const Event* e, double time) {
+	printf("%8.2f event %s", time - server.timestamp, event_type_string(e));
+	switch (e->type) {
+	case EVENT_WORKER_ONLINE:
+	case EVENT_WORKER_OFFLINE:
+	case EVENT_WORKER_OFF:
+	case EVENT_HALT_COMMAND:
+	case EVENT_MEM_COMMAND:
+		printf(" (id: %d)", e->worker->id);
+		break;
+	case EVENT_MEM_ACK:
+	case EVENT_WORK_ACK:
+	case EVENT_HALT_ACK:
+		printf(" (id: %d; ack: %d)", e->worker->id, e->ack);
+		break;
+	case EVENT_WORK_REQUEST:
+		printf(" (work-id: %d; load-size: %d; time-due: %.2f)", e->work_id, e->load_size, e->time_due);
+		break;
+	case EVENT_WORK_COMMAND:
+		printf(" (work-id: %d; threads: %d; load-size: %d)", e->work_id, e->threads, e->load_size);
+		break;
+	case EVENT_WORK_COMPLETE:
+		printf(" (id: %d; work-id: %d; ack: %d)", e->worker->id, e->work_id, e->ack);
+		break;
+	default: break;
+	}
+	printf("\n");
+}
+
+
