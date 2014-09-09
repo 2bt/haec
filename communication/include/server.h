@@ -8,16 +8,18 @@ enum {
 
 
 typedef struct {
-	int running;
-	int work_counter;
-	double timestamp;
+	int		running;
+	int		work_counter;
+	double	timestamp;
 
-	fd_set fds;
-	int fdmax;
+	fd_set	fds;
+	int		fdmax;
 
-	FILE* log_fd;
-	FILE* run_fd;
-	double run_timestamp;
+	FILE*	log_fd;
+	FILE*	scenario_fd;
+	double	scenario_timestamp;
+	char	scenario_cmd[256];
+	double	scenario_cmd_time;
 } Server;
 
 extern Server server;

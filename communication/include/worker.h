@@ -25,10 +25,6 @@ typedef struct {
 	int freq;
 	int map_threads;
 	int free_memory;
-
-	// queue
-	int work_id;
-	int input_len;
 */
 } Worker;
 
@@ -59,8 +55,8 @@ static inline const char* worker_state_string(const Worker* w) {
 }
 
 
-void worker_init(void);
-void worker_kill(void);
+int		worker_init(void);
+void	worker_kill(void);
 Worker* worker_next(Worker* w);
 Worker* worker_find_by_address(struct in_addr a, unsigned short p);
 Worker* worker_find_by_socket(int s);

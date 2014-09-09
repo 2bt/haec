@@ -19,9 +19,9 @@ static FILE* cambri_log_file;
 static int cambri_enabled = 0;
 
 
-void cambri_init(void) {
+int cambri_init(void) {
 	cambri_fd = open("/dev/ttyUSB0", O_RDWR | O_NOCTTY);
-	if (cambri_fd < 0) error(1, 0, "cambri_init");
+	if (cambri_fd < 0) return -1;
 
 	struct termios tty = {};
 	tcgetattr(cambri_fd, &tty);
@@ -37,7 +37,6 @@ void cambri_init(void) {
 
 
 	cambri_log_file = fopen("cambri.log", "w");
-	if (!cambri_log_file) error(1, 0, "cambri_init");
 	fprintf(cambri_log_file, " time      ");
 	int i;
 	for (i = 1; i <= 8; i++) fprintf(cambri_log_file, " | %4d", 1000 + i);
@@ -48,6 +47,7 @@ void cambri_init(void) {
 	fflush(cambri_log_file);
 
 	cambri_enabled = 1;
+	return 0;
 }
 
 

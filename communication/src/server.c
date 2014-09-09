@@ -3,8 +3,6 @@
 #include <signal.h>
 #include <string.h>
 #include <error.h>
-#include <arpa/inet.h>
-#include <unistd.h>
 
 #include <racr/racr.h>
 
@@ -31,7 +29,7 @@ ssize_t sendf(int s, const char* format, ...) {
 
 
 void server_log(const char* fmt, ...) {
-	char buf[1024];
+	char buf[256];
 	va_list args;
 	va_start(args, fmt);
 	vsprintf(buf, fmt, args);
@@ -42,15 +40,11 @@ void server_log(const char* fmt, ...) {
 }
 
 
-static void server_command() {
-
-	char cmd[1024];
-	fgets(cmd, sizeof(cmd), stdin);
-	cmd[strlen(cmd) - 1] = '\0';
+static void server_command(char* cmd) {
 
 	int id, size, time, threads, work_id;
 	Worker* w;
-	char run[1024];
+	char scenario[256];
 
 	if (strcmp(cmd, "exit") == 0) {
 		server.running = 0;
@@ -74,9 +68,14 @@ static void server_command() {
 		e->load_size = size;
 		e->time_due = time;
 	}
-	else if (sscanf(cmd, "run %s", run) == 1) {
-		Event* e = event_append(EVENT_RUN_START);
-		e->run = strdup(run);
+	else if (sscanf(cmd, "scenario %s", scenario) == 1) {
+		Event* e = event_append(EVENT_SCENARIO_START);
+		e->scenario = strdup(scenario);
+	}
+	else if (strcmp(cmd, "done") == 0) {
+		fclose(server.scenario_fd);
+		server.scenario_fd = NULL;
+		event_append(EVENT_SCENARIO_DONE);
 	}
 
 
@@ -124,20 +123,7 @@ static void server_command() {
 	}
 
 	else {
-		// some more testing
-		int id = atoi(cmd);
-		char* s = strchr(cmd, ' ');
-		if (!s) {
-			printf("error: %s\n", cmd);
-			return;
-		}
-		s++;
-		w = worker_find_by_id(id);
-		if (!w) {
-			printf("error: %s\n", cmd);
-			return;
-		}
-		sendf(w->socket_fd, s);
+		printf("error: %s\n", cmd);
 	}
 }
 
@@ -171,7 +157,7 @@ static void server_new_connection(int s) {
 
 
 static void server_receive(int s) {
-	char msg[1024];
+	char msg[256];
 	ssize_t len = recv(s, msg, sizeof(msg), 0);
 
 	Worker* w = worker_find_by_socket(s);
@@ -233,6 +219,38 @@ ERROR:
 }
 
 
+static int server_read_scenario_command() {
+
+	server.scenario_cmd[0] = '\0';
+	server.scenario_cmd_time = 0;
+
+	if (!server.scenario_fd) return 0;
+
+	char buf[256];
+	if (!fgets(buf, sizeof(buf), server.scenario_fd)) {
+		fclose(server.scenario_fd);
+		server.scenario_fd = NULL;
+		event_append(EVENT_SCENARIO_DONE);
+		return 0;
+	}
+
+	double time = read_timestamp(buf);
+	if (time < 0) return -1;
+
+	char* cmd = strchr(buf, ' ');
+	if (!cmd) return -1;
+	while (*cmd == ' ') cmd++;
+
+	char* p = strchr(cmd, '\n');
+	if (p) *p = '\0';
+
+	strcpy(server.scenario_cmd, cmd);
+	server.scenario_cmd_time = time;
+
+	return 0;
+}
+
+
 void server_process_events(void) {
 	Event* e;
 	double time = timestamp();
@@ -242,16 +260,21 @@ void server_process_events(void) {
 
 		Worker* w = e->worker;
 		switch (e->type) {
-		case EVENT_RUN_START:
-			if (server.run_fd) fclose(server.run_fd);
-			server.run_fd = fopen(e->run, "r");
-			if (server.run_fd) server.run_timestamp = time;
-			else printf("could not open run %s\n", e->run);
-			free(e->run);
-			e->run = NULL;
+		case EVENT_SCENARIO_START:
+			if (server.scenario_fd) fclose(server.scenario_fd);
+			server.scenario_fd = fopen(e->scenario, "r");
+			if (server.scenario_fd) {
+				server.scenario_timestamp = time;
+				while (server_read_scenario_command()) {
+					printf("error reading scenario command");
+				}
+			}
+			else printf("could not open scenario %s\n", e->scenario);
+			free(e->scenario);
+			e->scenario = NULL;
 			break;
 
-		case EVENT_RUN_END:
+		case EVENT_SCENARIO_DONE:
 			break;
 
 		case EVENT_WORKER_ONLINE:
@@ -327,14 +350,16 @@ static void server_done(int sig) { server.running = 0; }
 void server_run(int argc, char** argv) {
 
 	if (argc == 2) {
-		Event* e = event_append(EVENT_RUN_START);
-		e->run = strdup(argv[1]);
+		Event* e = event_append(EVENT_SCENARIO_START);
+		e->scenario = strdup(argv[1]);
 	}
 
-	server.log_fd = fopen("server.log", "w");
 
-	//cambri_init();
-	worker_init();
+	if (cambri_init()) printf("error initializing cambri\n");
+	if (worker_init()) {
+		printf("error initializing workers\n");
+		return;
+	}
 
 
 	int listener = socket(AF_INET, SOCK_STREAM, 0);
@@ -347,7 +372,7 @@ void server_run(int argc, char** argv) {
 	if (bind(listener, (struct sockaddr*)&addr, sizeof(addr)) < 0) {
 		error(1, 0, "bind");
 	}
-	listen(listener, 3);
+	listen(listener, 5);
 
 	FD_ZERO(&server.fds);
 	FD_SET(STDIN, &server.fds);
@@ -358,32 +383,47 @@ void server_run(int argc, char** argv) {
 	server.running = 1;
 	signal(SIGINT, server_done);
 
-	printf("entering server loop.\n");
-	while (server.running) {
+	server.log_fd = fopen("server.log", "w");
 
+	printf("entering server loop\n");
+	while (server.running) {
 
 		server_process_events();
 
+		// check for commands from scenario
+		double time = timestamp();
+		while (server.scenario_fd &&
+		time >= server.scenario_timestamp + server.scenario_cmd_time) {
+			server_command(server.scenario_cmd);
+			while (server_read_scenario_command()) {
+				printf("error reading scenario command");
+			}
+		}
 
-		// TODO: check for commands from run
-
-
+		// receive
 		fd_set fds = server.fds;
-		struct timeval timeout = { 0, 100000 };
+		struct timeval timeout = { 0, 50000 };
 		int count = select(server.fdmax + 1, &fds, NULL, NULL, &timeout);
 		if (count < 0) break;
 		if (count > 0) {
 			int i;
 			for (i = 0; i <= server.fdmax; i++) {
 				if (FD_ISSET(i, &fds)) {
-					if (i == STDIN) server_command();
+					if (i == STDIN) {
+						char cmd[256];
+						fgets(cmd, sizeof(cmd), stdin);
+						char* p = strchr(cmd, '\n');
+						if (p) *p = '\0';
+						server_command(cmd);
+					}
 					else if (i == listener) server_new_connection(listener);
 					else server_receive(i);
 				}
 			}
 		}
 
-		double time = timestamp();
+
+		// turn off halting workers
 		Worker* w;
 		for (w = worker_next(NULL); w; w = worker_next(w)) {
 			if (w->state == WORKER_HALTING

@@ -28,7 +28,7 @@ const char* format_timestamp(double t) {
 double read_timestamp(const char* t) {
 	int h, m;
 	double s;
-	sscanf(t, "%d:%d:%lf", &h, &m, &s);
+	if (sscanf(t, "%d:%d:%lf", &h, &m, &s) != 3) return -1;
 	return s + m * 60 + h * 3600;
 }
 
@@ -70,10 +70,10 @@ Event* event_pop(void) {
 
 
 void event_print(const Event* e, double time) {
-	server_log("%s event %s", format_timestamp(time - server.timestamp), event_type_string(e));
+	server_log("%s %s", format_timestamp(time - server.timestamp), event_type_string(e));
 	switch (e->type) {
-	case EVENT_RUN_START:
-		server_log(" (file: %s)", e->run);
+	case EVENT_SCENARIO_START:
+		server_log(" (file: %s)", e->scenario);
 		break;
 	case EVENT_WORKER_ONLINE:
 	case EVENT_WORKER_OFFLINE:
@@ -96,7 +96,7 @@ void event_print(const Event* e, double time) {
 	case EVENT_WORK_COMPLETE:
 		server_log(" (id: %d; work-id: %d; ack: %d)", e->worker->id, e->work_id, e->ack);
 		break;
-	case EVENT_RUN_END:
+	case EVENT_SCENARIO_DONE:
 	default: break;
 	}
 	server_log("\n");

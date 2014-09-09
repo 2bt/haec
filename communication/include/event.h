@@ -15,13 +15,13 @@ struct Event {
 	int		work_id;
 	int		threads;
 	int		ack;
-	char*	run;
+	char*	scenario;
 };
 
 
 enum {
-	EVENT_RUN_START,
-	EVENT_RUN_END,
+	EVENT_SCENARIO_START,
+	EVENT_SCENARIO_DONE,
 
 	EVENT_WORKER_ON,
 	EVENT_WORKER_ONLINE,
@@ -43,8 +43,8 @@ enum {
 
 static inline const char* event_type_string(const Event* e) {
 	static const char* strings[] = {
-		"RUN_START",
-		"RUN_END",
+		"SCENARIO_START",
+		"SCENARIO_DONE",
 
 		"WORKER_ON",
 		"WORKER_ONLINE",

@@ -1,6 +1,5 @@
 #include <stdlib.h>
 #include <stdio.h>
-#include <error.h>
 #include <string.h>
 
 #include <racr/racr.h>
@@ -31,11 +30,11 @@ void worker_kill(void) {
 }
 
 
-void worker_init(void) {
+int worker_init(void) {
 	worker_kill();
 
 	FILE* f = fopen("config.txt", "r");
-	if (!f) error(1, 0, "config.txt missing\n");
+	if (!f) return -1;
 
 	double time = timestamp();
 	char line[256];
@@ -71,11 +70,12 @@ void worker_init(void) {
 			racr_call_str("add-switch-to-ast", "id", id, time);
 		}
 		else {
-			printf("error reading config: %s\n", line);
+			fclose(f);
+			return -2;
 		}
 	}
 	fclose(f);
-
+	return 0;
 }
 
 
