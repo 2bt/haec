@@ -16,11 +16,12 @@ static int cambri_fd;
 static FILE* cambri_log_file;
 
 
-static int cambri_enabled = 0;
 
 
 int cambri_init(void) {
 	cambri_fd = open("/dev/ttyUSB0", O_RDWR | O_NOCTTY);
+	if (cambri_fd < 0) cambri_fd = open("/dev/ttyUSB1", O_RDWR | O_NOCTTY);
+
 	if (cambri_fd < 0) return -1;
 
 	struct termios tty = {};
@@ -36,9 +37,16 @@ int cambri_init(void) {
 	tcsetattr(cambri_fd, TCSANOW, &tty);
 
 
+	int i;
+	// enable profile 4 only
+	char buf[1024] = {};
+	for (i = 1; i <= 5; i++) {
+		cambri_write("en_profile %d %d", i, i == 4);
+		cambri_read(buf, sizeof(buf));
+	}
+
 	cambri_log_file = fopen("cambri.log", "w");
 	fprintf(cambri_log_file, " time      ");
-	int i;
 	for (i = 1; i <= 8; i++) fprintf(cambri_log_file, " | %4d", 1000 + i);
 	fprintf(cambri_log_file, "\n");
 	fprintf(cambri_log_file, "-----------");
@@ -46,19 +54,18 @@ int cambri_init(void) {
 	fprintf(cambri_log_file, "\n");
 	fflush(cambri_log_file);
 
-	cambri_enabled = 1;
 	return 0;
 }
 
 
 void cambri_kill(void) {
-	if (!cambri_enabled) return;
+	if (cambri_fd < 0) return;
 	close(cambri_fd);
 	fclose(cambri_log_file);
 }
 
 
-static void cambri_write(const char* fmt, ...) {
+void cambri_write(const char* fmt, ...) {
 	char buf[1024];
 	va_list args;
 	va_start(args, fmt);
@@ -69,19 +76,26 @@ static void cambri_write(const char* fmt, ...) {
 }
 
 
-static int cambri_read(char* buf, int len) {
-	int i;
+int cambri_read(char* buf, int len) {
 	int p = 0;
-	for (i = 0; i < 200; i++) { // safety
+	int i = 0;
+	while (i < 5) { // safety
 		if (p >= 5 && strcmp(buf + p - 5, "\r\n>> ") == 0) break;
-		p += read(cambri_fd, buf + p, len - p);
+		int d = read(cambri_fd, buf + p, len - p);
+		i += d == 0;
+		p += d;
+	}
+
+	if (p >= 10 && strcmp(buf + p - 10, "\r\nboot>> \n") == 0) {
+//		printf("CAMBRI ERROR\n");
+//		cambri_write("reboot");
 	}
 	return p;
 }
 
 
 void cambri_log_current(const char* time) {
-	if (!cambri_enabled) return;
+	if (cambri_fd < 0) return;
 	cambri_write("state");
 	char buf[1024] = {};
 	int ret = cambri_read(buf, sizeof(buf));
@@ -102,7 +116,7 @@ void cambri_log_current(const char* time) {
 
 
 void cambri_set_mode(int id, int mode) {
-	if (!cambri_enabled) return;
+	if (cambri_fd < 0) return;
 	cambri_write("mode %c %d 4", mode, id % 10);
 	char buf[1024] = {};
 	cambri_read(buf, sizeof(buf));

@@ -82,6 +82,12 @@ static void server_command(char* cmd) {
 	// testing...
 	else if (cmd[0] == '(') eval_string(cmd);
 
+	else if (strncmp(cmd, "cambri ", 7) == 0) {
+		cambri_write(cmd + 7);
+		char buf[4096] = {};
+		int ret = cambri_read(buf, sizeof(buf));
+		if (ret > 0) printf("%s\n", buf);
+	}
 	else if (sscanf(cmd, "boot %d", &id) == 1) {
 		w = worker_find_by_id(id);
 		if (!w) {
@@ -411,10 +417,11 @@ void server_run(int argc, char** argv) {
 				if (FD_ISSET(i, &fds)) {
 					if (i == STDIN) {
 						char cmd[256];
-						fgets(cmd, sizeof(cmd), stdin);
-						char* p = strchr(cmd, '\n');
-						if (p) *p = '\0';
-						server_command(cmd);
+						if (fgets(cmd, sizeof(cmd), stdin)) {
+							char* p = strchr(cmd, '\n');
+							if (p) *p = '\0';
+							server_command(cmd);
+						}
 					}
 					else if (i == listener) server_new_connection(listener);
 					else server_receive(i);
@@ -432,7 +439,6 @@ void server_run(int argc, char** argv) {
 				e->worker = w;
 			}
 		}
-
 
 		cambri_log_current(format_timestamp(time - server.timestamp));
 	}
