@@ -94,24 +94,49 @@ int cambri_read(char* buf, int len) {
 }
 
 
-void cambri_log_current(const char* time) {
+void cambri_log_current(double time) {
+	int i;
+
 	if (cambri_fd < 0) return;
 	cambri_write("state");
 	char buf[1024] = {};
 	int ret = cambri_read(buf, sizeof(buf));
 	if (ret == 0) error(1, 0, "cambri_log_current");
 
-	fprintf(cambri_log_file, "%s", time);
+
+	static int current_acc[8] = {};
+	static int sample_counter = 0;
+
+	static int next_second = -1;
+	if (next_second < 0) next_second = (int) time + 1;
+
+	if (time > next_second) {
+
+		while (time > next_second) {
+			fprintf(cambri_log_file, "%s", format_timestamp(next_second));
+			next_second++;
+			for (i = 0; i < 8; i++) {
+				fprintf(cambri_log_file, " | %4d", current_acc[i] / sample_counter);
+			}
+			fprintf(cambri_log_file, "\n");
+		}
+
+
+		fflush(cambri_log_file);
+
+
+		for (i = 0; i < 8; i++) current_acc[i] = 0;
+		sample_counter = 0;
+	}
+
+	sample_counter++;
 
 	char* p = buf;
-	int i;
 	for (i = 0; i < 8; i++) {
 		p = strchr(p, '\n') + 5;
 		int current = atoi(p);
-		fprintf(cambri_log_file, " | %4d", current);
+		current_acc[i] += current;
 	}
-	fprintf(cambri_log_file, "\n");
-	fflush(cambri_log_file);
 }
 
 

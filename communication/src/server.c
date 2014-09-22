@@ -440,7 +440,7 @@ void server_run(int argc, char** argv) {
 			}
 		}
 
-		cambri_log_current(format_timestamp(time - server.timestamp));
+		cambri_log_current(time - server.timestamp);
 	}
 
 	close(listener);
