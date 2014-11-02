@@ -53,50 +53,25 @@ def get_new_data(max_period, start_time):
 			h, m, s = map(float, columns[0].split(":"))
 			time = s + m * 60 + h * 3600
 			if newest_time == None: newest_time = time
-			if time < start_time or newest_time - time > max_period: break
+			if time <= start_time or newest_time - time > max_period: break
 			data.insert(0, [time] + map(int, columns[1:]))
 
 		events = []
-		reader = BackwardsReader("../communication/server.log")
-		newest_time = None
-		while 1:
-			line = reader.readline()
-			if line == "": break
-			fields = line.split()
-			h, m, s = map(float, fields[0].split(":"))
-			time = s + m * 60 + h * 3600
-			if newest_time == None: newest_time = time
-			if time < start_time or newest_time - time > max_period: break
-			events.insert(0, {"t": time, "e": fields[1], "d": " ".join(fields[2:])[1:-1] })
+
+		if data:
+			reader = BackwardsReader("../communication/server.log")
+			while 1:
+				line = reader.readline()
+				if line == "": break
+				fields = line.split()
+				h, m, s = map(float, fields[0].split(":"))
+				time = s + m * 60 + h * 3600
+				if time <= start_time or newest_time - time > max_period: break
+				if time <= data[-1][0]:
+					events.insert(0, {"t": time, "e": fields[1], "d": " ".join(fields[2:])[1:-1] })
 
 	except IOError: pass
 	return { "current": data, "events": events }
-
-
-
-# TESTING
-#import time
-#import random
-#import numpy
-#import math
-#t_start = time.time()
-#data = []
-#
-#def get_new_data(max_period, start_time):
-#	delta_t = 0.5
-#
-#	a = data[-1][0] + delta_t if data else 0
-#	b = time.time() - t_start
-#	data.extend([(
-#			t,
-#			int((1.4 + math.sin(t * 0.1)) * 100 + random.random() * 10 + math.cos(t * 0.7) * 20),
-#			random.randint(0, 100)
-#		) for t in numpy.arange(a, b, delta_t)])
-#
-#	i = 0
-#	while data[i][0] < start_time: i += 1
-#	while data[i][0] < b - max_period: i += 1
-#	return data[i:]
 
 
 

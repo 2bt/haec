@@ -20,4 +20,17 @@ svg {
 */
 }
 
+.work-command {
+	shape-rendering: crispEdges;
+	fill: #999;
+	stroke: #444;
+}
+
+.work-request {
+	/*shape-rendering: crispEdges;*/
+	fill: #999;
+	stroke: #444;
+}
+
+
 
