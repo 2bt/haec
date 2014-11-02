@@ -1,5 +1,5 @@
-RACKET_PATH = /home/twobit/Programming/scheme/racket
-RACR_PATH = /home/twobit/Programming/scheme/racr
+RACKET_PATH = ../../racket
+RACR_PATH = ../../racr
 
 CRACR = -I$(RACR_PATH)/racr-c/include -I$(RACKET_PATH)/racket/include
 LRACR = -lm -lpthread -ldl -lffi $(RACR_PATH)/racr-c/build/racr.o
