@@ -20,7 +20,10 @@ static FILE* cambri_log_file;
 
 int cambri_init(void) {
 	cambri_fd = open("/dev/ttyUSB0", O_RDWR | O_NOCTTY);
-	if (cambri_fd < 0) cambri_fd = open("/dev/ttyUSB1", O_RDWR | O_NOCTTY);
+	if (cambri_fd < 0) {
+		printf("USB1\n");
+		cambri_fd = open("/dev/ttyUSB1", O_RDWR | O_NOCTTY);
+	}
 
 	if (cambri_fd < 0) return -1;
 
@@ -42,7 +45,9 @@ int cambri_init(void) {
 	char buf[1024] = {};
 	for (i = 1; i <= 5; i++) {
 		cambri_write("en_profile %d %d", i, i == 4);
-		cambri_read(buf, sizeof(buf));
+		if (cambri_read(buf, sizeof(buf)) == 0) {
+			error(1, 0, "cambri_init");
+		}
 	}
 
 	cambri_log_file = fopen("cambri.log", "w");
@@ -87,7 +92,7 @@ int cambri_read(char* buf, int len) {
 	}
 
 	if (p >= 10 && strcmp(buf + p - 10, "\r\nboot>> \n") == 0) {
-//		printf("CAMBRI ERROR\n");
+		printf("CAMBRI ERROR\n");
 //		cambri_write("reboot");
 	}
 	return p;
