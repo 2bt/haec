@@ -8,7 +8,7 @@ LRACR += $(RACKET_PATH)/racket/src/build/racket/libmzgc.a
 
 
 CF = -Wall -O2 -Iinclude
-LF = -pthread
+LF = -pthread -lrt
 
 all: server worker
 
