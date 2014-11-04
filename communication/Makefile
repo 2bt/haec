@@ -38,7 +38,6 @@ obj/worker_main.o: Makefile src/worker_main.c
 
 bytecode:
 	@WD="$$PWD" &&\
-	cd .. &&\
 	cd $(RACR_PATH)/racr-c && ./bin/make_bc "`echo $$WD/bytecode`"
 
 clean:
