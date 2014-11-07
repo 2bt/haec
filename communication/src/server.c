@@ -82,12 +82,19 @@ static void server_command(char* cmd) {
 	// testing...
 	else if (cmd[0] == '(') eval_string(cmd);
 
-	else if (strncmp(cmd, "cambri ", 7) == 0) {
-		cambri_write(cmd + 7);
+	else if (strncmp(cmd, "cambri0 ", 7) == 0) {
+		cambri_write(0, cmd + 7);
 		char buf[4096] = {};
-		int ret = cambri_read(buf, sizeof(buf));
+		int ret = cambri_read(0, buf, sizeof(buf));
 		if (ret > 0) printf("%s\n", buf);
 	}
+	else if (strncmp(cmd, "cambri1 ", 7) == 0) {
+		cambri_write(1, cmd + 7);
+		char buf[4096] = {};
+		int ret = cambri_read(1, buf, sizeof(buf));
+		if (ret > 0) printf("%s\n", buf);
+	}
+
 	else if (sscanf(cmd, "boot %d", &id) == 1) {
 		w = worker_find_by_id(id);
 		if (!w) {
