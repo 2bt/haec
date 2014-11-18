@@ -16,6 +16,17 @@ static int cambri_fds[2];
 static FILE* cambri_log_file;
 
 
+static const char* get_tty_name(int c) {
+	if (c == 0) {
+		if (access("/sys/devices/platform/sw-ohci.1/usb2/2-1/2-1:1.0/ttyUSB0", F_OK) != -1) return "/dev/ttyUSB0";
+		if (access("/sys/devices/platform/sw-ohci.1/usb2/2-1/2-1:1.0/ttyUSB1", F_OK) != -1) return "/dev/ttyUSB1";
+	}
+	if (c == 1) {
+		if (access("/sys/devices/platform/sw-ohci.2/usb4/4-1/4-1:1.0/ttyUSB0", F_OK) != -1) return "/dev/ttyUSB0";
+		if (access("/sys/devices/platform/sw-ohci.2/usb4/4-1/4-1:1.0/ttyUSB1", F_OK) != -1) return "/dev/ttyUSB1";
+	}
+	return NULL;
+}
 
 
 int cambri_init(void) {
@@ -23,8 +34,11 @@ int cambri_init(void) {
 
 	int c, i;
 	for (c = 0; c < 2; c++) {
-		int fd = open(!c ? "/dev/ttyUSB0" : "/dev/ttyUSB1", O_RDWR | O_NOCTTY);
-		if (fd < 0) {
+		const char* name = get_tty_name(c);
+		int fd = -1;
+		if (name) fd = open(name, O_RDWR | O_NOCTTY);
+
+		if (!name || fd < 0) {
 			cambri_fds[c] = 0;
 			ret++;
 		}
