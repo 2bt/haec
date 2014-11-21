@@ -5,7 +5,7 @@
   (with-specification
     spec
     (ast-rule 'Config->Worker*<Workers-Switch*<Switches)
-    (ast-rule 'Worker->id-state-timestamp-switchid-Request*<Queue)
+    (ast-rule 'Worker->id-state-timestamp-switchid-devicetype-Request*<Queue)
     (ast-rule 'Request->id-size-time)
     (ast-rule 'Switch->id-state-timestamp)
     (compile-ast-specifications 'Config)
@@ -30,10 +30,10 @@
 
 
 (define add-worker-to-ast
-  (lambda (id time switch-id)
+  (lambda (id time switch-id device-type)
     (rewrite-add
       workers
-      (create-ast spec 'Worker (list id 'OFF time switch-id (create-ast-list (list)))))))
+      (create-ast spec 'Worker (list id 'OFF time switch-id device-type (create-ast-list (list)))))))
 
 
 (define add-switch-to-ast

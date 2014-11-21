@@ -39,6 +39,7 @@ int worker_init(void) {
 	double time = timestamp();
 	char line[256];
 	char addr[256];
+	char type[256];
 	int id;
 	int switch_id;
 
@@ -49,8 +50,8 @@ int worker_init(void) {
 		char* endl = strchr(line, '\n');
 		if (*endl) *endl = '\0';
 
-		if (sscanf(line, "worker %d %s %d",
-					&id, addr, &switch_id) == 3) {
+		if (sscanf(line, "worker %d %s %d %s",
+					&id, addr, &switch_id, type) == 4) {
 			worker_count++;
 			workers = realloc(workers, sizeof(Worker) * worker_count);
 			Worker* w = &workers[worker_count - 1];
@@ -64,14 +65,26 @@ int worker_init(void) {
 			w->state = WORKER_OFF;
 			w->timestamp = time;
 
-			racr_call_str("add-worker-to-ast", "idi", id, time, switch_id);
+			int t;
+			for (t = 0; t < DEVICE_MAX; t++) {
+				if (strcmp(type, worker_device_string(t)) == 0) {
+					w->device_type = t;
+					break;
+				}
+			}
+			if (t == DEVICE_MAX) {
+				fclose(f);
+				return -2;
+			}
+
+			racr_call_str("add-worker-to-ast", "idis", id, time, switch_id, type);
 		}
 		else if (sscanf(line, "switch %d", &id) == 1) {
 			racr_call_str("add-switch-to-ast", "id", id, time);
 		}
 		else {
 			fclose(f);
-			return -2;
+			return -3;
 		}
 	}
 	fclose(f);

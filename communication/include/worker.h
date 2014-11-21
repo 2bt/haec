@@ -4,12 +4,9 @@
 #include <unistd.h>
 
 
-#define TIME_BOOTING	54.7 // WORKER_BOOTING -> WORKER_IDLE
-#define TIME_HALTING	12.1 // WORKER_HALTING -> WORKER_OFF
-
-
 typedef struct {
 	struct in_addr addr;
+	int device_type;
 	int id;
 	int switch_id;
 
@@ -43,7 +40,7 @@ enum {
 };
 
 
-static inline const char* worker_state_string(const Worker* w) {
+static inline const char* worker_state_string(int state) {
 	static const char* strings[] = {
 		"OFF",
 		"BOOTING",
@@ -51,7 +48,24 @@ static inline const char* worker_state_string(const Worker* w) {
 		"HALTING",
 		"ERROR",
 	};
-	return strings[w->state];
+	return strings[state];
+}
+
+
+enum {
+	DEVICE_CUBIEBOARD,
+	DEVICE_SAMA5D3,
+
+	DEVICE_MAX
+};
+
+
+static inline const char* worker_device_string(int device_type) {
+	static const char* strings[] = {
+		"CUBIEBOARD",
+		"SAMA5D3"
+	};
+	return strings[device_type];
 }
 
 

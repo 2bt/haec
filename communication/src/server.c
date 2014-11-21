@@ -12,6 +12,9 @@
 #include "cambri.h"
 
 
+// TODO: move this to scheme
+#define TIME_HALTING 12.1
+
 Server server;
 
 
@@ -59,7 +62,7 @@ static void server_command(char* cmd) {
 			inet_ntop(AF_INET, &w->addr, s, sizeof(s));
 			printf(" %-4d | %-6d | %-15s:%05d | %6d | %-7s | %s\n",
 				w->id, w->switch_id, s, w->port, w->socket_fd,
-				worker_state_string(w), format_timestamp(time - w->timestamp));
+				worker_state_string(w->state), format_timestamp(time - w->timestamp));
 		}
 	}
 	else if (sscanf(cmd, "work %d %d", &size, &time) == 2) {

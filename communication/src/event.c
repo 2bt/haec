@@ -70,7 +70,7 @@ Event* event_pop(void) {
 
 
 void event_print(const Event* e, double time) {
-	server_log("%s %s", format_timestamp(time - server.timestamp), event_type_string(e));
+	server_log("%s %s", format_timestamp(time - server.timestamp), event_type_string(e->type));
 	switch (e->type) {
 	case EVENT_SCENARIO_START:
 		server_log(" (file: %s)", e->scenario);

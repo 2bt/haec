@@ -41,7 +41,7 @@ enum {
 };
 
 
-static inline const char* event_type_string(const Event* e) {
+static inline const char* event_type_string(int type) {
 	static const char* strings[] = {
 		"SCENARIO_START",
 		"SCENARIO_DONE",
@@ -62,7 +62,7 @@ static inline const char* event_type_string(const Event* e) {
 		"MEM_COMMAND",
 		"MEM_ACK",
 	};
-	return strings[e->type];
+	return strings[type];
 }
 
 
