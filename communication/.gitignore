@@ -3,3 +3,5 @@
 /bytecode
 /obj
 *.swp
+server.log
+cambri.log
