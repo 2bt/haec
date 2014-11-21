@@ -165,6 +165,7 @@ int main(int argc, char** argv) {
 			printf("server hung up\n");
 			close(socket_fd);
 			connected = 0;
+			sleep(1);
 
 			socket_fd = socket(AF_INET, SOCK_STREAM, 0);
 			if (socket_fd < 0) error(1, 0, "socket\n");
