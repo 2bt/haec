@@ -1,5 +1,27 @@
 $(document).ready(function() {
 
+	$("form").submit(function() {
+		var p = $(this).parent();
+		p.css("background-color", "red");
+
+		var q = $(this).serialize();
+		$("input[name=cmd]", this).val("");
+
+		$.post("command", q, function(ret) {
+			p.css("background-color", "");
+			console.log(ret);
+		});
+		return false;
+	});
+
+
+
+
+
+
+
+
+
 	var past = 60 * 5;
 	var tickWidth = 60;
 
@@ -10,7 +32,7 @@ $(document).ready(function() {
 	var time = -past;
 	var width = 600;
 	var height = 400;
-	var margin = {top: 20, right: 20, bottom: 0, left: 50, middle: 24, row: 25 };
+	var margin = { top: 20, right: 20, bottom: 0, left: 50, middle: 24, row: 25 };
 
 
 	var x = d3.scale.linear()
@@ -168,7 +190,9 @@ $(document).ready(function() {
 					if (e.e == "WORK_COMMAND") {
 						events.push(e);
 
-						var y = (e.info.id % 1000) * margin.row + 5;
+						var d = e.info.id % 1000 - 1;
+						var i = (e.info.id - d - 1) / 1000 - 1;
+						var y = (d + i * 8 + 1) * margin.row + 5;
 
 						e.rect = svg_events.append("rect")
 						.attr("class", "work-command")

@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import os
+import socket
 import cherrypy
 
 class BackwardsReader:
@@ -85,6 +86,13 @@ class Root:
 	@cherrypy.tools.json_out()
 	def poll(self, t=0, m=60.5): return get_new_data(float(m), float(t))
 
+
+	@cherrypy.expose
+	@cherrypy.tools.json_out()
+	def command(self, cmd):
+		s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+		i = s.sendto(cmd, ("localhost", 1338))
+		return i
 
 if __name__ == "__main__":
 

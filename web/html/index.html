@@ -10,13 +10,21 @@
 </head>
 <body>
 
-	<svg id="svg">
-		<clipPath id="clip">
-			<rect id="cliprect" />
-		</clipPath>
-		<g id="chart"></g>
-		<g id="events" style="clip-path:url(#clip);"></g>
-	</svg>
+	<div id="content">
+		<svg id="svg" class="column">
+			<clipPath id="clip">
+				<rect id="cliprect" />
+			</clipPath>
+			<g id="chart"></g>
+			<g id="events" style="clip-path:url(#clip);"></g>
+		</svg>
+		<div class="column right">
+			<form>
+				<input name="cmd" value="" />
+				<input type="submit" value="execute" />
+			</form>
+		</div>
+	</div>
 
 </body>
 </html>

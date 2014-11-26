@@ -3,12 +3,23 @@ body {
 	font: 10px sans-serif;
 }
 
-svg {
-	display: block;
+#content {
 	margin-left: auto;
 	margin-right: auto;
+}
 
+.column {
+	margin:1em;
+	float:left;
 	background-color:#fff;
+}
+
+.right {
+	padding:1em;
+}
+
+#svg {
+	display: block;
 }
 
 .axis path,
