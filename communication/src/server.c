@@ -13,7 +13,7 @@
 
 
 // TODO: move this to scheme
-#define TIME_HALTING 12.1
+#define TIME_HALTING 13.0
 
 Server server;
 
@@ -43,7 +43,7 @@ void server_log(const char* fmt, ...) {
 }
 
 
-static void server_command(char* cmd) {
+static int server_command(char* cmd) {
 
 	int id, size, time, threads, work_id;
 	Worker* w;
@@ -102,11 +102,11 @@ static void server_command(char* cmd) {
 		w = worker_find_by_id(id);
 		if (!w) {
 			printf("error: %s\n", cmd);
-			return;
+			return 1;
 		}
 		if (w->state != WORKER_OFF) {
 			printf("error: worker %d is not OFF\n", w->id);
-			return;
+			return 1;
 		}
 		w->state = WORKER_BOOTING;
 		w->timestamp = timestamp();
@@ -117,7 +117,7 @@ static void server_command(char* cmd) {
 		w = worker_find_by_id(id);
 		if (!w) {
 			printf("error: %s\n", cmd);
-			return;
+			return 1;
 		}
 		sendf(w->socket_fd, "halt");
 		w->state = WORKER_HALTING;
@@ -128,7 +128,7 @@ static void server_command(char* cmd) {
 		w = worker_find_by_id(id);
 		if (!w) {
 			printf("error: %s\n", cmd);
-			return;
+			return 1;
 		}
 		Event* e = event_append(EVENT_WORK_COMMAND);
 		e->worker = w;
@@ -140,7 +140,10 @@ static void server_command(char* cmd) {
 
 	else {
 		printf("error: %s\n", cmd);
+		return 1;
 	}
+
+	return 0;
 }
 
 
@@ -390,10 +393,20 @@ void server_run(int argc, char** argv) {
 	}
 	listen(listener, 5);
 
+	int commander = socket(AF_INET, SOCK_DGRAM, 0);
+	if (commander < 0) error(1, 0, "socket");
+	addr.sin_port = htons(PORT + 1);
+	if (bind(commander, (struct sockaddr*)&addr, sizeof(addr)) < 0) {
+		error(1, 0, "bind");
+	}
+
+
 	FD_ZERO(&server.fds);
 	FD_SET(STDIN, &server.fds);
 	FD_SET(listener, &server.fds);
-	server.fdmax = listener;
+	FD_SET(commander, &server.fds);
+
+	server.fdmax = commander;
 	server.work_counter = 0;
 	server.timestamp = timestamp();
 	server.running = 1;
@@ -419,9 +432,12 @@ void server_run(int argc, char** argv) {
 		// receive
 		fd_set fds = server.fds;
 		struct timeval timeout = { 0, 50000 };
-		int count = select(server.fdmax + 1, &fds, NULL, NULL, &timeout);
-		if (count < 0) break;
-		if (count > 0) {
+		int count;
+		while ((count = select(server.fdmax + 1, &fds, NULL, NULL, &timeout)) != 0) {
+			if (count < 0) {
+				server.running = 0;
+				break;
+			}
 			int i;
 			for (i = 0; i <= server.fdmax; i++) {
 				if (FD_ISSET(i, &fds)) {
@@ -432,6 +448,11 @@ void server_run(int argc, char** argv) {
 							if (p) *p = '\0';
 							server_command(cmd);
 						}
+					}
+					else if (i == commander) {
+						char cmd[256] = {};
+						recvfrom(commander, cmd, sizeof(cmd), 0, NULL, NULL);
+						server_command(cmd);
 					}
 					else if (i == listener) server_new_connection(listener);
 					else server_receive(i);
@@ -454,6 +475,7 @@ void server_run(int argc, char** argv) {
 	}
 
 	close(listener);
+	close(commander);
 
 	cambri_kill();
 	worker_kill();
