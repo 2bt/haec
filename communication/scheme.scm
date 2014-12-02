@@ -61,7 +61,7 @@
   (lambda (parent-id n)
     (let*
       ((parent (att-value 'lookup-worker config parent-id))
-       (workers (att-value 'Workers parent)))
+       (workers (ast-child 'Workers parent)))
       (rewrite-add workers n))))
 
 
@@ -111,6 +111,7 @@
       ast
       (list)
       (current-output-port))))
+
 
 ;;; the old stuff ;;;
 ;
