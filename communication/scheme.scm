@@ -18,6 +18,7 @@
 
     (ag-rule
       lookup-worker
+
       (Worker
         (lambda (n id)
           (if (= id (ast-child 'id n))
@@ -58,21 +59,22 @@
 
 (define add-node-to-ast
   (lambda (parent-id n)
-    ((parent (att-value 'lookup-worker config parent-id))
-     (workers (attr-value 'Workers parent)))
-    (rewrite-add workers n)))
+    (let*
+      ((parent (att-value 'lookup-worker config parent-id))
+       (workers (att-value 'Workers parent)))
+      (rewrite-add workers n))))
 
 
 (define add-worker-to-ast
   (lambda (id parent-id device-type time)
-    (add-note-to-ast
+    (add-node-to-ast
       parent-id
       (create-ast spec 'Worker (list id 'OFF time device-type (create-ast-list (list)))))))
 
 
 (define add-switch-to-ast
   (lambda (id parent-id time)
-    (add-note-to-ast
+    (add-node-to-ast
       parent-id
       (create-ast spec 'Switch (list id 'OFF time (create-ast-list (list)))))))
 
