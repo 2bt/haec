@@ -3,7 +3,7 @@
 (define ast
   (with-specification
     spec
-    (ast-rule 'Root->Config-Scheduler*<Schedulers-Scheduler<CurrentScheduler)
+    (ast-rule 'Root->Config-scheduler)
     (ast-rule 'Config->AbstractWorker*<Workers)
 
     (ast-rule 'AbstractWorker->id-state-timestamp)
@@ -12,19 +12,15 @@
 
     (ast-rule 'Request->id-size-time)
 
-    (ast-rule 'Scheduler->name-method)
-
     (compile-ast-specifications 'Root)
 
     (ag-rule
       lookup-worker
-
       (Worker
         (lambda (n id)
           (if (= id (ast-child 'id n))
             n
             #f)))
-
       (Switch
         (lambda (n id)
           (if (= id (ast-child 'id n))
@@ -33,7 +29,6 @@
               (lambda (i worker)
                 (att-value 'lookup-worker worker id))
               (ast-child 'Workers n)))))
-
       (Config
         (lambda (n id)
           (if (= id 0)
@@ -43,15 +38,76 @@
                 (att-value 'lookup-worker worker id))
               (ast-child 'Workers n))))))
 
+    (ag-rule
+      get-running-workers
+      (Worker
+        (lambda (n)
+          (if (eq? (ast-child 'state n) 'RUNNING)
+            (list n)
+            (list))))
+      (Switch
+        (lambda (n)
+          (fold-left
+            (lambda (a b)
+              (append a (att-value 'get-running-workers b)))
+            (list)
+            (ast-children (ast-child 'Workers n)))))
+      (Config
+        (lambda (n)
+          (fold-left
+            (lambda (a b)
+              (append a (att-value 'get-running-workers b)))
+            (list)
+            (ast-children (ast-child 'Workers n))))))
+
+
+    (ag-rule
+      schedule
+      (Root
+        (lambda (n time work-id load-size time-due)
+          (let ((scheduler (ast-child 'scheduler n)))
+            (cond
+              ((eq? scheduler 'round-robbin)
+               (let* ((running-workers (att-value 'get-running-workers (ast-child 'Config n)))
+                      (worker
+                        (if (null? running-workers)
+                          #f
+                          (fold-left
+                            (lambda (w1 w2)
+                              (if (<=
+                                    (ast-num-children (ast-child 'Queue w1))
+                                    (ast-num-children (ast-child 'Queue w2)))
+                                w1
+                                w2))
+                            (car running-workers)
+                            (cdr running-workers)))))
+                 (if worker
+                   (let*
+                     ((queue (ast-child 'Queue worker))
+                      (worker-idle? (= 0 (ast-num-children queue))))
+                     (rewrite-add
+                       queue
+                       (create-ast 'Request (list work-id load-size time-due)))
+                     (when worker-idle? (assign-next-request worker)))
+                   (display "no worker running\n")))))))))
+
 
 
     (compile-ag-specifications)
 
-    (create-ast 'Root
-                (list
-                  (create-ast 'Config (list (create-ast-list (list))))
-                  (create-ast-list (list))
-                  (create-ast-bud)))))
+    (create-ast
+      'Root
+      (list
+        (create-ast 'Config (list (create-ast-list (list))))
+        'round-robbin))))
+
+
+(define display-ast
+  (lambda ()
+    (print-ast
+      ast
+      (list)
+      (current-output-port))))
 
 
 (define config (ast-child 'Config ast))
@@ -59,9 +115,8 @@
 
 (define add-node-to-ast
   (lambda (parent-id n)
-    (let*
-      ((parent (att-value 'lookup-worker config parent-id))
-       (workers (ast-child 'Workers parent)))
+    (let* ((parent (att-value 'lookup-worker config parent-id))
+           (workers (ast-child 'Workers parent)))
       (rewrite-add workers n))))
 
 
@@ -79,38 +134,62 @@
       (create-ast spec 'Switch (list id 'OFF time (create-ast-list (list)))))))
 
 
+(define assign-next-request
+  (lambda (worker)
+    (let ((queue (ast-child 'Queue worker)))
+      (if (not (= 0 (ast-num-children queue)))
+        (let ((request (ast-child 1 queue)))
+          (add-event
+            'event-work-command
+            (ast-child 'id worker)
+            (ast-child 'id request)
+            0
+            (ast-child 'size request)))
+        #f))))
+
 
 (define event-worker-online
   (lambda (id time)
-    #f))
+    (let ((worker (att-value 'lookup-worker config id)))
+      (rewrite-terminal 'state worker 'RUNNING)
+      (rewrite-terminal 'timestamp worker time)
+      (assign-next-request worker))))
 
 
 (define event-worker-offline
   (lambda (id time)
-    #f))
+    (let ((worker (att-value 'lookup-worker config id)))
+      (when (not (eq? (ast-child 'state worker) 'HALTING))
+        (begin
+          (rewrite-terminal 'state worker 'ERROR)
+          (rewrite-terminal 'timestamp worker time))))))
 
 
 (define event-worker-off
   (lambda (id time)
-    #f))
+    (let ((worker (att-value 'lookup-worker config id)))
+      (rewrite-terminal 'state worker 'OFF)
+      (rewrite-terminal 'timestamp worker time))))
 
 
 (define event-work-request
   (lambda (time work-id load-size time-due)
-    #f))
+    (att-value 'schedule config time work-id load-size time-due)))
 
 
 (define event-work-complete
   (lambda (id time work-id)
-    #f))
-
-
-(define display-ast
-  (lambda ()
-    (print-ast
-      ast
-      (list)
-      (current-output-port))))
+    (let* ((worker (att-value 'lookup-worker config id))
+           (queue (ast-child 'Queue worker))
+           (request
+             (ast-find-child
+               (lambda (i request) (= (ast-child 'id request) work-id))
+               queue)))
+      (if request
+        (begin
+          (rewrite-delete request)
+          (assign-next-request worker))
+        (display "no request with specified id found")))))
 
 
 ;;; the old stuff ;;;
