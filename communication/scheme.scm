@@ -1,3 +1,18 @@
+; TODO:
+; requests brauchen ein attribut zur zeitlichen einordnung
+; requests brauchen ein child time-dispatch
+;
+;
+
+
+(define predict-processing-timespan
+  (lambda (load-size devicetype)
+    (* load-size
+       (cond
+         ((eq? devicetype 'CUBIEBOARD) 4)
+         ((eq? devicetype 'SAMA5D3) 2)))))
+
+
 (define spec (create-specification))
 
 (define ast
@@ -10,7 +25,7 @@
     (ast-rule 'Switch:AbstractWorker->AbstractWorker*<Workers)
     (ast-rule 'Worker:AbstractWorker->devicetype-Request*<Queue)
 
-    (ast-rule 'Request->id-size-time)
+    (ast-rule 'Request->id-size-deadline)
 
     (compile-ast-specifications 'Root)
 
@@ -70,16 +85,53 @@
               ((eq? scheduler 'round-robbin)
                (let ((running-workers (att-value 'get-running-workers (ast-child 'Config n))))
                  (if (null? running-workers)
-                   #f
-                   (fold-left
-                     (lambda (w1 w2)
-                       (if (<=
-                             (ast-num-children (ast-child 'Queue w1))
-                             (ast-num-children (ast-child 'Queue w2)))
-                         w1
-                         w2))
-                     (car running-workers)
-                     (cdr running-workers))))))))))
+                   (values #f #f)
+                   (let*
+                     ((worker
+                        (fold-left
+                          (lambda (w1 w2)
+                            (if (<=
+                                  (ast-num-children (ast-child 'Queue w1))
+                                  (ast-num-children (ast-child 'Queue w2)))
+                              w1
+                              w2))
+                          (car running-workers)
+                          (cdr running-workers)))
+                      (index
+                        (+ 1 (ast-num-children (ast-child 'Queue worker)))))
+                     (values worker index)))))
+              ((eq? scheduler 'smart-batmana)
+               (values #f #f)))))))
+
+
+
+    (ag-rule
+      timespan-processing
+      (Request
+        (lambda (n devicetype)
+          (predict-processing-timespan (ast-child 'size n) devicetype))))
+
+
+
+    (ag-rule
+      schedule-batman
+      (Worker
+        (lambda (n time work-id load-size time-due)
+          ; hint: worker must be in state RUNNING
+          (let*
+            ((devicetype (ast-child 'devicetype n))
+             (timespan-processing (predict-processing-timespan load-size devicetype))
+             (queue (ast-child 'Queue n))
+             (index
+               (let next ((index (ast-num-children queue)))
+                 (cond
+                   ((= index 0) 1)
+                   ((> time-due
+                       (ast-child 'deadline (ast-child index queue)))
+                    (+ index 1))
+                   ((= index 1) #f)
+                   (#t (next (- index 1)))
+
 
 
 
@@ -124,7 +176,7 @@
       (create-ast spec 'Switch (list id 'OFF time (create-ast-list (list)))))))
 
 
-(define assign-next-request
+(define dispatch-next-request
   (lambda (worker)
     (let ((queue (ast-child 'Queue worker)))
       (if (not (= 0 (ast-num-children queue)))
@@ -143,7 +195,7 @@
     (let ((worker (att-value 'lookup-worker config id)))
       (rewrite-terminal 'state worker 'RUNNING)
       (rewrite-terminal 'timestamp worker time)
-      (assign-next-request worker))))
+      (dispatch-next-request worker))))
 
 
 (define event-worker-offline
@@ -164,15 +216,16 @@
 
 (define event-work-request
   (lambda (time work-id load-size time-due)
-    (let ((worker (att-value 'schedule config time work-id load-size time-due)))
+    (let-values (((worker index) (att-value 'schedule config time work-id load-size time-due)))
       (if worker
         (let*
           ((queue (ast-child 'Queue worker))
            (worker-idle? (= 0 (ast-num-children queue))))
-          (rewrite-add
+          (rewrite-insert
             queue
+            index
             (create-ast spec 'Request (list work-id load-size time-due)))
-          (when worker-idle? (assign-next-request worker)))
+          (when worker-idle? (dispatch-next-request worker)))
         (display "no worker running\n")))))
 
 
@@ -187,7 +240,7 @@
       (if request
         (begin
           (rewrite-delete request)
-          (assign-next-request worker))
+          (dispatch-next-request worker))
         (display "no request with specified id found\n")))))
 
 
@@ -315,7 +368,7 @@
 ;          (cdr running-workers))))))
 ;
 ;
-;(define assign-next-request
+;(define dispatch-next-request
 ;  (lambda (worker)
 ;    (let ((queue (ast-child 'Queue worker)))
 ;      (if (not (= 0 (ast-num-children queue)))
@@ -334,7 +387,7 @@
 ;    (let ((worker (get-worker id)))
 ;      (rewrite-terminal 'state worker 'RUNNING)
 ;      (rewrite-terminal 'timestamp worker time)
-;      (assign-next-request worker))))
+;      (dispatch-next-request worker))))
 ;
 ;
 ;(define event-worker-offline
@@ -363,7 +416,7 @@
 ;          (rewrite-add
 ;            queue
 ;            (create-ast spec 'Request (list work-id load-size time-due)))
-;          (when worker-idle? (assign-next-request worker)))
+;          (when worker-idle? (dispatch-next-request worker)))
 ;        (display "no worker running\n")))))
 ;
 ;
@@ -379,7 +432,7 @@
 ;      (if request
 ;        (begin
 ;          (rewrite-delete request)
-;          (assign-next-request worker))
+;          (dispatch-next-request worker))
 ;        (display "no request with specified id found\n")))))
 ;
 ;
