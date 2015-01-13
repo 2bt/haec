@@ -46,7 +46,10 @@ void server_log(const char* fmt, ...) {
 
 static int server_command(char* cmd) {
 
-	int id, size, time, threads, work_id;
+	double time = timestamp();
+	double duration;
+
+	int id, size, threads, work_id;
 	Worker* w;
 	char scenario[256];
 
@@ -57,7 +60,6 @@ static int server_command(char* cmd) {
 	else if (strcmp(cmd, "status") == 0) {
 		printf(" id   | parent | address:port          | socket | state   | time\n");
 		printf("------+--------+-----------------------+--------+---------+-------------\n");
-		double time = timestamp();
 		for (w = worker_next(NULL); w; w = worker_next(w)) {
 			char s[INET_ADDRSTRLEN];
 			inet_ntop(AF_INET, &w->addr, s, sizeof(s));
@@ -66,11 +68,11 @@ static int server_command(char* cmd) {
 				worker_state_string(w->state), format_timestamp(time - w->timestamp));
 		}
 	}
-	else if (sscanf(cmd, "work %d %d", &size, &time) == 2) {
+	else if (sscanf(cmd, "work %d %lf", &size, &duration) == 2) {
 		Event* e = event_append(EVENT_WORK_REQUEST);
 		e->work_id = server.work_counter++;
 		e->load_size = size;
-		e->time_due = time;
+		e->deadline = time + duration;
 	}
 	else if (sscanf(cmd, "scenario %s", scenario) == 1) {
 		Event* e = event_append(EVENT_SCENARIO_START);
@@ -325,7 +327,7 @@ void server_process_events(void) {
 			break;
 
 		case EVENT_WORK_REQUEST:
-			racr_call_str("event-work-request", "diid", time, e->work_id, e->load_size, e->time_due);
+			racr_call_str("event-work-request", "diid", time, e->work_id, e->load_size, e->deadline);
 			break;
 
 		case EVENT_WORK_COMMAND:

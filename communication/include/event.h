@@ -11,7 +11,7 @@ struct Event {
 	// validity of fields depends on type
 	Worker* worker;
 	int		load_size;
-	double	time_due;
+	double	deadline;
 	int		work_id;
 	int		threads;
 	int		ack;
