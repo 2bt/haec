@@ -1,4 +1,6 @@
 ; TODO:
+; - return error message from scheduler
+
 
 (define predict-processing-timespan
   (lambda (load-size devicetype)
@@ -14,12 +16,11 @@
   (with-specification
     spec
     (ast-rule 'Root->Config-scheduler)
-    (ast-rule 'Config->AbstractWorker*<Workers)
-
     (ast-rule 'AbstractWorker->id-state-timestamp)
-    (ast-rule 'Switch:AbstractWorker->AbstractWorker*<Workers)
+    (ast-rule 'CompositeWorker:AbstractWorker->AbstractWorker*<Workers)
+    (ast-rule 'Config:CompositeWorker->)
+    (ast-rule 'Switch:CompositeWorker->)
     (ast-rule 'Worker:AbstractWorker->devicetype-Request*<Queue)
-
     (ast-rule 'Request->id-size-deadline-dispatchtime)
 
     (compile-ast-specifications 'Root)
@@ -31,17 +32,9 @@
           (if (= id (ast-child 'id n))
             n
             #f)))
-      (Switch
+      (CompositeWorker
         (lambda (n id)
           (if (= id (ast-child 'id n))
-            n
-            (ast-find-child*
-              (lambda (i worker)
-                (att-value 'lookup-worker worker id))
-              (ast-child 'Workers n)))))
-      (Config
-        (lambda (n id)
-          (if (= id 0)
             n
             (ast-find-child*
               (lambda (i worker)
@@ -55,14 +48,7 @@
           (if (eq? (ast-child 'state n) 'RUNNING)
             (list n)
             (list))))
-      (Switch
-        (lambda (n)
-          (fold-left
-            (lambda (a b)
-              (append a (att-value 'get-running-workers b)))
-            (list)
-            (ast-children (ast-child 'Workers n)))))
-      (Config
+      (CompositeWorker
         (lambda (n)
           (fold-left
             (lambda (a b)
@@ -70,35 +56,35 @@
             (list)
             (ast-children (ast-child 'Workers n))))))
 
-
     (ag-rule
       schedule
       (Root
         (lambda (n time work-id load-size deadline)
           (let ((scheduler (ast-child 'scheduler n)))
-            (cond
-              ((eq? scheduler 'round-robbin)
-               (let ((running-workers (att-value 'get-running-workers (ast-child 'Config n))))
-                 (if (null? running-workers)
-                   (values #f #f)
-                   (let*
-                     ((worker
-                        (fold-left
-                          (lambda (w1 w2)
-                            (if (<=
-                                  (ast-num-children (ast-child 'Queue w1))
-                                  (ast-num-children (ast-child 'Queue w2)))
-                              w1
-                              w2))
-                          (car running-workers)
-                          (cdr running-workers)))
-                      (index
-                        (+ 1 (ast-num-children (ast-child 'Queue worker)))))
-                     (values worker index)))))
-              ((eq? scheduler 'smart-batmana)
-               (values #f #f)))))))
+            (att-value scheduler (ast-child 'Config n))))))
 
 
+    (ag-rule
+      schedule-robin
+      (Config
+        (lambda (n)
+          (let ((running-workers (att-value 'get-running-workers n)))
+            (if (null? running-workers)
+              (values #f #f)
+              (let*
+                ((worker
+                   (fold-left
+                     (lambda (w1 w2)
+                       (if (<=
+                             (ast-num-children (ast-child 'Queue w1))
+                             (ast-num-children (ast-child 'Queue w2)))
+                         w1
+                         w2))
+                     (car running-workers)
+                     (cdr running-workers)))
+                 (index
+                   (+ 1 (ast-num-children (ast-child 'Queue worker)))))
+                (values worker index)))))))
 
     (ag-rule
       processing-timespan
@@ -109,7 +95,6 @@
              (worker (ast-parent queue))
              (devicetype (ast-child 'devicetype worker)))
             (predict-processing-timespan (ast-child 'size n) devicetype)))))
-
 
     (ag-rule
       predicted-termination-time
@@ -125,7 +110,6 @@
                  (ast-child 'dispatchtime n) ; must not be #f
                  (att-value 'predicted-termination-time
                             (ast-child (- index 1) queue))))))))
-
 
     (ag-rule
       maximum-dispatch-deferment
@@ -161,6 +145,28 @@
                       index
                       (next (+ index 1)))))))))))
 
+    (ag-rule
+      workload-heuristic
+      (Worker
+        (lambda (n)
+          (let*
+            ((queue (ast-child 'Queue n))
+             (queue-length (ast-num-children queue)))
+            (let next ((i 1) (sum 0))
+              (if (> i queue-length)
+                sum
+                (next (+ i 1)
+                      (+ sum (att-value 'processing-timespan (ast-child i queue)))))))))
+      (Switch
+        (lambda (n)
+          (let*
+            ((workers (ast-child 'Workers n))
+             (num-workers (ast-num-children workers)))
+            (let next ((i 1) (sum 0))
+              (if (> i num-workers)
+                sum
+                (next (+ i 1)
+                      (+ sum (att-value 'processing-timespan (ast-child i workers))))))))))
 
     (ag-rule
       schedule-batman
@@ -178,19 +184,37 @@
                  time
                  (att-value 'predict-termination-time (ast-child (- index 1) queue))))
              (error
-               (>
-                 (+ dispatch-time processing-timespan)
-                 deadline))
-             (error
                (or
-                 error
-                 (if (<= index queue-length)
+                 (>
+                   (+ dispatch-time processing-timespan)
+                   deadline)
+                 (and
+                   (<= index queue-length)
                    (let
                      ((deferment (att-value 'maximum-dispatch-deferment (att-child index queue))))
                      (> processing-timespan deferment))))))
             (if error
-              #f
-              index)))))
+              (values #f #f)
+              (values n index)))))
+
+      (CompositeWorker
+        (lambda (n time work-id load-size deadline)
+          ; hint: switch must be in state RUNNING
+          (let*
+            ((workers (ast-children (ast-child 'Workers n)))
+             (sorted-workers
+               (list-sort
+                 (lambda (a b)
+                   (>
+                     (att-value 'workload-heuristic a)
+                     (att-value 'workload-heuristic b)))
+                 workers)))
+            (let next ((rest sorted-workers))
+              (let-values
+                (((w i) (att-value 'schedule-batman (car rest))))
+                (if w
+                  (values w i)
+                  (next (cdr rest)))))))))
 
 
 
@@ -200,8 +224,14 @@
     (create-ast
       'Root
       (list
-        (create-ast 'Config (list (create-ast-list (list))))
-        'round-robbin))))
+        (create-ast
+          'Config
+          (list
+            0
+            'RUNNING
+            0
+            (create-ast-list (list))))
+        'schedule-robin))))
 
 
 (define display-ast
