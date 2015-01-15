@@ -1,10 +1,9 @@
 ; TODO:
 ; C:
-; - set thread cout on worker_main.c (`nproc`)
+; - keep state.txt
 ; - implement current accumulator
 ; - event reset-accumulator
 ; - event set-scheduler
-; - state.txt
 ; Web:
 ; - select for scheduler
 ; - select for scenario
@@ -191,8 +190,9 @@
       schedule-batman
       (Worker
         (lambda (n time work-id load-size deadline)
+          (display ">Worker schedule-batman\n")
           ; hint: worker must be in state RUNNING
-          (if (not (= (ast-child 'state n) 'RUNNING))
+          (if (not (eq? (ast-child 'state n) 'RUNNING))
             (cons #f #f)
             (let*
               ((queue (ast-child 'Queue n))
@@ -206,7 +206,6 @@
                    (att-value 'predict-termination-time (ast-child (- index 1) queue))))
                (error
                  (or
-                   (not (= )
                    (>
                      (+ dispatch-time processing-timespan)
                      deadline)
@@ -214,15 +213,16 @@
                      (<= index queue-length)
                      (let
                        ((deferment (att-value 'maximum-dispatch-deferment (att-child index queue))))
-                       (> processing-timespan deferment)))))))
+                       (> processing-timespan deferment))))))
               (if error
                 (cons #f #f)
                 (cons n index))))))
 
       (CompositeWorker
         (lambda (n time work-id load-size deadline)
+          (display ">CompositeWorker schedule-batman\n")
           ; hint: switch must be in state RUNNING
-          (if (not (= (ast-child 'state n) 'RUNNING))
+          (if (not (eq? (ast-child 'state n) 'RUNNING))
             (cons #f #f)
             (let*
               ((workers (ast-children (ast-child 'Workers n)))
@@ -237,7 +237,7 @@
                 (if (null? rest)
                   (cons #f #f)
                   (let*
-                    ((pair (att-value 'schedule-batman (car rest)))
+                    ((pair (att-value 'schedule-batman (car rest) time work-id load-size deadline))
                      (w (car pair))
                      (i (cdr pair)))
                     (if w
@@ -250,10 +250,11 @@
     (create-ast
       'Root
       (list
-        'schedule-robin
+        ;'schedule-robin
+        'schedule-batman
         (create-ast
           'Config
-          (list 0 'SANE 0 (create-ast-list (list))))))))
+          (list 0 'RUNNING 0 (create-ast-list (list))))))))
 
 
 (define display-ast

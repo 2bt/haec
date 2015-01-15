@@ -8,6 +8,7 @@ function update() {
 END
 }
 
-for i in $(seq 21 27); do
+#for i in 21 22 23 41 42 43; do
+for i in 21 22 23; do
 	update 192.168.1.$i &
 done
