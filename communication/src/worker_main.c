@@ -68,7 +68,7 @@ void handle_command(char* cmd) {
 		if (!p) goto ERROR;
 		WorkArgs* args = malloc(sizeof(WorkArgs));
 		if (sscanf(p, "%d %lf",
-			&args->id, &args->load_size) != 3) goto ERROR;
+			&args->id, &args->load_size) != 2) goto ERROR;
 		pthread_t work;
 		int e = pthread_create(&work, NULL, (void*(*)(void*)) work_thread, args);
 		sendf(socket_fd, "work-ack %d", e);
