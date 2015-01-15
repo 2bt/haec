@@ -28,6 +28,7 @@ ssize_t sendf(int s, const char* format, ...) {
 
 
 int socket_fd;
+int thread_count;
 
 
 typedef struct { int id; double load_size; } WorkArgs;
@@ -132,6 +133,17 @@ int main(int argc, char** argv) {
 		printf("usage: %s server-address\n", argv[0]);
 		return 0;
 	}
+
+	{
+		FILE* f = popen("nproc", "r");
+		char line[64];
+		size_t len = fread(line, 1, sizeof(line), f);
+		pclose(f);
+		if (len > 0) thread_count = atoi(line) - 1;
+		else thread_count = 0;
+	}
+
+
 	const char* addr = argc == 2 ? argv[1] : "127.0.0.1";
 	struct sockaddr_in server = { AF_INET, htons(PORT), { inet_addr(addr) } };
 
