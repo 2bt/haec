@@ -38,7 +38,7 @@ void* work_thread(WorkArgs* args) {
 	char line[256];
 	snprintf(line, sizeof(line),
 		"../index/index mr %d ../index/wiki/dump.txt %d",
-		0, (unsigned) (args->load_size * 1024 * 1024)); // convert MB to Bytes
+		thread_count, (unsigned) (args->load_size * 1024 * 1024)); // convert MB to Bytes
 
 	FILE* f = popen(line, "r");
 	size_t len = fread(line, 1, sizeof(line), f);
