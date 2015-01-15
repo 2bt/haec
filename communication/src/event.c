@@ -88,10 +88,10 @@ void event_print(const Event* e, double time) {
 		server_log(" (id: %d; ack: %d)", e->worker->id, e->ack);
 		break;
 	case EVENT_WORK_REQUEST:
-		server_log(" (work-id: %d; load-size: %d; deadline: %.2f)", e->work_id, e->load_size, e->deadline);
+		server_log(" (work-id: %d; load-size: %lf; deadline: %.2lf)", e->work_id, e->load_size, e->deadline);
 		break;
 	case EVENT_WORK_COMMAND:
-		server_log(" (id: %d; work-id: %d; threads: %d; load-size: %d)", e->worker->id, e->work_id, e->threads, e->load_size);
+		server_log(" (id: %d; work-id: %d; load-size: %lf)", e->worker->id, e->work_id, e->load_size);
 		break;
 	case EVENT_WORK_COMPLETE:
 		server_log(" (id: %d; work-id: %d; ack: %d)", e->worker->id, e->work_id, e->ack);

@@ -30,14 +30,14 @@ ssize_t sendf(int s, const char* format, ...) {
 int socket_fd;
 
 
-typedef struct { int id; int threads; int input_len; } WorkArgs;
+typedef struct { int id; double load_size; } WorkArgs;
 
 
 void* work_thread(WorkArgs* args) {
 	char line[256];
 	snprintf(line, sizeof(line),
 		"../index/index mr %d ../index/wiki/dump.txt %d",
-		args->threads, args->input_len);
+		0, (unsigned) (args->load_size * 1024 * 1024)); // convert MB to Bytes
 
 	FILE* f = popen(line, "r");
 	size_t len = fread(line, 1, sizeof(line), f);
@@ -66,8 +66,8 @@ void handle_command(char* cmd) {
 		// spawn work thread
 		if (!p) goto ERROR;
 		WorkArgs* args = malloc(sizeof(WorkArgs));
-		if (sscanf(p, "%d %d %d",
-			&args->id, &args->threads, &args->input_len) != 3) goto ERROR;
+		if (sscanf(p, "%d %lf",
+			&args->id, &args->load_size) != 3) goto ERROR;
 		pthread_t work;
 		int e = pthread_create(&work, NULL, (void*(*)(void*)) work_thread, args);
 		sendf(socket_fd, "work-ack %d", e);

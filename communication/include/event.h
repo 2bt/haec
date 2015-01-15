@@ -10,10 +10,9 @@ struct Event {
 
 	// validity of fields depends on type
 	Worker* worker;
-	int		load_size;
+	double	load_size;
 	double	deadline;
 	int		work_id;
-	int		threads;
 	int		ack;
 	char*	scenario;
 };

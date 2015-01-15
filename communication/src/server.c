@@ -47,9 +47,8 @@ void server_log(const char* fmt, ...) {
 static int server_command(char* cmd) {
 
 	double time = timestamp();
-	double duration;
-
-	int id, size, threads, work_id;
+	double duration, size;
+	int id, work_id;
 	Worker* w;
 	char scenario[256];
 
@@ -68,7 +67,7 @@ static int server_command(char* cmd) {
 				worker_state_string(w->state), format_timestamp(time - w->timestamp));
 		}
 	}
-	else if (sscanf(cmd, "work %d %lf", &size, &duration) == 2) {
+	else if (sscanf(cmd, "work %lf %lf", &size, &duration) == 2) {
 		Event* e = event_append(EVENT_WORK_REQUEST);
 		e->work_id = server.work_counter++;
 		e->load_size = size;
@@ -127,7 +126,7 @@ static int server_command(char* cmd) {
 		w->timestamp = timestamp();
 	}
 
-	else if (sscanf(cmd, "work-command %d %d %d %d", &id, &work_id, &threads, &size) == 4) {
+	else if (sscanf(cmd, "work-command %d %d %lf", &id, &work_id, &size) == 4) {
 		w = worker_find_by_id(id);
 		if (!w) {
 			printf("error: %s\n", cmd);
@@ -137,7 +136,6 @@ static int server_command(char* cmd) {
 		e->worker = w;
 		e->work_id = work_id;
 		e->load_size = size;
-		e->threads = threads;
 
 	}
 
@@ -299,6 +297,18 @@ void server_process_events(void) {
 		case EVENT_SCENARIO_DONE:
 			break;
 
+		case EVENT_WORKER_ON:
+			if (w->state != WORKER_OFF) {
+				printf("worker %d cannot be turned on as it is not off\n", w->id);
+				w->state = WORKER_ERROR;
+			}
+			else {
+				w->state = WORKER_BOOTING;
+				cambri_set_mode(w->id, CAMBRI_CHARGE);
+			}
+			w->timestamp = time;
+			break;
+
 		case EVENT_WORKER_ONLINE:
 			if (w->state == WORKER_BOOTING) {
 				printf("worker %d booted successfully in %.2f seconds\n", w->id, time - w->timestamp);
@@ -327,11 +337,11 @@ void server_process_events(void) {
 			break;
 
 		case EVENT_WORK_REQUEST:
-			racr_call_str("event-work-request", "diid", time, e->work_id, e->load_size, e->deadline);
+			racr_call_str("event-work-request", "didd", time, e->work_id, e->load_size, e->deadline);
 			break;
 
 		case EVENT_WORK_COMMAND:
-			sendf(w->socket_fd, "work %d %d %d", e->work_id, e->threads, e->load_size);
+			sendf(w->socket_fd, "work %d %lf", e->work_id, e->load_size);
 			break;
 
 		case EVENT_WORK_ACK:

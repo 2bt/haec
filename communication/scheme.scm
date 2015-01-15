@@ -1,11 +1,24 @@
 ; TODO:
+; C:
+; - set thread cout on worker_main.c (`nproc`)
+; - implement current accumulator
+; - event reset-accumulator
+; - event set-scheduler
+; - state.txt
+; Web:
+; - select for scheduler
+; - select for scenario
+; - play button
+; - reset button
+; - stromzähler
+; Scheme:
 ; - return error message from scheduler
 
 
 (define predict-processing-timespan
-  (lambda (load-size devicetype)
+  (lambda (load-size device-type)
     (* load-size
-       (cdr (assq devicetype
+       (cdr (assq device-type
                   '((CUBIEBOARD . 4)
                     (SAMA5D3 .    2)))))))
 
@@ -47,10 +60,10 @@
         (lambda (n check)
           (if (check n) (list n) (list))))
       (CompositeWorker
-        (lambda (n)
+        (lambda (n check)
           (fold-left
             (lambda (a b)
-              (append a (att-value 'get-filtered-workers check b)))
+              (append a (att-value 'get-filtered-workers b check)))
             (list)
             (ast-children (ast-child 'Workers n))))))
 
@@ -58,21 +71,25 @@
       schedule
       (Root
         (lambda (n time work-id load-size deadline)
-          (let ((scheduler (ast-child 'scheduler n)))
-            (att-value scheduler (ast-child 'Config n))))))
+          (let
+            ((scheduler (ast-child 'scheduler n)))
+            (display ">Root schedule\n")
+            (att-value scheduler (ast-child 'Config n) time work-id load-size deadline)))))
 
 
     (ag-rule
       schedule-robin
       (Config
-        (lambda (n)
-          (let ((running-workers
-                  (att-value
-                    'get-filtered-workers
-                    (lambda (worker) (eq? (ast-child 'state worker) 'RUNNING))
-                    n)))
+        (lambda (n time work-id load-size deadline)
+          (display ">Config schedule-robin\n")
+          (let
+            ((running-workers
+               (att-value
+                 'get-filtered-workers
+                 n
+                 (lambda (worker) (eq? (ast-child 'state worker) 'RUNNING)))))
             (if (null? running-workers)
-              (values #f #f)
+              (cons #f #f)
               (let*
                 ((worker
                    (fold-left
@@ -86,7 +103,7 @@
                      (cdr running-workers)))
                  (index
                    (+ 1 (ast-num-children (ast-child 'Queue worker)))))
-                (values worker index)))))))
+                (cons worker index)))))))
 
     (ag-rule
       processing-timespan
@@ -95,8 +112,8 @@
           (let*
             ((queue (ast-parent n))
              (worker (ast-parent queue))
-             (devicetype (ast-child 'devicetype worker)))
-            (predict-processing-timespan (ast-child 'size n) devicetype)))))
+             (device-type (ast-child 'devicetype worker)))
+            (predict-processing-timespan (ast-child 'size n) device-type)))))
 
     (ag-rule
       predicted-termination-time
@@ -106,7 +123,7 @@
             ((queue (ast-parent n))
              (worker (ast-parent queue))
              (index (ast-child-index n))
-             (devicetype (ast-child 'devicetype worker)))
+             (device-type (ast-child 'devicetype worker)))
             (+ (att-value 'processing-timespan n)
                (if (= index 1)
                  (ast-child 'dispatchtime n) ; must not be #f
@@ -176,13 +193,13 @@
         (lambda (n time work-id load-size deadline)
           ; hint: worker must be in state RUNNING
           (if (not (= (ast-child 'state n) 'RUNNING))
-            (values #f #f)
+            (cons #f #f)
             (let*
               ((queue (ast-child 'Queue n))
                (queue-length (ast-num-children queue))
                (index (att-value 'find-insertion-position n deadline))
-               (devicetype (ast-child 'devicetype n))
-               (processing-timespan (predict-processing-timespan load-size devicetype))
+               (device-type (ast-child 'devicetype n))
+               (processing-timespan (predict-processing-timespan load-size device-type))
                (dispatch-time
                  (if (= index 1)
                    time
@@ -199,14 +216,14 @@
                        ((deferment (att-value 'maximum-dispatch-deferment (att-child index queue))))
                        (> processing-timespan deferment)))))))
               (if error
-                (values #f #f)
-                (values n index))))))
+                (cons #f #f)
+                (cons n index))))))
 
       (CompositeWorker
         (lambda (n time work-id load-size deadline)
           ; hint: switch must be in state RUNNING
           (if (not (= (ast-child 'state n) 'RUNNING))
-            (values #f #f)
+            (cons #f #f)
             (let*
               ((workers (ast-children (ast-child 'Workers n)))
                (sorted-workers
@@ -218,11 +235,13 @@
                    workers)))
               (let next ((rest sorted-workers))
                 (if (null? rest)
-                  (values #f #f)
-                  (let-values
-                    (((w i) (att-value 'schedule-batman (car rest))))
+                  (cons #f #f)
+                  (let*
+                    ((pair (att-value 'schedule-batman (car rest)))
+                     (w (car pair))
+                     (i (cdr pair)))
                     (if w
-                      (values w i)
+                      pair
                       (next (cdr rest)))))))))))
 
 
@@ -270,16 +289,62 @@
 
 
 
-;(let
-;  ((idle-workers
-;     (att-value
-;       'get-filtered-workers
-;       (lambda (worker)
-;         (and
-;           (eq? (ast-child 'state worker) 'RUNNING)
-;           (= 0 (ast-num-children (ast-child 'Queue worker)))))
-;       n)))
-;  (#f))
+
+(define adapt
+  (lambda (num-backup-workers)
+    (let*
+      ((key
+         (lambda (worker)
+           (cdr (assq (ast-child 'devicetype worker)
+                      '((CUBIEBOARD . 1)
+                        (SAMA5D3 .    0))))))
+       (idle-workers
+         (att-value
+           'get-filtered-workers
+           (lambda (worker)
+             (and
+               (memq (ast-child 'state worker) '(RUNNING BOOTING))
+               (= 0 (ast-num-children (ast-child 'Queue worker)))))
+           config))
+       (num-idle-workers (length idle-workers)))
+      (cond
+        ((> num-idle-workers num-backup-workers) ; halt
+         (let
+           ((num-excess-workers (- num-idle-workers num-backup-workers))
+            (sorted-idle-workers
+              (list-sort
+                (lambda (a b) (< (key a) (key b)))
+                idle-workers)))
+           (let next ((i num-excess-workers) (rest sorted-idle-workers))
+             (when (and (> i 0) (not (null? rest)))
+               (let ((worker (car rest)))
+                 (rewrite-terminal 'state worker 'HALTING)
+                 (add-event
+                   'event-halt-command
+                   (ast-child 'id worker))
+                 (next (- i 1) (cdr rest))))))
+         ((< num-idle-workers num-backup-workers) ; boot
+          (let*
+            ((off-workers
+               (att-value
+                 'get-filtered-workers
+                 (lambda (worker) (= (ast-child 'state worker) 'OFF))
+                 config))
+             (num-off-workers (length off-workers))
+             (sorted-off-workers
+               (list-sort
+                 (lambda (a b) (> (key a) (key b)))
+                 off-workers)))
+             (num-wanting-workers (- num-backup-workers num-idle-workers)))
+            (let next ((i num-wanting-workers) (rest sorted-off-workers))
+              (when (and (> i 0) (not (null? rest)))
+                (let ((worker (car rest)))
+                  (rewrite-terminal 'state worker 'BOOTING)
+                  (add-event
+                    'event-worker-on
+                    (ast-child 'id worker))
+                  (next (- i 1) (cdr rest)))))))))))
+
 
 
 (define dispatch-next-request
@@ -292,10 +357,10 @@
             'event-work-command
             (ast-child 'id worker)
             (ast-child 'id request)
-            0
             (ast-child 'size request)))
         #f))))
 
+;;; events ;;;
 
 (define event-worker-online
   (lambda (id time)
@@ -323,7 +388,10 @@
 
 (define event-work-request
   (lambda (time work-id load-size deadline)
-    (let-values (((worker index) (att-value 'schedule config time work-id load-size deadline)))
+    (let*
+      ((pair (att-value 'schedule ast time work-id load-size deadline))
+       (worker (car pair))
+       (index (cdr pair)))
       (if worker
         (let*
           ((queue (ast-child 'Queue worker))
