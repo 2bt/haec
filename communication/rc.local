@@ -18,12 +18,16 @@ if [ -e $RED_LED ]; then
 	echo 255 > ${RED_LED}/brightness
 fi
 
-
-BLUE_LED=/sys/class/leds/d2
-if [ -e $BLUE_LED ]; then
-	BLUE_LED=/sys/class/leds/blue\:ph21\:led2
+GREEN_LED=/sys/class/leds/green\:ph20\:led1
+if [ -e $RED_LED ]; then
+	echo none > ${RED_LED}/trigger
+	echo 0 > ${RED_LED}/brightness
 fi
 
+BLUE_LED=/sys/class/leds/blue\:ph21\:led2
+if [ ! -e $BLUE_LED ]; then
+	BLUE_LED=/sys/class/leds/d2
+fi
 echo none > ${BLUE_LED}/trigger
 echo 0 > ${BLUE_LED}/brightness
 
