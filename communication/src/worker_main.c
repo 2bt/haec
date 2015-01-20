@@ -16,6 +16,15 @@
 enum { PORT = 1337 };
 
 
+const char* led_path = NULL;
+void set_led(int flag) {
+	if (!led_path) return;
+	FILE* f = fopen(led_path, "w");
+	fprintf(f, flag ? "255" : "0");
+	fclose(f);
+}
+
+
 ssize_t sendf(int s, const char* format, ...) {
 	char line[256];
 	va_list args;
@@ -35,6 +44,9 @@ typedef struct { int id; double load_size; } WorkArgs;
 
 
 void* work_thread(WorkArgs* args) {
+
+	set_led(1);
+
 	char line[256];
 	snprintf(line, sizeof(line),
 		"../index/index mr %d ../index/wiki/dump.txt %d",
@@ -49,6 +61,9 @@ void* work_thread(WorkArgs* args) {
 	sendf(socket_fd, "work-complete %d %d", args->id, ret);
 
 	free(args);
+
+	set_led(0);
+
 	return NULL;
 }
 
@@ -127,6 +142,7 @@ ERROR:
 }
 
 
+
 int main(int argc, char** argv) {
 
 	if (argc > 2) {
@@ -134,6 +150,7 @@ int main(int argc, char** argv) {
 		return 0;
 	}
 
+	// get thread count
 	{
 		FILE* f = popen("nproc", "r");
 		char line[64];
@@ -143,15 +160,28 @@ int main(int argc, char** argv) {
 		else thread_count = 0;
 	}
 
+	// init led path
+	{
+		const char* led_paths[2] = {
+			"/sys/class/leds/blue:ph21:led2/brightness",
+			"/sys/class/leds/d2"
+		};
+		int i;
+		for (i = 0; i < 2; i++) {
+			if (access(led_paths[i], W_OK) != -1) {
+				led_path = led_paths[i];
+				break;
+			}
+		}
+	}
+
 
 	const char* addr = argc == 2 ? argv[1] : "127.0.0.1";
 	struct sockaddr_in server = { AF_INET, htons(PORT), { inet_addr(addr) } };
 
-
 	int connected = 0;
 	socket_fd = socket(AF_INET, SOCK_STREAM, 0);
 	if (socket_fd < 0) error(1, 0, "socket\n");
-
 
 	while (running) {
 
