@@ -168,7 +168,7 @@ int main(int argc, char** argv) {
 	{
 		const char* led_paths[2] = {
 			"/sys/class/leds/blue:ph21:led2/brightness",
-			"/sys/class/leds/d2"
+			"/sys/class/leds/d2/brightness"
 		};
 		int i;
 		for (i = 0; i < 2; i++) {
