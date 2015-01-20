@@ -20,6 +20,10 @@ const char* led_path = NULL;
 void set_led(int flag) {
 	if (!led_path) return;
 	FILE* f = fopen(led_path, "w");
+	if (!f) {
+		printf("error: set_led\n");
+		return;
+	}
 	fprintf(f, flag ? "255" : "0");
 	fclose(f);
 }
