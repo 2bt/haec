@@ -19,9 +19,9 @@ if [ -e $RED_LED ]; then
 fi
 
 GREEN_LED=/sys/class/leds/green\:ph20\:led1
-if [ -e $RED_LED ]; then
-	echo none > ${RED_LED}/trigger
-	echo 0 > ${RED_LED}/brightness
+if [ -e $GREEN_LED ]; then
+	echo none > ${GREEN_LED}/trigger
+	echo 0 > ${GREEN_LED}/brightness
 fi
 
 BLUE_LED=/sys/class/leds/blue\:ph21\:led2
