@@ -84,13 +84,13 @@
       lookup-worker
       (Worker
         (lambda (n id)
-          (display "[ATTRIBUTE on Worker] loopup-worker\n")
+          (display "[ATTRIBUTE on Worker] lookup-worker\n")
           (if (= id (ast-child 'id n))
             n
             #f)))
       (CompositeWorker
         (lambda (n id)
-          (display "[ATTRIBUTE on CompositeWorker] loopup-worker\n")
+          (display "[ATTRIBUTE on CompositeWorker] lookup-worker\n")
           (if (= id (ast-child 'id n))
             n
             (ast-find-child*
@@ -188,7 +188,7 @@
              (queue-length (ast-num-children (ast-parent n)))
              (local-deferment
                (-
-                 (ast-child 'dispatchtime n)
+                 (ast-child 'deadline n)
                  (att-value 'predicted-termination-time n))))
             (if (= index queue-length)
               local-deferment
@@ -357,6 +357,7 @@
 
 (define adapt
   (lambda (num-backup-workers)
+    (display "[FUNCTION] adapt\n")
     (let*
       ((key
          (lambda (worker)
