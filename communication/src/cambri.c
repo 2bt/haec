@@ -58,7 +58,7 @@ int cambri_init(void) {
 			cfsetospeed(&tty, B115200);
 			cfsetispeed(&tty, B115200);
 			tcsetattr(fd, TCSANOW, &tty);
-/*
+
 			// enable profile 4 only
 			char buf[1024] = {};
 			for (i = 1; i <= 5; i++) {
@@ -67,7 +67,6 @@ int cambri_init(void) {
 					error(1, 0, "cambri_init");
 				}
 			}
-*/
 
 		}
 	}
@@ -181,8 +180,7 @@ void cambri_log_current(double time) {
 void cambri_set_mode(int id, int mode) {
 	int c = id / 1000 - 1;
 	if (c < 0 || c >= NUM_CAMBRIS || !cambri_fds[c]) return;
-	//cambri_write(c, "mode %c %d 4", mode, id % 10);
-	cambri_write(c, "mode %c %d", mode, id % 10);
+	cambri_write(c, "mode %c %d 4", mode, id % 10);
 	char buf[1024] = {};
 	cambri_read(c, buf, sizeof(buf));
 }

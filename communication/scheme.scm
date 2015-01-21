@@ -366,20 +366,21 @@
        (idle-workers
          (att-value
            'get-filtered-workers
+           config
            (lambda (worker)
              (and
                (memq (ast-child 'state worker) '(RUNNING BOOTING))
-               (= 0 (ast-num-children (ast-child 'Queue worker)))))
-           config))
+               (= 0 (ast-num-children (ast-child 'Queue worker)))))))
        (num-idle-workers (length idle-workers)))
       (cond
         ((> num-idle-workers num-backup-workers) ; halt
-         (let
+         (let*
            ((num-excess-workers (- num-idle-workers num-backup-workers))
             (sorted-idle-workers
               (list-sort
                 (lambda (a b) (< (key a) (key b)))
                 idle-workers)))
+           (displayln ">>> HALT")
            (let next ((i num-excess-workers) (rest sorted-idle-workers))
              (when (and (> i 0) (not (null? rest)))
                (let ((worker (car rest)))
@@ -387,28 +388,29 @@
                  (add-event
                    'event-halt-command
                    (ast-child 'id worker))
-                 (next (- i 1) (cdr rest))))))
-         ((< num-idle-workers num-backup-workers) ; boot
-          (let*
-            ((off-workers
-               (att-value
-                 'get-filtered-workers
-                 (lambda (worker) (= (ast-child 'state worker) 'OFF))
-                 config))
-             (num-off-workers (length off-workers))
-             (sorted-off-workers
-               (list-sort
-                 (lambda (a b) (> (key a) (key b)))
-                 off-workers)))
-             (num-wanting-workers (- num-backup-workers num-idle-workers)))
-            (let next ((i num-wanting-workers) (rest sorted-off-workers))
-              (when (and (> i 0) (not (null? rest)))
-                (let ((worker (car rest)))
-                  (rewrite-terminal 'state worker 'BOOTING)
-                  (add-event
-                    'event-worker-on
-                    (ast-child 'id worker))
-                  (next (- i 1) (cdr rest)))))))))))
+                 (next (- i 1) (cdr rest)))))))
+        ((< num-idle-workers num-backup-workers) ; boot
+         (let*
+           ((off-workers
+              (att-value
+                'get-filtered-workers
+                config
+                (lambda (worker) (eq? (ast-child 'state worker) 'OFF))))
+            (num-off-workers (length off-workers))
+            (sorted-off-workers
+              (list-sort
+                (lambda (a b) (> (key a) (key b)))
+                off-workers))
+            (num-wanting-workers (- num-backup-workers num-idle-workers)))
+           (displayln ">>> BOOT")
+           (let next ((i num-wanting-workers) (rest sorted-off-workers))
+             (when (and (> i 0) (not (null? rest)))
+               (let ((worker (car rest)))
+                 (rewrite-terminal 'state worker 'BOOTING)
+                 (add-event
+                   'event-worker-on
+                   (ast-child 'id worker))
+                 (next (- i 1) (cdr rest)))))))))))
 
 
 
@@ -465,7 +467,8 @@
             queue
             index
             (create-ast spec 'Request (list work-id load-size deadline #f)))
-          (when worker-idle? (dispatch-next-request time worker)))
+          (when worker-idle? (dispatch-next-request time worker))
+          (adapt 1))
         (printf "[ERROR] ~a~n" index)))))
 
 
@@ -488,7 +491,8 @@
             (printf "### ~a ~a ~a ~a ~a~n" (ast-child 'size request) speed processing-time met-deadline? remaining-time))
 
           (rewrite-delete request)
-          (dispatch-next-request time worker))
+          (dispatch-next-request time worker)
+          (adapt 1))
         (display "[FATAL ERROR] no request with specified id found\n"))))) ; this should never happen
 
 
