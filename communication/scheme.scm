@@ -15,13 +15,54 @@
 ; - return error message from scheduler
 
 
+(define-record-type
+  device-characteristic
+  (fields
+    bootable              ; #t or #f
+    boot-timespan         ; in s
+    halt-timespan         ; in s
+    boot-current-integral ; in mA*s
+    halt-current-integral ; in mA*s
+    speed                 ; in MB/s
+    idle-current          ; in mA
+    busy-current))        ; in mA
+
+(define device-table (make-eq-hashtable))
+(hashtable-set!
+  device-table
+  'CUBIEBOARD
+  (make-device-characteristic
+    #t
+    60.0
+    13.0
+    (* 60.0 300.0)
+    (* 13.0 300.0)
+    3.5
+    250.0
+    400.0))
+
+(hashtable-set!
+  device-table
+  'SAMA5D3
+  (make-device-characteristic
+    #f
+    0.0
+    0.0
+    0.0
+    0.0
+    1.0
+    150.0
+    200.0))
+
+
+
+
+
 (define predict-processing-timespan
   (lambda (load-size device-type)
     (display "[FUNCTION] predict-processing-timespan\n")
-    (* load-size
-       (cdr (assq device-type
-                  '((CUBIEBOARD . 1)
-                    (SAMA5D3 .    3.6)))))))
+    (/ load-size
+       (device-characteristic-speed (hashtable-ref device-table device-type #f)))))
 
 
 (define spec (create-specification))
@@ -438,6 +479,14 @@
                queue)))
       (if request
         (begin
+          (let*
+            ((processing-time (- time (ast-child 'dispatchtime request)))
+             (speed (/ (ast-child 'size request) processing-time))
+             (deadline (ast-child 'deadline request))
+             (remaining-time (- deadline time))
+             (met-deadline? (<= 0 remaining-time)))
+            (printf "### ~a ~a ~a ~a ~a~n" (ast-child 'size request) speed processing-time met-deadline? remaining-time))
+
           (rewrite-delete request)
           (dispatch-next-request time worker))
         (display "[FATAL ERROR] no request with specified id found\n"))))) ; this should never happen

@@ -1,11 +1,12 @@
 $(document).ready(function() {
 
-	$("form").submit(function() {
+	$("form,.cmd").submit(function() {
 		var p = $(this).parent();
 		p.css("background-color", "red");
 
 		var q = $(this).serialize();
-		$("input[name=cmd]", this).val("");
+		console.log("hi", q);
+		//$("input[name=cmd]", this).val("");
 
 		$.post("command", q, function(ret) {
 			p.css("background-color", "");
@@ -13,10 +14,6 @@ $(document).ready(function() {
 		});
 		return false;
 	});
-
-
-
-
 
 
 
@@ -41,12 +38,11 @@ $(document).ready(function() {
 	var y = d3.scale.linear()
 	.range([height, 0]);
 
-
 	var format = d3.format("02d");
 	var xAxis = d3.svg.axis()
 	.scale(x)
 	.orient("bottom")
-	.tickFormat(function (t) {
+	.tickFormat(function(t) {
 		if (t < 0) return "";
 		var h = Math.floor(t / 3600);
 		var m = Math.floor(t / 60) % 60;
@@ -110,8 +106,6 @@ $(document).ready(function() {
 				if (first_poll) {
 					first_poll = false;
 
-
-
 					svg.attr("height", height + margin.top + margin.bottom + margin.middle +
 						(json.current[0].length + 1) * margin.row
 					);
@@ -163,7 +157,18 @@ $(document).ready(function() {
 
 				// events
 				json.events.forEach(function(e, i) {
-					console.log(e.e);
+					console.log(e.e, e);
+
+					// console output
+					var h = format(Math.floor(e.t / 3600));
+					var m = format(Math.floor(e.t / 60) % 60);
+					var s = format(Math.floor(e.t % 60));
+					var ms = format(Math.round(e.t % 1 * 100));
+					var time = h + ":" + m + ":" + s + "." + ms;
+					$("<pre></pre>").text(time +" "+ e.e +" ("+ e.d +")").prependTo("#console");
+
+
+					// process only these events
 					if (!{
 						"WORK_REQUEST": true,
 						"WORK_COMMAND": true,
@@ -180,12 +185,9 @@ $(document).ready(function() {
 
 					if (e.e == "WORK_REQUEST") {
 						events.push(e);
-
-						e.circle = svg_events.append("circle")
+						e.marker = svg_events.append("polygon")
 						.attr("class", "work-request")
-						.attr("r", margin.row / 2 - 2)
-						.attr("cy", margin.row / 2);
-
+						.attr("points", "-3,20, 3,20, 0,0");
 
 					}
 					if (e.e == "WORK_COMMAND") {
@@ -229,7 +231,7 @@ $(document).ready(function() {
 					// remove old events
 					if (e.t < time - past) {
 						if (e.e == "WORK_REQUEST") {
-							e.circle.remove();
+							e.marker.remove();
 						}
 
 						if (e.e == "WORK_COMMAND") {
@@ -249,7 +251,7 @@ $(document).ready(function() {
 
 
 					if (e.e == "WORK_REQUEST") {
-						e.circle.attr("cx", x(e.t));
+						e.marker.attr("transform", "translate(" + x(e.t) + ",0)");
 					}
 					if (e.e == "WORK_COMMAND") {
 						var w = width;

@@ -9,20 +9,42 @@
 	<title>HAEC</title>
 </head>
 <body>
+	<div id="banner" class="column">
+		<h1>RACR<i>tune</i></h1>
+	</div>
 
 	<div id="content">
-		<svg id="svg" class="column">
+		<svg id="svg" style="margin:0em 1em;background-color:white;float:left">
 			<clipPath id="clip">
 				<rect id="cliprect" />
 			</clipPath>
 			<g id="chart"></g>
 			<g id="events" style="clip-path:url(#clip);"></g>
 		</svg>
-		<div class="column right">
-			<form>
-				<input name="cmd" value="" />
-				<input type="submit" value="execute" />
-			</form>
+		<div style="padding:0em 0em 0em 680px;">
+			<div class="column right">
+				<h2>Commands</h2>
+				<form class="cmd" id="scheduler-form">
+					<input class="button" type="submit" value="Switch scheduler" />
+					<select style="margin-left:0.5em" name="cmd" form="scheduler-form">
+						<option value="(rewrite-terminal 'scheduler ast 'schedule-robin)">Round-robin</option>
+						<option value="(rewrite-terminal 'scheduler ast 'schedule-batman)">Advanced scheduler</option>
+					</select>
+				</form>
+				<form style="margin-top:1em" class="cmd">
+					<input class="button" type="submit" value="Start demo scenario" />
+					<input type="hidden" name="cmd" value="scenario demo.run" />
+				</form>
+				<form style="margin-top:1em" class="cmd">
+					<input class="button" type="submit" value="Execute" />
+					<input style="margin-left:0.5em" name="cmd" value="" />
+				</form>
+			</div>
+			<div class="column right">
+				<h2>Console</h2>
+				<div id="console">
+				</div>
+			</div>
 		</div>
 	</div>
 
