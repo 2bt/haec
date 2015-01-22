@@ -32,7 +32,7 @@ ssize_t sendf(int s, const char* format, ...) {
 }
 
 
-void server_log(const char* fmt, ...) {
+void server_log_event(const char* fmt, ...) {
 	char buf[256];
 	va_list args;
 	va_start(args, fmt);
@@ -81,6 +81,9 @@ static int server_command(char* cmd) {
 		fclose(server.scenario_fd);
 		server.scenario_fd = NULL;
 		event_append(EVENT_SCENARIO_DONE);
+	}
+	else if (strcmp(cmd, "reset e-meter") == 0) {
+		event_append(EVENT_E_METER_RESET);
 	}
 
 
@@ -367,12 +370,25 @@ void server_process_events(void) {
 		case EVENT_HALT_ACK:
 			break;
 
+		case EVENT_E_METER_RESET:
+			cambri_set_current_integral(0);
+			server.e_meter_timestamp = time;
+			break;
+
 		default:
 			printf("unknown event: %d\n", e->type);
 			break;
 		}
 		free(e);
 	}
+}
+
+
+static void server_log_status(void) {
+	FILE* f = fopen("status.log", "w");
+	double energy = cambri_get_current_integral() * 5 * 0.001; // in Joule
+	fprintf(f, "energy: %.1lf\n", energy);
+	fclose(f);
 }
 
 
@@ -423,10 +439,11 @@ void server_run(int argc, char** argv) {
 	server.fdmax = commander;
 	server.work_counter = 0;
 	server.timestamp = timestamp();
+	server.e_meter_timestamp = server.timestamp;
 	server.running = 1;
 	signal(SIGINT, server_done);
 
-	server.log_fd = fopen("server.log", "w");
+	server.log_fd = fopen("event.log", "w");
 
 	printf("entering server loop\n");
 	while (server.running) {
@@ -493,6 +510,7 @@ tryagain:
 		}
 
 		cambri_log_current(time - server.timestamp);
+		server_log_status();
 	}
 
 	close(listener);

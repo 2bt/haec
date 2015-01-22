@@ -42,6 +42,6 @@ bytecode:
 
 clean:
 	rm -rf obj server worker
-	rm -f server.log cambri.log
+	rm -f status.log event.log cambri.log
 
 .PHONY: clean bytecode

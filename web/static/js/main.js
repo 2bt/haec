@@ -5,12 +5,10 @@ $(document).ready(function() {
 		p.css("background-color", "red");
 
 		var q = $(this).serialize();
-		console.log("hi", q);
 		//$("input[name=cmd]", this).val("");
 
 		$.post("command", q, function(ret) {
 			p.css("background-color", "");
-			console.log(ret);
 		});
 		return false;
 	});
@@ -29,7 +27,7 @@ $(document).ready(function() {
 	var time = -past;
 	var width = 600;
 	var height = 400;
-	var margin = { top: 20, right: 20, bottom: 0, left: 50, middle: 24, row: 25 };
+	var margin = { top: 20, right: 20, bottom: 0, left: 50, middle: 24, row: 25, left_label:45 };
 
 
 	var x = d3.scale.linear()
@@ -69,6 +67,8 @@ $(document).ready(function() {
 	.attr("height", 1000);
 
 
+	var svg_event_titles = d3.select("#event_titles")
+	.attr("transform", "translate(" + margin.left_label + "," + (margin.top + height + margin.middle) + ")");
 
 	var svg_xAxis = svg_chart.append("g")
 	.attr("class", "x axis")
@@ -94,6 +94,8 @@ $(document).ready(function() {
 	var svg_areas = [];
 	var areas = [];
 
+	var lane_titles = ["Sama 3", "Sama 2", "Sama 1", "Cubie 3", "Cubie 2", "Cubie 1", "Master", "Switch", "9"];
+
 	var colors = d3.scale.category10();
 
 	var first_poll = true;
@@ -101,6 +103,7 @@ $(document).ready(function() {
 	(function poll() {
 		$.post("poll", { "t": time, "m": past + delta }, function(json) {
 			console.log("poll", json);
+			$("#e-meter").text(json.status.energy);
 
 			if (json.current.length > 0) {
 				if (first_poll) {
@@ -133,6 +136,13 @@ $(document).ready(function() {
 						.attr("y", (i + 1) * margin.row)
 						.style("fill", d3.rgb(c).brighter())
 						.style("fill-opacity", 0.5);
+
+						// lane titles
+						svg_event_titles.append("text")
+						.attr("text-anchor", "end")
+						.attr("y",(i + 1.5) * margin.row)
+						.attr("dy",".5ex")
+						.text(lane_titles[i]);
 					});
 
 				}
@@ -157,7 +167,6 @@ $(document).ready(function() {
 
 				// events
 				json.events.forEach(function(e, i) {
-					console.log(e.e, e);
 
 					// console output
 					var h = format(Math.floor(e.t / 3600));

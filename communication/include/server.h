@@ -11,6 +11,7 @@ typedef struct {
 	int		running;
 	int		work_counter;
 	double	timestamp;
+	double	e_meter_timestamp;
 
 	fd_set	fds;
 	int		fdmax;
@@ -25,4 +26,4 @@ typedef struct {
 extern Server server;
 
 void server_run(int argc, char** argv);
-void server_log(const char* fmt, ...);
+void server_log_event(const char* fmt, ...);

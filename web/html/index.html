@@ -6,38 +6,45 @@
 	<script src="/static/js/jquery-2.1.1.min.js" charset="utf-8"></script>
 	<script src="/static/js/d3.min.js" charset="utf-8"></script>
 	<script src="/static/js/main.js" charset="utf-8"></script>
-	<title>HAEC</title>
+	<title>HAEC Demo B01 &#8212; RACRtune</title>
 </head>
 <body>
 	<div id="banner" class="column">
-		<h1>RACR<i>tune</i></h1>
+		<h1>RACR<i>tune</i><span class="subtitle">· B01 Demo 1b: Distributed Indexing of Wikipedia Data</span></h1>
 	</div>
 
 	<div id="content">
-		<svg id="svg" style="margin:0em 1em;background-color:white;float:left">
+		<svg id="svg" style="margin:0 5px;background-color:white;float:left">
 			<clipPath id="clip">
 				<rect id="cliprect" />
 			</clipPath>
 			<g id="chart"></g>
 			<g id="events" style="clip-path:url(#clip);"></g>
+			<g id="event_titles"></g>
 		</svg>
-		<div style="padding:0em 0em 0em 680px;">
+		<div style="padding:0px 0px 0px 675px;">
 			<div class="column right">
 				<h2>Commands</h2>
-				<form class="cmd" id="scheduler-form">
+
+				<form class="cmd">
+					<input class="button" type="submit" value="Reset E-meter" />
+					<input type="hidden" name="cmd" value="reset e-meter" />
+					<span id="e-meter">0</span> Joule
+				</form>
+				<form style="margin-top:5px" class="cmd">
+					<input class="button" type="submit" value="Start demo scenario" />
+					<input type="hidden" name="cmd" value="scenario demo.run" />
+				</form>
+				<form style="margin-top:5px" class="cmd" id="scheduler-form">
 					<input class="button" type="submit" value="Switch scheduler" />
-					<select style="margin-left:0.5em" name="cmd" form="scheduler-form">
+					<select style="margin-left:5px" name="cmd" form="scheduler-form">
 						<option value="(rewrite-terminal 'scheduler ast 'schedule-batman)">Advanced scheduler</option>
 						<option value="(rewrite-terminal 'scheduler ast 'schedule-robin)">Round-robin</option>
 					</select>
 				</form>
-				<form style="margin-top:1em" class="cmd">
-					<input class="button" type="submit" value="Start demo scenario" />
-					<input type="hidden" name="cmd" value="scenario demo.run" />
-				</form>
-				<form style="margin-top:1em" class="cmd">
-					<input class="button" type="submit" value="Execute" />
-					<input style="margin-left:0.5em" name="cmd" value="" />
+				<form style="margin-top:5px" class="cmd">
+					<input class="button" type="submit" value="Execute custom command" />
+					<input style="margin-left:5px;font-family:monospace;" name="cmd" value="" />
 				</form>
 			</div>
 			<div class="column right">

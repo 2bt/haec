@@ -70,10 +70,10 @@ Event* event_pop(void) {
 
 
 void event_print(const Event* e, double time) {
-	server_log("%s %s", format_timestamp(time - server.timestamp), event_type_string(e->type));
+	server_log_event("%s %s", format_timestamp(time - server.timestamp), event_type_string(e->type));
 	switch (e->type) {
 	case EVENT_SCENARIO_START:
-		server_log(" (file: %s)", e->scenario);
+		server_log_event(" (file: %s)", e->scenario);
 		break;
 	case EVENT_WORKER_ON:
 	case EVENT_WORKER_ONLINE:
@@ -81,26 +81,27 @@ void event_print(const Event* e, double time) {
 	case EVENT_WORKER_OFF:
 	case EVENT_HALT_COMMAND:
 	case EVENT_MEM_COMMAND:
-		server_log(" (id: %d)", e->worker->id);
+		server_log_event(" (id: %d)", e->worker->id);
 		break;
 	case EVENT_MEM_ACK:
 	case EVENT_WORK_ACK:
 	case EVENT_HALT_ACK:
-		server_log(" (id: %d; ack: %d)", e->worker->id, e->ack);
+		server_log_event(" (id: %d; ack: %d)", e->worker->id, e->ack);
 		break;
 	case EVENT_WORK_REQUEST:
-		server_log(" (work-id: %d; load-size: %.3lf; deadline: %.2lf)", e->work_id, e->load_size, e->deadline);
+		server_log_event(" (work-id: %d; load-size: %.3lf; deadline: %.2lf)", e->work_id, e->load_size, e->deadline);
 		break;
 	case EVENT_WORK_COMMAND:
-		server_log(" (id: %d; work-id: %d; load-size: %.3lf)", e->worker->id, e->work_id, e->load_size);
+		server_log_event(" (id: %d; work-id: %d; load-size: %.3lf)", e->worker->id, e->work_id, e->load_size);
 		break;
 	case EVENT_WORK_COMPLETE:
-		server_log(" (id: %d; work-id: %d; ack: %d)", e->worker->id, e->work_id, e->ack);
+		server_log_event(" (id: %d; work-id: %d; ack: %d)", e->worker->id, e->work_id, e->ack);
 		break;
 	case EVENT_SCENARIO_DONE:
+	case EVENT_E_METER_RESET:
 	default: break;
 	}
-	server_log("\n");
+	server_log_event("\n");
 }
 
 

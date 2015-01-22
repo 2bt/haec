@@ -1,6 +1,5 @@
 body {
 	background-color:#999;
-	font: 10px sans-serif;
 }
 
 #content {
@@ -9,15 +8,33 @@ body {
 }
 
 .column {
-	margin:1em;
+	margin:10px 5px 5px 10px;
 	background-color:#fff;
 }
 
 .right {
-	padding:1em;
+	padding:0.5em;
+}
+
+#e-meter {
+	display:inline-block;
+	width:145px;
+	text-align:right;
+	font-weight:bold;
+	font-size:14px;
+	font-family:monospace;
+	padding-left:20px;
+}
+
+input, select {
+	width:200px;
+	padding:2px;
+	margin:0px;
+	box-sizing:border-box;
 }
 
 #console {
+	font-size:10px;
 	background-color:#ddd;
 	padding:0.5em;
 	border-style:solid;
@@ -34,8 +51,8 @@ body {
 }
 
 #banner {
-	padding:1em;
-	margin:1em;
+	padding:5px;
+	margin:5px;
 	background-image: url(/static/img/logo.jpg);
 	background-size: 130px;
 	background-repeat: no-repeat;
@@ -47,12 +64,21 @@ h1 {
 	color:#333;
 	font-size:40px;
 	margin:0;
+	padding-left:10px;
+}
+
+.subtitle {
+	color:#777;
+	font-size:25px;
+	margin:0;
+	padding-left:10px;
+	vertical-align:2px;
 }
 
 h2 {
 	color:#333;
 	padding:0;
-	padding-bottom:0.5em;
+	padding-bottom:0.1em;
 	margin:0;
 }
 
@@ -62,6 +88,7 @@ h2 {
 
 
 #svg {
+	font: 10px sans-serif;
 	display: block;
 }
 

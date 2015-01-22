@@ -13,3 +13,6 @@ void	cambri_write(int c, const char* fmt, ...);
 int		cambri_read(int c, char* buf, int len);
 void	cambri_log_current(double time);
 void	cambri_set_mode(int id, int mode);
+
+int		cambri_get_current_integral(void);
+void	cambri_set_current_integral(int c);

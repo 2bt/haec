@@ -60,7 +60,7 @@ def get_new_data(max_period, start_time):
 		events = []
 
 		if data:
-			reader = BackwardsReader("../communication/server.log")
+			reader = BackwardsReader("../communication/event.log")
 			while 1:
 				line = reader.readline()
 				if line == "": break
@@ -71,8 +71,14 @@ def get_new_data(max_period, start_time):
 				if time <= data[-1][0]:
 					events.insert(0, {"t": time, "e": fields[1], "d": " ".join(fields[2:])[1:-1] })
 
+
+		status = {}
+		for line in file("../communication/status.log"):
+			k, v = line.split(":", 1)
+			status[k.strip()] = v.strip();
+
 	except IOError: pass
-	return { "current": data, "events": events }
+	return { "current": data, "events": events, "status": status }
 
 
 

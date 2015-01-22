@@ -127,6 +127,11 @@ int cambri_read(int c, char* buf, int len) {
 }
 
 
+static int current_integral = 0;
+int cambri_get_current_integral(void) { return current_integral; }
+void cambri_set_current_integral(int c) { current_integral = c; }
+
+
 void cambri_log_current(double time) {
 	int i;
 
@@ -142,7 +147,9 @@ void cambri_log_current(double time) {
 			fprintf(cambri_log_file, "%s", format_timestamp(next_second));
 			next_second++;
 			for (i = 0; i < NUM_CAMBRIS * 8; i++) {
-				fprintf(cambri_log_file, " | %4d", current_acc[i] / sample_counter);
+				int current = current_acc[i] / sample_counter;
+				current_integral += current;
+				fprintf(cambri_log_file, " | %4d", current);
 			}
 			fprintf(cambri_log_file, "\n");
 		}
