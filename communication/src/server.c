@@ -15,8 +15,9 @@
 
 // TODO: move this to scheme
 #define TIME_HALTING 13.0
-#define TIME_REBOOTDELAY 5.0
-#define TIME_NOCURRENT 5.0
+#define TIME_REBOOTDELAY 12.0
+#define TIME_NOCURRENT 12.0
+
 
 
 Server server;
@@ -439,8 +440,8 @@ void server_run(int argc, char** argv) {
 
 	server.fdmax = commander;
 	server.work_counter = 0;
-	server.timestamp = timestamp();
-	server.e_meter_timestamp = server.timestamp;
+	server.timestamp = absolut_timestamp();
+	server.e_meter_timestamp = 0;
 	server.running = 1;
 	signal(SIGINT, server_done);
 
@@ -510,7 +511,7 @@ tryagain:
 			}
 			else if (w->state == WORKER_BOOTING && time - w->timestamp > TIME_NOCURRENT) {
 				if (cambri_get_current(w->id) == 0) {
-					printf("rebooting worker %di\n", w->id);
+					printf("rebooting worker %d\n", w->id);
 					Event* e = event_append(EVENT_WORKER_REBOOT);
 					e->worker = w;
 				}
@@ -522,7 +523,8 @@ tryagain:
 			}
 		}
 
-		cambri_log_power(time - server.timestamp);
+		
+		cambri_log_data(time, "scheduler1");
 	}
 
 	close(listener);

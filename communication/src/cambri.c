@@ -11,11 +11,15 @@
 #include "event.h"
 
 
-enum { NUM_CAMBRIS = 1 };
+enum {
+	NUM_CAMBRIS = 1,
+	PROFILE = 3
+};
 
 
 static int cambri_fds[NUM_CAMBRIS];
-static FILE* cambri_log_file;
+static FILE* cambri_log;
+static FILE* status_log;
 
 
 static const char* get_tty_name(int c) {
@@ -61,8 +65,8 @@ int cambri_init(void) {
 
 			// enable profile 4 only
 			char buf[1024] = {};
-			for (i = 1; i <= 5; i++) {
-				cambri_write(c, "en_profile %d %d", i, i == 4);
+			for (i = 1; i <= 6; i++) {
+				cambri_write(c, "en_profile %d %d", i, i == PROFILE);
 				if (cambri_read(c, buf, sizeof(buf)) == 0) {
 					error(1, 0, "cambri_init");
 				}
@@ -72,14 +76,16 @@ int cambri_init(void) {
 	}
 
 
-	cambri_log_file = fopen("cambri.log", "w");
-	fprintf(cambri_log_file, " time      ");
-	for (i = 0; i < NUM_CAMBRIS * 8; i++) fprintf(cambri_log_file, " | %4d", (i/8+1) * 1000 + i%8+1);
-	fprintf(cambri_log_file, "\n");
-	fprintf(cambri_log_file, "-----------");
-	for (i = 0; i < NUM_CAMBRIS * 8; i++) fprintf(cambri_log_file, "-+-----");
-	fprintf(cambri_log_file, "\n");
-	fflush(cambri_log_file);
+	cambri_log = fopen("cambri.log", "w");
+	fprintf(cambri_log, " time      ");
+	for (i = 0; i < NUM_CAMBRIS * 8; i++) fprintf(cambri_log, " | %5d", (i/8+1) * 1000 + i%8+1);
+	fprintf(cambri_log, "\n");
+	fprintf(cambri_log, "-----------");
+	for (i = 0; i < NUM_CAMBRIS * 8; i++) fprintf(cambri_log, "-+------");
+	fprintf(cambri_log, "\n");
+	fflush(cambri_log);
+
+	status_log = fopen("status.log", "w");
 
 	return ret;
 }
@@ -90,7 +96,8 @@ void cambri_kill(void) {
 	for (c = 0; c < NUM_CAMBRIS; c++) {
 		if (cambri_fds[c]) close(cambri_fds[c]);
 	}
-	fclose(cambri_log_file);
+	fclose(cambri_log);
+	fclose(status_log);
 }
 
 
@@ -130,12 +137,16 @@ int cambri_read(int c, char* buf, int len) {
 static double energy = 0;
 static int current_cache[NUM_CAMBRIS * 8] = {};
 
-int		cambri_get_current(int id) { return current_cache[id]; }
+int	cambri_get_current(int id) {
+	int i = 8*(id/1000 - 1)+(id%1000-1);
+	return current_cache[i];
+}
+
 double	cambri_get_energy(void) { return energy; }
 void	cambri_set_energy(double e) { energy = e; }
 
 
-void cambri_log_power(double time) {
+void cambri_log_data(double time, char* scheduler) {
 	int i;
 
 	static double power_acc[NUM_CAMBRIS * 8] = {};
@@ -146,25 +157,25 @@ void cambri_log_power(double time) {
 
 	if (time > next_second) {
 
-		FILE* f = fopen("status.log", "w");
-		fprintf(f, "%s", format_timestamp(next_second));
-		fprintf(f, "energy:%.1f", cambri_get_energy());
-		fprintf(f, "\n");
-		fclose(f);
+		fprintf(status_log, "%s", format_timestamp(next_second));
+		fprintf(status_log, " energy:%.1f", cambri_get_energy());
+		fprintf(status_log, " scheduler:%s", scheduler);
+		fprintf(status_log, "\n");
+		fflush(status_log);
 
 
 		while (time > next_second) {
-			fprintf(cambri_log_file, "%s", format_timestamp(next_second));
+			fprintf(cambri_log, "%s", format_timestamp(next_second));
 			next_second++;
 			for (i = 0; i < NUM_CAMBRIS * 8; i++) {
 				double power = power_acc[i] / sample_counter;
 				energy += power;
-				fprintf(cambri_log_file, " | %4.2f", power);
+				fprintf(cambri_log, " | %4.3f", power);
 			}
-			fprintf(cambri_log_file, "\n");
+			fprintf(cambri_log, "\n");
 		}
 
-		fflush(cambri_log_file);
+		fflush(cambri_log);
 
 
 		for (i = 0; i < NUM_CAMBRIS * 8; i++) power_acc[i] = 0;
@@ -198,9 +209,9 @@ void cambri_log_power(double time) {
 		for (i = 0; i < 8; i++) {
 			p = strchr(p, '\n');
 			if (!p) error(1, 0, "cambri_log_power");
-			int current = atoi(p += 5) * 0.001;
+			int current = atoi(p += 5);
 			int id = c * 8 + i;
-			power_acc[id] += current * voltage;
+			power_acc[id] += current * 0.001 * voltage;
 			current_cache[id] = current;
 		}
 	}
@@ -210,7 +221,7 @@ void cambri_log_power(double time) {
 void cambri_set_mode(int id, int mode) {
 	int c = id / 1000 - 1;
 	if (c < 0 || c >= NUM_CAMBRIS || !cambri_fds[c]) return;
-	cambri_write(c, "mode %c %d 4", mode, id % 10);
+	cambri_write(c, "mode %c %d %d", mode, id % 10, PROFILE);
 	char buf[1024] = {};
 	cambri_read(c, buf, sizeof(buf));
 }

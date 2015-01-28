@@ -8,10 +8,14 @@
 
 
 
-double timestamp(void) {
+double absolut_timestamp(void) {
 	struct timespec t;
 	clock_gettime(CLOCK_REALTIME, &t);
 	return t.tv_sec + t.tv_nsec * 1e-9;
+}
+
+double timestamp(void) {
+	return absolut_timestamp() - server.timestamp;
 }
 
 
@@ -70,7 +74,7 @@ Event* event_pop(void) {
 
 
 void event_print(const Event* e, double time) {
-	server_log_event("%s %s", format_timestamp(time - server.timestamp), event_type_string(e->type));
+	server_log_event("%s %s", format_timestamp(time), event_type_string(e->type));
 	switch (e->type) {
 	case EVENT_SCENARIO_START:
 		server_log_event(" (file: %s)", e->scenario);

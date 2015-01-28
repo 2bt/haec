@@ -354,7 +354,7 @@
       (create-ast spec 'Switch (list id 'RUNNING time (create-ast-list (list)))))))
 
 
-(define setBackupWorkers
+(define set-backup-workers
   (lambda (number)
     (rewrite-terminal 'backupworkers ast number)))
 
@@ -486,7 +486,7 @@
             index
             (create-ast spec 'Request (list work-id load-size deadline #f)))
           (when worker-idle? (dispatch-next-request time worker))
-          adapt)
+          (adapt))
         (printf "[ERROR] ~a~n" index)))))
 
 
@@ -510,7 +510,7 @@
 
           (rewrite-delete request)
           (dispatch-next-request time worker)
-          adapt)
+          (adapt))
         (display "[FATAL ERROR] no request with specified id found\n"))))) ; this should never happen
 
 
