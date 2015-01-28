@@ -29,18 +29,28 @@
 				<form class="cmd">
 					<input class="button" type="submit" value="Reset E-meter" />
 					<input type="hidden" name="cmd" value="reset e-meter" />
-					<span id="e-meter">0</span> Joule
+					<span id="e-meter">0</span> Ws
 				</form>
-				<form style="margin-top:5px" class="cmd">
+				<form style="margin-top:5px" class="cmd" id="scenario-form">
 					<input class="button" type="submit" value="Start demo scenario" />
-					<input type="hidden" name="cmd" value="scenario demo.run" />
+					<!--
+					<input type="hidden" name="cmd" value="scenario runs/demo.run" />
+					-->
+
+					<select style="margin-left:5px" name="cmd" form="scenario-form">
+						<option value="scenario runs/demo.run">demo</option>
+						<option value="scenario runs/m1.run">m1</option>
+						<option value="scenario runs/m2.run">m2</option>
+					</select>
+
 				</form>
 				<form style="margin-top:5px" class="cmd" id="scheduler-form">
 					<input class="button" type="submit" value="Switch scheduler" />
 					<select style="margin-left:5px" name="cmd" form="scheduler-form">
-						<option value="(rewrite-terminal 'scheduler ast 'schedule-batman)">Advanced scheduler</option>
-						<option value="(rewrite-terminal 'scheduler ast 'schedule-robin)">Round-robin</option>
+						<option id="batman" value="(rewrite-terminal 'scheduler ast 'schedule-batman)">Advanced scheduler</option>
+						<option id="robin" value="(rewrite-terminal 'scheduler ast 'schedule-robin)">Round-robin</option>
 					</select>
+					<span id="currentsched"></span>
 				</form>
 				<form style="margin-top:5px" class="cmd">
 					<input class="button" type="submit" value="Execute custom command" />

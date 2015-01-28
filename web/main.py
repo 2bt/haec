@@ -41,10 +41,44 @@ class BackwardsReader:
 
 
 
+def get_recording_data(recording):
+	path = "../communication/recordings/%s/" % recording
+	reader = file(path + "cambri.log")
+	reader.readline()
+	reader.readline()
+
+	data = []
+	events = []
+	statuses = []
+
+	for line in reader:
+		columns = line.split()[::2]
+		h, m, s = map(float, columns[0].split(":"))
+		time = s + m * 60 + h * 3600
+		data.append([time] + map(float, columns[1:]))
+
+	for line in file(path + "event.log"):
+		fields = line.split()
+		h, m, s = map(float, fields[0].split(":"))
+		time = s + m * 60 + h * 3600
+		events.append({"t": time, "e": fields[1], "d": " ".join(fields[2:])[1:-1] })
+
+	for line in file(path + "status.log"):
+		status = {}
+		for s in line.split()[1:]:
+			k, v = s.split(":", 1)
+			status[k.strip()] = v.strip();
+		statuses.append(status)
+
+	return { "power": data, "events": events, "statuses": statuses }
+
 
 def get_new_data(max_period, start_time):
+	data = []
+	events = []
+	status = {}
 	try:
-		data = []
+
 		reader = BackwardsReader("../communication/cambri.log")
 		newest_time = None
 		while 1:
@@ -55,9 +89,8 @@ def get_new_data(max_period, start_time):
 			time = s + m * 60 + h * 3600
 			if newest_time == None: newest_time = time
 			if time <= start_time or newest_time - time > max_period: break
-			data.insert(0, [time] + map(int, columns[1:]))
+			data.insert(0, [time] + map(float, columns[1:]))
 
-		events = []
 
 		if data:
 			reader = BackwardsReader("../communication/event.log")
@@ -72,13 +105,14 @@ def get_new_data(max_period, start_time):
 					events.insert(0, {"t": time, "e": fields[1], "d": " ".join(fields[2:])[1:-1] })
 
 
-		status = {}
-		for line in file("../communication/status.log"):
-			k, v = line.split(":", 1)
+
+		line = BackwardsReader("../communication/status.log").readline()
+		for s in line.split()[1:]:
+			k, v = s.split(":", 1)
 			status[k.strip()] = v.strip();
 
 	except IOError: pass
-	return { "current": data, "events": events, "status": status }
+	return { "power": data, "events": events, "status": status }
 
 
 
@@ -89,9 +123,16 @@ class Root:
 		return file("html/index.html")
 
 	@cherrypy.expose
+	def recordings(self):
+		return file("html/recordings.html")
+
+	@cherrypy.expose
 	@cherrypy.tools.json_out()
 	def poll(self, t=0, m=60.5): return get_new_data(float(m), float(t))
 
+	@cherrypy.expose
+	@cherrypy.tools.json_out()
+	def get_recording_data(self, n): return get_recording_data(n)
 
 	@cherrypy.expose
 	@cherrypy.tools.json_out()

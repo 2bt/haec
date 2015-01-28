@@ -103,14 +103,13 @@ h2 {
 
 .work-command {
 	shape-rendering: crispEdges;
-	fill: #999;
-	stroke: #444;
+	fill:#ddd;
+	stroke:#999;
 }
 
 .work-request {
 	/*shape-rendering: crispEdges;*/
 	fill:#777;
-	/*stroke:#444;*/
 }
 
 

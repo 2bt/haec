@@ -22,12 +22,12 @@ $(document).ready(function() {
 
 	var delta = 1; // one sample per second
 	var update = 1;
-	var current = [];
+	var power = [];
 	var events = [];
 	var time = -past;
 	var width = 600;
 	var height = 400;
-	var margin = { top: 20, right: 20, bottom: 0, left: 50, middle: 24, row: 25, left_label:45 };
+	var margin = { top: 20, right: 20, bottom: 20, left: 50, middle: 24, row: 15, left_label:45 };
 
 
 	var x = d3.scale.linear()
@@ -65,6 +65,8 @@ $(document).ready(function() {
 	d3.select("#cliprect")
 	.attr("width", width)
 	.attr("height", 1000);
+	var svg_events_back_layer = svg_events.append("g");
+	var svg_events_front_layer = svg_events.append("g");
 
 
 	var svg_event_titles = d3.select("#event_titles")
@@ -83,11 +85,11 @@ $(document).ready(function() {
 	.attr("y", 6)
 	.attr("dy", ".71em")
 	.style("text-anchor", "end")
-	.text("Current (mA)");
+	.text("Power (W)");
 
 
 	x.domain([-past, 0]);
-	y.domain([0, 3500]);
+	y.domain([0, 15]);
 	svg_xAxis.call(xAxis);
 	svg_yAxis.call(yAxis);
 
@@ -100,20 +102,26 @@ $(document).ready(function() {
 
 	var first_poll = true;
 
+
+	function id_to_index(id) {
+		var d = id % 1000 - 1;
+		var i = (id - d - 1) / 1000 - 1;
+		return d + i * 8;
+	}
+
+
 	(function poll() {
 		$.post("poll", { "t": time, "m": past + delta }, function(json) {
 			console.log("poll", json);
 			$("#e-meter").text(json.status.energy);
-
-			if (json.current.length > 0) {
+			$("#currentsched").text(json.status.scheduler);
+			if (json.power.length > 0) {
 				if (first_poll) {
 					first_poll = false;
 
-					svg.attr("height", height + margin.top + margin.bottom + margin.middle +
-						(json.current[0].length + 1) * margin.row
-					);
+					svg.attr("height", height + margin.top + margin.bottom + margin.middle + margin.row * 7);
 
-					d3.range(json.current[0].length - 1).forEach(function(i) {
+					d3.range(8).forEach(function(i) {
 
 						areas[i] = d3.svg.area()
 						.x(function(d) { return x(d[0]); })
@@ -126,31 +134,34 @@ $(document).ready(function() {
 						.attr("class", "area")
 						.style("fill", d3.rgb(c).brighter())
 						.style("stroke", c)
-						.datum(current)
+						.datum(power)
 						.attr("d", areas[i]);
 
-						// lanes
-						svg_events.append("rect")
-						.attr("width", width)
-						.attr("height", margin.row)
-						.attr("y", (i + 1) * margin.row)
-						.style("fill", d3.rgb(c).brighter())
-						.style("fill-opacity", 0.1);
 
-						// lane titles
-						svg_event_titles.append("text")
-						.attr("text-anchor", "end")
-						.attr("y",(i + 1.5) * margin.row)
-						.attr("dy",".5ex")
-						.text(lane_titles[i]);
+						if (i < 6) {
+							// lanes
+							svg_events_front_layer.append("rect")
+							.attr("width", width)
+							.attr("height", margin.row)
+							.attr("y", (i + 1) * margin.row)
+							.style("fill", d3.rgb(c).brighter())
+							.style("fill-opacity", 0.1);
+
+							// lane titles
+							svg_event_titles.append("text")
+							.attr("text-anchor", "end")
+							.attr("y",(i + 1.5) * margin.row)
+							.attr("dy",".5ex")
+							.text(lane_titles[i]);
+						}
 					});
 
 				}
 
 
-				json.current.forEach(function(d) { current.push(d); });
-				while (current.length > past / delta + 1) current.shift();
-				time = current[current.length - 1][0];
+				json.power.forEach(function(d) { power.push(d); });
+				while (power.length > past / delta + 1) power.shift();
+				time = power[power.length - 1][0];
 
 
 				x.domain([time - past, time]);
@@ -174,7 +185,7 @@ $(document).ready(function() {
 					var s = format(Math.floor(e.t % 60));
 					var ms = format(Math.round(e.t % 1 * 100));
 					var time = h + ":" + m + ":" + s + "." + ms;
-					$("<pre></pre>").text(time +" "+ e.e +" ("+ e.d +")").prependTo("#console");
+					$("<pre></pre>").text(time +" "+ e.e + Array(16 - e.e.length).join(" ") +" ("+ e.d +")").prependTo("#console");
 
 
 					// process only these events
@@ -197,28 +208,27 @@ $(document).ready(function() {
 						e.info[l[0]] = l[1];
 					});
 
+					e.svg = {};
+
 					if (e.e == "WORK_REQUEST") {
 						events.push(e);
-						e.marker = svg_events.append("polygon")
+						e.svg.marker = svg_events_front_layer.append("polygon")
 						.attr("class", "work-request")
-						.attr("points", "-3,20, 3,20, 0,0");
+						.attr("points", "-3,0, 3,0, 0,15");
 
 					}
 					else if (e.e == "WORK_COMMAND") {
 						events.push(e);
 
-						var d = e.info.id % 1000 - 1;
-						var i = (e.info.id - d - 1) / 1000 - 1;
-						var y = (d + i * 8 + 1) * margin.row + 5;
+						var y = (id_to_index(e.info.id) + 1) * margin.row + 3;
 
-						e.rect = svg_events.append("rect")
+						e.svg.rect = svg_events_front_layer.append("rect")
 						.attr("class", "work-command")
 						.attr("y", y)
-						.attr("height", margin.row - 10);
+						.attr("height", margin.row - 6);
 
 						events.forEach(function(f) {
-							if (f.e == "WORK_REQUEST" &&
-								f.info["work-id"] == e.info["work-id"]) {
+							if (f.e == "WORK_REQUEST" && f.info["work-id"] == e.info["work-id"]) {
 								e.request = f;
 								f.command = e;
 								return;
@@ -227,25 +237,61 @@ $(document).ready(function() {
 					}
 					else if (e.e == "WORK_COMPLETE") {
 						events.forEach(function(f) {
-							if (f.e == "WORK_COMMAND" &&
-								f.info["work-id"] == e.info["work-id"]) {
+							if (f.e == "WORK_COMMAND" && f.info["work-id"] == e.info["work-id"]) {
 								e.command = f;
 								f.complete = e;
-								return;
 							}
 						});
 					}
 					else if (e.e == "WORKER_ON") {
-						// TODO
+
+						// only consider event, if no previous WORKER_ON event was emited
+						var i;
+						for (i = 0; i < events.length; i++) {
+							var f = events[i];
+							if (f.e == "WORKER_ON" && f.info["id"] == e.info["id"] && !f.complete) {
+								break;
+							}
+						}
+						if (i == events.length) {
+							var i = id_to_index(e.info.id);
+							events.push(e);
+							e.svg.rect = svg_events_back_layer.append("rect")
+							.attr("y", (i + 1) * margin.row)
+							.attr("height", margin.row)
+							.style("stroke", "none")
+							.style("fill", d3.rgb(colors(i)).brighter(1.8));
+						}
 					}
 					else if (e.e == "WORKER_ONLINE") {
-						// TODO
+
+						var i = id_to_index(e.info.id);
+						events.push(e);
+						e.svg.rect = svg_events_back_layer.append("rect")
+						.attr("y", (i + 1) * margin.row)
+						.attr("height", margin.row)
+						.style("stroke", "none")
+						.style("fill", d3.rgb(colors(i)));
+
 					}
 					else if (e.e == "WORKER_OFF") {
-						// TODO
+						var i;
+						for (i = 0; i < events.length; i++) {
+							var f = events[i];
+							if (f.e == "WORKER_ON" && f.info["id"] == e.info["id"] && !f.complete) {
+								f.complete = e;
+							}
+						}
 					}
 					else if (e.e == "WORKER_OFFLINE") {
-						// TODO
+
+						var i;
+						for (i = 0; i < events.length; i++) {
+							var f = events[i];
+							if (f.e == "WORKER_ONLINE" && f.info["id"] == e.info["id"] && !f.complete) {
+								f.complete = e;
+							}
+						}
 					}
 					else if (e.e == "WORKER_REBOOT") {
 						// TODO
@@ -258,19 +304,20 @@ $(document).ready(function() {
 
 					// remove old events
 					if (e.t < time - past) {
-						if (e.e == "WORK_REQUEST") {
-							e.marker.remove();
-						}
 
-						if (e.e == "WORK_COMMAND") {
+						if (e.e == "WORK_COMMAND" || e.e == "WORKER_ONLINE" || e.e == "WORKER_ON") {
 							if (e.complete && e.complete.t < time - past) {
-								e.rect.remove();
+								e.svg.rect.remove();
 								events.splice(i, 1);
 								i--;
 								continue;
 							}
 						}
 						else {
+							$.each(e.svg, function(k, v) {
+								v.remove();
+							});
+
 							events.splice(i, 1);
 							i--;
 							continue;
@@ -279,13 +326,14 @@ $(document).ready(function() {
 
 
 					if (e.e == "WORK_REQUEST") {
-						e.marker.attr("transform", "translate(" + x(e.t) + ",0)");
+						e.svg.marker.attr("transform", "translate(" + x(e.t) + ",0)");
 					}
-					if (e.e == "WORK_COMMAND") {
-						var w = width;
-						if (e.complete) w = d3.min([w, x(e.complete.t) - x(e.t)]);
-						e.rect.attr("x", x(e.t))
-						.attr("width", w);
+					if (e.e == "WORK_COMMAND" || e.e == "WORKER_ONLINE" || e.e == "WORKER_ON") {
+						var x1 = x(e.t);
+						if (x1 < 0) x1 = -1;
+						var x2 = width;
+						if (e.complete) x2 = x(e.complete.t);
+						e.svg.rect.attr("x", x1).attr("width", x2 - x1);
 					}
 
 				}
