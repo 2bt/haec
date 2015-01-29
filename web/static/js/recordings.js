@@ -1,20 +1,15 @@
-$(document).ready(function() {
 
 
-	var width = 1200;
-	var height = 100;
-	var margin = { top: 20, right: 20, bottom: 20, left: 50, middle: 24, row: 15, left_label:45 };
+var Graph = function(recording_name) {
+	var self = this;
 
-	var svg = d3.select("#svg")
-	.attr("viewBox", "0 0 "+ (width + margin.left + margin.right) +" "+
-	(height + margin.top + margin.bottom + margin.middle + margin.row * 7));
+	var x_scale = d3.scale.linear().range([0, self.width]);
+	var y_scale = d3.scale.linear().range([self.height, 0]);
 
-
-
-	var x_scale = d3.scale.linear().range([0, width]);
-	var y_scale = d3.scale.linear().range([height, 0]);
-
-	var tickWidth = 60;
+	self.svg = d3.select("#content").append("svg")
+	.attr("width", "100%")
+	.attr("viewBox", "0 0 "+ (self.width + margin.left + margin.right) +" "+
+	(self.height + margin.top + margin.bottom + margin.middle + margin.row * 7));
 
 	var format = d3.format("02d");
 	var xAxis = d3.svg.axis()
@@ -25,72 +20,78 @@ $(document).ready(function() {
 		var h = Math.floor(t / 3600);
 		var m = Math.floor(t / 60) % 60;
 		var s = t % 60;
-		if (tickWidth % 60 == 0) return h+":"+format(m);
+		if (self.tickWidth % 60 == 0) return h+":"+format(m);
 		else return h+":"+format(m)+":"+format(s);
 	});
 	var yAxis = d3.svg.axis()
 	.scale(y_scale)
 	.orient("left");
 
-
-	var svg_chart = d3.select("#chart")
+	var svg_chart = self.svg.append("g")
 	.attr("transform", "translate("+ margin.left +","+ margin.top +")");
 
-	var svg_events = d3.select("#events")
-	.attr("transform", "translate("+ margin.left +"," + (margin.top + height + margin.middle) +")");
-	d3.select("#cliprect")
-	.attr("width", width)
-	.attr("height", 1000);
+	var svg_events = self.svg.append("g")
+	.attr("transform", "translate("+ margin.left +"," + (margin.top + self.height + margin.middle) +")");
+
 	var svg_events_back_layer = svg_events.append("g");
 	var svg_events_front_layer = svg_events.append("g");
 
 
-	var svg_event_titles = d3.select("#event_titles")
-	.attr("transform", "translate(" + margin.left_label + "," + (margin.top + height + margin.middle) + ")");
+	var svg_event_titles = self.svg.append("g")
+	.attr("transform", "translate(" + margin.left_label + "," + (margin.top + self.height + margin.middle) + ")");
 
 
-	var svg_areas = [];
-	var areas = [];
+	var svg_xAxis = svg_chart.append("g")
+	.attr("class", "x axis")
+	.attr("transform", "translate(0," + self.height + ")")
 
-	var lane_titles = ["Sama 1", "Sama 2", "Cubie 1", "Cubie 2", "Cubie 3", "Cubie 4", "Master", "Switch"];
+	var svg_yAxis = svg_chart.append("g")
+	.attr("class", "y axis");
 
-	var colors = d3.scale.category10();
+	svg_yAxis.append("text")
+	.attr("transform", "rotate(-90)")
+	.attr("y", 6)
+	.attr("dy", ".71em")
+	.style("text-anchor", "end")
+	.text("Power (W)");
 
-	function id_to_index(id) {
-		var d = id % 1000 - 1;
-		var i = (id - d - 1) / 1000 - 1;
-		return d + i * 8;
-	}
+	svg_yAxis.call(yAxis);
+	y_scale.domain([0, 20]);
 
-	var power = [];
-	var events = []
 
-	$.post("get_recording_data", { "n": "bar" }, function(json) {
 
-		console.log(json.power);
 
+
+	$.post("get_recording_data", { "n": recording_name }, function(json) {
+
+		var replay_len = json.power.length;
+		x_scale.domain([0, replay_len]);
+		// TODO: clip
+//		x_scale.domain([70, 30 * 60]);
+		xAxis.tickValues(d3.range(0, replay_len, self.tickWidth));
+		svg_xAxis.call(xAxis);
 
 
 		d3.range(json.power[0].length - 1).forEach(function(i) {
 
-			areas[i] = d3.svg.area()
+			var areas = d3.svg.area()
 			.x(function(d) { return x_scale(d[0]); })
-			.y0(height)
+			.y0(self.height)
 			.y1(function(d) { return y_scale(d3.sum(d.slice(i+1))); });
 
 			var c = colors(i);
 
-			svg_areas[i] = svg_chart.append("path")
+			var svg_area = svg_chart.append("path")
 			.attr("class", "area")
 			.style("fill", d3.rgb(c).brighter())
 			.style("stroke", c)
-			.datum(power)
-			.attr("d", areas[i]);
+			.datum(json.power)
+			.attr("d", areas);
 
 			if (i < 6) {
 				// lanes
 				svg_events_front_layer.append("rect")
-				.attr("width", width)
+				.attr("width", self.width)
 				.attr("height", margin.row)
 				.attr("y", (i + 1) * margin.row)
 				.style("fill", d3.rgb(c).brighter())
@@ -107,45 +108,9 @@ $(document).ready(function() {
 
 
 
-		var svg_xAxis = svg_chart.append("g")
-		.attr("class", "x axis")
-		.attr("transform", "translate(0," + height + ")")
-
-		var svg_yAxis = svg_chart.append("g")
-		.attr("class", "y axis");
-
-		svg_yAxis.append("text")
-		.attr("transform", "rotate(-90)")
-		.attr("y", 6)
-		.attr("dy", ".71em")
-		.style("text-anchor", "end")
-		.text("Power (W)");
-
-
-		y_scale.domain([0, 15]);
-		svg_yAxis.call(yAxis);
-
-		json.power.forEach(function(d) { power.push(d); });
-
-		var replay_len = json.power.length;
-		x_scale.domain([0, replay_len]);
-		xAxis.tickValues(d3.range(0, replay_len, tickWidth));
-		svg_xAxis.call(xAxis);
-
-		for (var i = 0; i < areas.length; i++) svg_areas[i].attr("d", areas[i])
-
 		// events
+		var events = [];
 		json.events.forEach(function(e, i) {
-
-			// console output
-			var h = format(Math.floor(e.t / 3600));
-			var m = format(Math.floor(e.t / 60) % 60);
-			var s = format(Math.floor(e.t % 60));
-			var ms = format(Math.round(e.t % 1 * 100));
-			var time = h + ":" + m + ":" + s + "." + ms;
-			$("<pre></pre>").text(time +" "+ e.e + Array(16 - e.e.length).join(" ") +" ("+ e.d +")").prependTo("#console");
-
-
 			// process only these events
 			if (!{
 				"WORK_REQUEST": true,
@@ -155,7 +120,6 @@ $(document).ready(function() {
 				"WORKER_ONLINE": true,
 				"WORKER_OFF": true,
 				"WORKER_OFFLINE": true,
-				"WORKER_REBOOT": true
 			}[e.e]) return;
 
 
@@ -168,11 +132,12 @@ $(document).ready(function() {
 
 			e.svg = {};
 
+
 			if (e.e == "WORK_REQUEST") {
 				events.push(e);
-				e.svg.marker = svg_events_front_layer.append("polygon")
-				.attr("class", "work-request")
-				.attr("points", "-3,0, 3,0, 0,15");
+				e.svg.marker = svg_events_front_layer.append("polyline")
+				.attr("class", "marker")
+				.attr("points", "0,0, 0,10");
 
 			}
 			else if (e.e == "WORK_COMMAND") {
@@ -202,7 +167,6 @@ $(document).ready(function() {
 				});
 			}
 			else if (e.e == "WORKER_ON") {
-
 				// only consider event, if no previous WORKER_ON event was emited
 				var i;
 				for (i = 0; i < events.length; i++) {
@@ -217,42 +181,35 @@ $(document).ready(function() {
 					e.svg.rect = svg_events_back_layer.append("rect")
 					.attr("y", (i + 1) * margin.row)
 					.attr("height", margin.row)
+					.style("fill-opacity", 0.8)
 					.style("stroke", "none")
 					.style("fill", d3.rgb(colors(i)).brighter(1.8));
 				}
 			}
 			else if (e.e == "WORKER_ONLINE") {
-
 				var i = id_to_index(e.info.id);
 				events.push(e);
 				e.svg.rect = svg_events_back_layer.append("rect")
 				.attr("y", (i + 1) * margin.row)
 				.attr("height", margin.row)
 				.style("stroke", "none")
+				.style("fill-opacity", 0.8)
 				.style("fill", d3.rgb(colors(i)));
 
 			}
 			else if (e.e == "WORKER_OFF") {
-				var i;
-				for (i = 0; i < events.length; i++) {
-					var f = events[i];
+				events.forEach(function(f) {
 					if (f.e == "WORKER_ON" && f.info["id"] == e.info["id"] && !f.complete) {
 						f.complete = e;
 					}
-				}
+				});
 			}
 			else if (e.e == "WORKER_OFFLINE") {
-
-				var i;
-				for (i = 0; i < events.length; i++) {
-					var f = events[i];
+				events.forEach(function(f) {
 					if (f.e == "WORKER_ONLINE" && f.info["id"] == e.info["id"] && !f.complete) {
 						f.complete = e;
 					}
-				}
-			}
-			else if (e.e == "WORKER_REBOOT") {
-				// TODO
+				});
 			}
 		});
 
@@ -260,21 +217,100 @@ $(document).ready(function() {
 		for (var i = 0; i < events.length; i++) {
 			var e = events[i];
 
-
 			if (e.e == "WORK_REQUEST") {
 				e.svg.marker.attr("transform", "translate(" + x_scale(e.t) + ",0)");
 			}
 			if (e.e == "WORK_COMMAND" || e.e == "WORKER_ONLINE" || e.e == "WORKER_ON") {
 				var x1 = x_scale(e.t);
 				if (x1 < 0) x1 = -1;
-				var x2 = width;
+				var x2 = self.width;
 				if (e.complete) x2 = x_scale(e.complete.t);
-				e.svg.rect.attr("x", x1).attr("width", x2 - x1);
+				if (x1 < x2) e.svg.rect.attr("x", x1).attr("width", x2 - x1);
 			}
 
 		}
 
 	 }, "json");
+
+
+
+}
+
+Graph.prototype = Graph;
+Graph.width = 1200;
+Graph.height = 100;
+Graph.tickWidth = 60;
+
+$(document).ready(function() {
+
+
+	var energy_svg = d3.select("#content").append("svg")
+	.attr("width", "100%")
+	.attr("viewBox", "0 0 "+ (Graph.width + margin.left + margin.right) +" "+
+	(200 + margin.top + margin.bottom + margin.middle));
+
+
+	var height = 200;
+
+	var x_scale = d3.scale.linear().range([0, Graph.width]);
+	var y_scale = d3.scale.linear().range([height, 0]);
+
+
+	var format = d3.format("02d");
+	var xAxis = d3.svg.axis()
+	.scale(x_scale)
+	.orient("bottom")
+	.tickFormat(function(t) {
+		if (t < 0) return "";
+		var h = Math.floor(t / 3600);
+		var m = Math.floor(t / 60) % 60;
+		var s = t % 60;
+		if (Graph.tickWidth % 60 == 0) return h+":"+format(m);
+		else return h+":"+format(m)+":"+format(s);
+	});
+	var yAxis = d3.svg.axis()
+	.scale(y_scale)
+	.orient("left");
+
+	var svg_chart = energy_svg.append("g")
+	.attr("transform", "translate("+ margin.left +","+ margin.top +")");
+
+	var svg_events = energy_svg.append("g")
+	.attr("transform", "translate("+ margin.left +"," + (margin.top + height + margin.middle) +")");
+
+	var svg_events_back_layer = svg_events.append("g");
+	var svg_events_front_layer = svg_events.append("g");
+
+
+	var svg_event_titles = energy_svg.append("g")
+	.attr("transform", "translate(" + margin.left_label + "," + (margin.top + height + margin.middle) + ")");
+
+
+	var svg_xAxis = svg_chart.append("g")
+	.attr("class", "x axis")
+	.attr("transform", "translate(0," + height + ")")
+
+	var svg_yAxis = svg_chart.append("g")
+	.attr("class", "y axis");
+
+	svg_yAxis.append("text")
+	.attr("transform", "rotate(-90)")
+	.attr("y", 6)
+	.attr("dy", ".71em")
+	.style("text-anchor", "end")
+	.text("Energy (Ws)");
+
+	svg_yAxis.call(yAxis);
+	y_scale.domain([0, 10000]);
+
+
+	x_scale.domain([0, 60 * 30]);
+	xAxis.tickValues(d3.range(0, 60 * 30, Graph.tickWidth));
+	svg_xAxis.call(xAxis);
+
+
+	var g = new Graph("4");
+	var h = new Graph("5");
 
 
 

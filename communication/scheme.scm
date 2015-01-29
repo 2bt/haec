@@ -384,7 +384,10 @@
            ((num-excess-workers (- num-idle-workers num-backup-workers))
             (sorted-idle-workers
               (list-sort
-                (lambda (a b) (< (key a) (key b)))
+               ;(lambda (a b) (< (key a) (key b)))
+                (lambda (a b) (eq? (ast-child 'state a) 'BOOTING))
+
+
                 idle-workers))
             (sorted-bootable-idle-workers
               (filter

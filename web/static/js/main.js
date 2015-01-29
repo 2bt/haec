@@ -27,7 +27,6 @@ $(document).ready(function() {
 	var time = -past;
 	var width = 600;
 	var height = 400;
-	var margin = { top: 20, right: 20, bottom: 20, left: 50, middle: 24, row: 15, left_label:45 };
 
 
 	var x = d3.scale.linear()
@@ -62,6 +61,7 @@ $(document).ready(function() {
 
 	var svg_events = d3.select("#events")
 	.attr("transform", "translate("+ margin.left +"," + (margin.top + height + margin.middle) +")");
+
 	d3.select("#cliprect")
 	.attr("width", width)
 	.attr("height", 1000);
@@ -89,25 +89,16 @@ $(document).ready(function() {
 
 
 	x.domain([-past, 0]);
-	y.domain([0, 15]);
+	y.domain([0, 20]);
 	svg_xAxis.call(xAxis);
 	svg_yAxis.call(yAxis);
 
 	var svg_areas = [];
 	var areas = [];
 
-	var lane_titles = ["Sama 1", "Sama 2", "Cubie 1", "Cubie 2", "Cubie 3", "Cubie 4", "Master", "Switch"];
-
-	var colors = d3.scale.category10();
 
 	var first_poll = true;
 
-
-	function id_to_index(id) {
-		var d = id % 1000 - 1;
-		var i = (id - d - 1) / 1000 - 1;
-		return d + i * 8;
-	}
 
 
 	(function poll() {
@@ -185,7 +176,7 @@ $(document).ready(function() {
 					var s = format(Math.floor(e.t % 60));
 					var ms = format(Math.round(e.t % 1 * 100));
 					var time = h + ":" + m + ":" + s + "." + ms;
-					$("<pre></pre>").text(time +" "+ e.e + Array(16 - e.e.length).join(" ") +" ("+ e.d +")").prependTo("#console");
+					$("<pre></pre>").text(time +" "+ e.e + Array(15 - e.e.length).join(" ") +" ("+ e.d +")").prependTo("#console");
 
 
 					// process only these events
@@ -260,6 +251,7 @@ $(document).ready(function() {
 							.attr("y", (i + 1) * margin.row)
 							.attr("height", margin.row)
 							.style("stroke", "none")
+							.style("fill-opacity", 0.8)
 							.style("fill", d3.rgb(colors(i)).brighter(1.8));
 						}
 					}
@@ -271,6 +263,7 @@ $(document).ready(function() {
 						.attr("y", (i + 1) * margin.row)
 						.attr("height", margin.row)
 						.style("stroke", "none")
+						.style("fill-opacity", 0.8)
 						.style("fill", d3.rgb(colors(i)));
 
 					}
@@ -284,13 +277,33 @@ $(document).ready(function() {
 						}
 					}
 					else if (e.e == "WORKER_OFFLINE") {
-
 						var i;
+						var on = false;
 						for (i = 0; i < events.length; i++) {
 							var f = events[i];
 							if (f.e == "WORKER_ONLINE" && f.info["id"] == e.info["id"] && !f.complete) {
 								f.complete = e;
 							}
+							if (f.e == "WORKER_ON" && f.info["id"] == e.info["id"] && !f.complete) {
+								on = true;
+							}
+						}
+						// fake event
+						if (!on) {
+							var i = id_to_index(e.info.id);
+							events.unshift({
+								e: "WORKER_ON",
+								info: { id: e.id },
+								t: e.t,
+								svg: {
+									rect: svg_events_back_layer.append("rect")
+										.attr("y", (i + 1) * margin.row)
+										.attr("height", margin.row)
+										.style("stroke", "none")
+										.style("fill-opacity", 0.8)
+										.style("fill", d3.rgb(colors(i)).brighter(1.8))
+								}
+							});
 						}
 					}
 					else if (e.e == "WORKER_REBOOT") {
