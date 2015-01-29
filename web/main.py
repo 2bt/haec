@@ -64,8 +64,11 @@ def get_recording_data(recording):
 		events.append({"t": time, "e": fields[1], "d": " ".join(fields[2:])[1:-1] })
 
 	for line in file(path + "status.log"):
-		status = {}
-		for s in line.split()[1:]:
+		items = line.split();
+		time = items.pop(0)
+		h, m, s = map(float, time.split(":"))
+		status = { "t": s + m * 60 + h * 3600 }
+		for s in items:
 			k, v = s.split(":", 1)
 			status[k.strip()] = v.strip();
 		statuses.append(status)

@@ -266,34 +266,18 @@ $(document).ready(function() {
 						.style("fill-opacity", 0.8)
 						.style("fill", d3.rgb(colors(i)));
 
-					}
-					else if (e.e == "WORKER_OFF") {
-						var i;
-						for (i = 0; i < events.length; i++) {
-							var f = events[i];
-							if (f.e == "WORKER_ON" && f.info["id"] == e.info["id"] && !f.complete) {
-								f.complete = e;
-							}
-						}
-					}
-					else if (e.e == "WORKER_OFFLINE") {
-						var i;
+
+						// create WORKER_ON event if none has been emitted previously
 						var on = false;
-						for (i = 0; i < events.length; i++) {
-							var f = events[i];
-							if (f.e == "WORKER_ONLINE" && f.info["id"] == e.info["id"] && !f.complete) {
-								f.complete = e;
-							}
+						events.forEach(function(f) {
 							if (f.e == "WORKER_ON" && f.info["id"] == e.info["id"] && !f.complete) {
 								on = true;
 							}
-						}
-						// fake event
+						});
 						if (!on) {
-							var i = id_to_index(e.info.id);
-							events.unshift({
+							events.push({
 								e: "WORKER_ON",
-								info: { id: e.id },
+								info: { id: e.info.id },
 								t: e.t,
 								svg: {
 									rect: svg_events_back_layer.append("rect")
@@ -305,6 +289,21 @@ $(document).ready(function() {
 								}
 							});
 						}
+
+					}
+					else if (e.e == "WORKER_OFF") {
+						events.forEach(function(f) {
+							if (f.e == "WORKER_ON" && f.info["id"] == e.info["id"] && !f.complete) {
+								f.complete = e;
+							}
+						});
+					}
+					else if (e.e == "WORKER_OFFLINE") {
+						events.forEach(function(f) {
+							if (f.e == "WORKER_ONLINE" && f.info["id"] == e.info["id"] && !f.complete) {
+								f.complete = e;
+							}
+						});
 					}
 					else if (e.e == "WORKER_REBOOT") {
 						// TODO
