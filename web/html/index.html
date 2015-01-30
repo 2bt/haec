@@ -23,7 +23,7 @@
 			<g id="events" style="clip-path:url(#clip);"></g>
 			<g id="event_titles"></g>
 		</svg>
-		<div style="padding:0px 0px 0px 675px;">
+		<div style="padding:0px 0px 0px 1075px;">
 			<div class="column right">
 				<h2>Commands</h2>
 
@@ -39,8 +39,8 @@
 					-->
 
 					<select style="margin-left:5px" name="cmd" form="scenario-form">
-						<option value="scenario runs/demo.run">demo</option>
-						<option value="scenario runs/m1.run">m1</option>
+						<option value="scenario runs/demo8.run">Demo 1</option>
+						<option value="scenario runs/demo8.run">m1</option>
 						<option value="scenario runs/m2.run">m2</option>
 					</select>
 
@@ -48,10 +48,9 @@
 				<form style="margin-top:5px" class="cmd" id="scheduler-form">
 					<input class="button" type="submit" value="Switch scheduler" />
 					<select style="margin-left:5px" name="cmd" form="scheduler-form">
-						<option id="batman" value="(rewrite-terminal 'scheduler ast 'schedule-batman)">Advanced scheduler</option>
-						<option id="robin" value="(rewrite-terminal 'scheduler ast 'schedule-robin)">Round-robin</option>
+						<option id="batman" value="(rewrite-terminal 'scheduler ast 'schedule-batman)">Load-consolidating Scheduler</option>
+						<option id="robin" value="(rewrite-terminal 'scheduler ast 'schedule-robin)">Simple Scheduler</option>
 					</select>
-					<span id="currentsched"></span>
 				</form>
 				<form style="margin-top:5px" class="cmd">
 					<input class="button" type="submit" value="Execute custom command" />

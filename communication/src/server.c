@@ -17,8 +17,8 @@
 #define TIME_HALTING 13.0
 #define TIME_REBOOTDELAY 12.0
 #define TIME_NOCURRENT 12.0
-
-
+#define ADAPTATION_FREQUENCY 20.0
+#define MAX_BOOT_TIME 100.0
 
 Server server;
 
@@ -447,6 +447,8 @@ void server_run(int argc, char** argv) {
 
 	server.log_fd = fopen("event.log", "w");
 
+	double adapt_time = timestamp();
+
 	printf("entering server loop\n");
 	while (server.running) {
 
@@ -509,9 +511,12 @@ tryagain:
 				Event* e = event_append(EVENT_WORKER_OFF);
 				e->worker = w;
 			}
+			else if (w->state == WORKER_BOOTING && time - w->timestamp > MAX_BOOT_TIME) {
+				Event* e = event_append(EVENT_WORKER_REBOOT);
+				e->worker = w;
+			}
 			else if (w->state == WORKER_BOOTING && time - w->timestamp > TIME_NOCURRENT) {
 				if (cambri_get_current(w->id) == 0) {
-					printf("rebooting worker %d\n", w->id);
 					Event* e = event_append(EVENT_WORKER_REBOOT);
 					e->worker = w;
 				}
@@ -523,7 +528,11 @@ tryagain:
 			}
 		}
 
-		
+		if (timestamp() - adapt_time > ADAPTATION_FREQUENCY ) {
+			eval_string("(adapt)");
+			adapt_time = timestamp();
+		}
+
 		cambri_log_data(time, "scheduler1");
 	}
 

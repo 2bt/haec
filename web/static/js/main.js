@@ -17,7 +17,7 @@ $(document).ready(function() {
 
 
 
-	var past = 60 * 5;
+	var past = 60 * 15;
 	var tickWidth = 60;
 
 	var delta = 1; // one sample per second
@@ -25,7 +25,7 @@ $(document).ready(function() {
 	var power = [];
 	var events = [];
 	var time = -past;
-	var width = 600;
+	var width = 1000;
 	var height = 400;
 
 
@@ -105,7 +105,6 @@ $(document).ready(function() {
 		$.post("poll", { "t": time, "m": past + delta }, function(json) {
 			console.log("poll", json);
 			$("#e-meter").text(json.status.energy);
-			$("#currentsched").text(json.status.scheduler);
 			if (json.power.length > 0) {
 				if (first_poll) {
 					first_poll = false;

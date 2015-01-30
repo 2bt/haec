@@ -27,7 +27,7 @@ body {
 }
 
 input, select {
-	width:200px;
+	width:180px;
 	padding:2px;
 	margin:0px;
 	box-sizing:border-box;
@@ -83,7 +83,7 @@ h2 {
 }
 
 .button {
-	min-width: 200px;
+	min-width: 150px;
 }
 
 

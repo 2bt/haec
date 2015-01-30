@@ -232,7 +232,7 @@ var Graph = function(recording_name, ready_function) {
 	 }, "json");
 
 
-}
+};
 
 Graph.prototype = Graph;
 Graph.width = 1200;
@@ -272,7 +272,6 @@ Graph.set_x_domain = function(a, b) {
 
 	});
 };
-
 
 
 var Energy = function() {
@@ -326,7 +325,7 @@ var Energy = function() {
 	.style("text-anchor", "end")
 	.text("Consumed energy (Ws)");
 
-	y_scale.domain([0, 50000]);
+	y_scale.domain([0, self.max_energy]);
 	svg_yAxis.call(yAxis);
 
 
@@ -336,6 +335,9 @@ var Energy = function() {
 	self.xAxis = xAxis;
 	self.svg_xAxis = svg_xAxis;
 
+	self.yAxis = yAxis;
+	self.svg_yAxis = svg_yAxis;
+
 	self.svg_chart = svg_chart;
 
 
@@ -343,14 +345,17 @@ var Energy = function() {
 	self.svg_lines = [];
 };
 
+
 Energy.prototype = Energy;
-Energy.set_x_domain = function(a, b) {
+
+Energy.max_energy = 20000;
+Energy.set_x_domain = function(t1, t2) {
 	var self = this;
 
 
-	self.x_scale.domain([a, b]);
-	var l = d3.max([0, Math.ceil(a / Graph.tickWidth) * Graph.tickWidth]);
-	self.xAxis.tickValues(d3.range(l, b, Graph.tickWidth));
+	self.x_scale.domain([t1, t2]);
+	var l = d3.max([0, Math.ceil(t1 / Graph.tickWidth) * Graph.tickWidth]);
+	self.xAxis.tickValues(d3.range(l, t2, Graph.tickWidth));
 	self.svg_xAxis.call(self.xAxis);
 
 
@@ -375,6 +380,7 @@ Energy.add_line = function(statuses, color) {
 	});
 
 	self.svg_lines[i] = self.svg_chart.append("path")
+	.attr("clip-path", "url(#clip)")
 	.attr("class", "line")
 	.attr("stroke", color)
 	.datum(statuses)
@@ -388,17 +394,31 @@ $(document).ready(function() {
 
 	e = new Energy();
 
-	g = new Graph("4", function(g){
+	g = new Graph("ro", function(g){
 
 		e.set_x_domain(0, g.recording_length);
-		e.add_line(g.json.statuses, "#0f0");
+		e.add_line(g.json.statuses, "#aa3");
 
 	});
 
-	g = new Graph("5", function(g){
+	h = new Graph("rs", function(h){
 
 		e.set_x_domain(0, g.recording_length);
-		e.add_line(g.json.statuses, "#f00");
+		h.set_x_domain(0, g.recording_length);
+		g.set_x_domain(0, g.recording_length);
+
+		e.add_line(h.json.statuses, "#55f");
+
+	});
+
+	i = new Graph("as", function(i){
+
+		e.set_x_domain(0, g.recording_length);
+		h.set_x_domain(0, g.recording_length);
+		g.set_x_domain(0, g.recording_length);
+		i.set_x_domain(0, g.recording_length);
+
+		e.add_line(i.json.statuses, "#000");
 
 	});
 

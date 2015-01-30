@@ -185,7 +185,8 @@
           (display "[ATTRIBUTE on Request] maximum-dispatch-deferment\n")
           (let*
             ((index (ast-child-index n))
-             (queue-length (ast-num-children (ast-parent n)))
+             (queue (ast-parent n))
+             (queue-length (ast-num-children queue))
              (local-deferment
                (-
                  (ast-child 'deadline n)
@@ -315,7 +316,7 @@
       'Root
       (list
         'schedule-robin
-        1
+        6
         ;'schedule-batman
         (create-ast
           'Config
@@ -488,8 +489,7 @@
             queue
             index
             (create-ast spec 'Request (list work-id load-size deadline #f)))
-          (when worker-idle? (dispatch-next-request time worker))
-          (adapt))
+          (when worker-idle? (dispatch-next-request time worker)))
         (printf "[ERROR] ~a~n" index)))))
 
 
@@ -512,8 +512,7 @@
             (printf "### ~a ~a ~a ~a ~a~n" (ast-child 'size request) speed processing-time met-deadline? remaining-time))
 
           (rewrite-delete request)
-          (dispatch-next-request time worker)
-          (adapt))
+          (dispatch-next-request time worker))
         (display "[FATAL ERROR] no request with specified id found\n"))))) ; this should never happen
 
 
