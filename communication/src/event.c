@@ -21,8 +21,9 @@ double timestamp(void) {
 
 const char* format_timestamp(double t) {
 	double s = fmod(t, 60);
-	int m = (int)(t / 60) % 60;
+	int m = (int)(t / 60);
 	int h = m / 60 % 99;
+	m %= 60;
 	static char buf[12];
 	snprintf(buf, sizeof(buf), "%02d:%02d:%05.2f", h, m, s);
 	return buf;
