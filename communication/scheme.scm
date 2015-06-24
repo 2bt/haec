@@ -128,11 +128,20 @@
     (ag-rule
       depth
       (Config
-        #f
         (lambda (n) 0))
       (AbstractWorker
-        #f
         (lambda (n) (+ 1 (att-value 'depth (ast-parent n))))))
+
+
+    (ag-rule
+      in-use?
+      (Config (lambda (n) #t))
+      (Switch
+        (lambda (n)
+          (exists
+            (lambda (child)
+              (memq (ast-child 'state child) '(RUNNING BOOTING)))
+            (ast-children (ast-child 'Workers n))))))
 
 
     (ag-rule
@@ -375,7 +384,7 @@
   (lambda (id parent-id time)
     (add-node-to-ast
       parent-id
-      (create-ast spec 'Switch (list id 'RUNNING time (create-ast-list (list)))))))
+      (create-ast spec 'Switch (list id 'OFF time (create-ast-list (list)))))))
 
 
 (define set-backup-workers
@@ -437,7 +446,14 @@
                     (and
                       (= (att-value 'depth a)
                          (att-value 'depth b))
-                      (eq? (ast-child 'state a) 'BOOTING))))
+                      (or
+                        (and
+                          (eq? (ast-child 'state a) 'BOOTING)
+                          (not (eq? (ast-child 'state b) 'BOOTING)))
+                        (and
+                          (eq? (ast-child 'state a) 'BOOTING)
+                          (eq? (ast-child 'state b) 'BOOTING)
+                          (> (ast-child 'id a) (ast-child 'id b)))))))
                 haltable-workers))
             (sorted-bootable-haltable-workers
               (filter
@@ -453,9 +469,7 @@
              (when (and (> i 0) (not (null? rest)))
                (let ((worker (car rest)))
                  (rewrite-terminal 'state worker 'HALTING)
-                 (add-event
-                   'event-halt-command
-                   (ast-child 'id worker))
+                 (add-event 'event-halt-command (ast-child 'id worker))
                  (next (- i 1) (cdr rest)))))))
         ((< num-idle-workers num-backup-workers) ; boot
          (displayln ">>>>>> BOOT!")
@@ -486,9 +500,16 @@
                (let ((worker (car rest)))
                  (rewrite-terminal 'state worker 'BOOTING)
                  (rewrite-terminal 'timestamp worker time)
-                 (add-event
-                   'event-worker-on
-                   (ast-child 'id worker))
+                 (add-event 'event-worker-on (ast-child 'id worker))
+
+                 ; check whether switches should be turned on
+                 (let next ((parent (ast-parent (ast-parent worker))))
+                   (when (eq? (ast-child 'state parent) 'OFF)
+                     (begin
+                       (rewrite-terminal 'state parent 'RUNNING)
+                       (add-event 'event-switch-on (ast-child 'id parent))
+                       (next (ast-parent (ast-parent parent))))))
+
                  (next (- i 1) (cdr rest)))))))))))
 
 
@@ -513,7 +534,15 @@
     (let ((worker (att-value 'lookup-worker config id)))
       (rewrite-terminal 'state worker 'RUNNING)
       (rewrite-terminal 'timestamp worker time)
-      (dispatch-next-request time worker))))
+      (dispatch-next-request time worker)
+
+      ; check whether switches should have been turned on :D
+      (let next ((parent (ast-parent (ast-parent worker))))
+        (when (eq? (ast-child 'state parent) 'OFF)
+          (begin
+            (rewrite-terminal 'state parent 'RUNNING)
+            (add-event 'event-switch-on (ast-child 'id parent))
+            (next (ast-parent (ast-parent parent)))))))))
 
 
 (define event-worker-offline
@@ -522,15 +551,30 @@
       (when (not (eq? (ast-child 'state worker) 'HALTING))
         (begin
           (rewrite-terminal 'state worker 'ERROR)
-          (rewrite-terminal 'timestamp worker time))))))
+          (rewrite-terminal 'timestamp worker time)))
+
+      ; check whether switches can be turned off
+      (let next ((parent (ast-parent (ast-parent worker))))
+        (when (not (att-value 'in-use? parent))
+          (begin
+            (rewrite-terminal 'state parent 'OFF)
+            (add-event 'event-switch-off (ast-child 'id parent))
+            (next (ast-parent (ast-parent parent)))))))))
 
 
 (define event-worker-off
   (lambda (id time)
     (let ((worker (att-value 'lookup-worker config id)))
       (rewrite-terminal 'state worker 'OFF)
-      (rewrite-terminal 'timestamp worker time))))
+      (rewrite-terminal 'timestamp worker time)
 
+      ; check whether switches can be turned off
+      (let next ((parent (ast-parent (ast-parent worker))))
+        (when (not (att-value 'in-use? parent))
+          (begin
+            (rewrite-terminal 'state parent 'OFF)
+            (add-event 'event-switch-off (ast-child 'id parent))
+            (next (ast-parent (ast-parent parent)))))))))
 
 (define event-adapt
   (lambda (time)
