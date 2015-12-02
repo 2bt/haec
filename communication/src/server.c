@@ -16,7 +16,8 @@
 #define TIME_HALTING 13.0
 #define TIME_REBOOTDELAY 12.0
 #define TIME_NOCURRENT 12.0
-#define ADAPTATION_FREQUENCY 20.0
+//#define ADAPTATION_FREQUENCY 20.0
+#define ADAPTATION_FREQUENCY 3
 #define MAX_BOOT_TIME 100.0
 
 Server server;
@@ -24,15 +25,6 @@ Server server;
 
 void eval_string(const char* str);
 
-
-ssize_t sendf(int s, const char* format, ...) {
-	char line[256];
-	va_list args;
-	va_start(args, format);
-	vsnprintf(line, sizeof(line), format, args);
-	va_end(args);
-	return send(s, line, strlen(line) + 1, 0);
-}
 
 
 void server_log_event(const char* fmt, ...) {
@@ -60,18 +52,18 @@ static int server_command(char* cmd) {
 		printf("exiting...\n");
 	}
 	else if (strcmp(cmd, "status") == 0) {
-		printf(" type   | id   | parent | address:port          | socket | state   | time\n");
-		printf("--------+------+--------+-----------------------+--------+---------+-------------\n");
+		printf(" type   | id   | parent | address:port          | socket | state     | time\n");
+		printf("--------+------+--------+-----------------------+--------+-----------+-------------\n");
 		for (w = worker_next(NULL); w; w = worker_next(w)) {
 			if (!w->is_switch) {
 			char s[INET_ADDRSTRLEN];
 			inet_ntop(AF_INET, &w->addr, s, sizeof(s));
-			printf(" worker | %-4d | %-6d | %-15s:%05d | %6d | %-7s | %s\n",
-				w->id, w->parent_id, s, w->port, w->socket_fd,
+			printf(" worker | %-4d | %-6d | %-15s:%05d | %6d | %-9s | %s\n",
+				w->id, w->parent_id, s, ntohs(w->port), w->socket_fd,
 				worker_state_string(w->state), format_timestamp(time - w->timestamp));
 			}
 			else {
-			printf(" switch | %-4d | %-6d | %21s |        | %-7s | %s\n",
+			printf(" switch | %-4d | %-6d | %21s |        | %-9s | %s\n",
 				w->id, w->parent_id, "", worker_state_string(w->state), format_timestamp(time - w->timestamp));
 			}
 		}
@@ -133,7 +125,7 @@ static int server_command(char* cmd) {
 			printf("error: %s\n", cmd);
 			return 1;
 		}
-		sendf(w->socket_fd, "halt");
+		worker_send(w, "halt");
 		w->state = WORKER_HALTING;
 		w->timestamp = timestamp();
 	}
@@ -166,11 +158,11 @@ static void server_new_connection(int s) {
 	int newfd = accept(s, (struct sockaddr*) &client, &size);
 	if (newfd < 0) perror("accept");
 	else {
-		Worker* w = worker_find_by_address(client.sin_addr, 0);
+		Worker* w = worker_find_by_address(client.sin_addr, client.sin_port);
 		if (!w) {
 			char s[INET_ADDRSTRLEN];
 			inet_ntop(AF_INET, &client.sin_addr, s, sizeof(s));
-			printf("unexpected connection from %s:%d\n", s, client.sin_port);
+			printf("unexpected connection from %s:%d\n", s, ntohs(client.sin_port));
 			close(newfd);
 			return;
 		}
@@ -178,7 +170,6 @@ static void server_new_connection(int s) {
 		FD_SET(newfd, &server.fds);
 		if (newfd > server.fdmax) server.fdmax = newfd;
 
-		w->port = client.sin_port;
 		w->socket_fd = newfd;
 
 		Event* e = event_append(EVENT_WORKER_ONLINE);
@@ -203,7 +194,6 @@ static void server_receive(int s) {
 		FD_CLR(s, &server.fds);
 
 		w->socket_fd = -1;
-		w->port = 0;
 
 		Event* e = event_append(EVENT_WORKER_OFFLINE);
 		e->worker = w;
@@ -358,7 +348,6 @@ void server_process_events(void) {
 			w->state = WORKER_OFF;
 			w->timestamp = time;
 			w->socket_fd = -1;
-			w->port = 0;
 			cambri_set_mode(w->id, CAMBRI_OFF);
 			racr_call_str("event-worker-off", "id", w->id, time);
 			break;
@@ -375,7 +364,7 @@ void server_process_events(void) {
 
 		case EVENT_WORK_COMMAND:
 			if (w->is_switch) break;
-			sendf(w->socket_fd, "work %d %lf", e->work_id, e->load_size);
+			worker_send(w, "work %d %lf", e->work_id, e->load_size);
 			break;
 
 		case EVENT_WORK_ACK:
@@ -386,7 +375,7 @@ void server_process_events(void) {
 			break;
 
 		case EVENT_MEM_COMMAND:
-			sendf(w->socket_fd, "mem");
+			worker_send(w, "mem");
 			break;
 
 		case EVENT_MEM_ACK:
@@ -394,7 +383,7 @@ void server_process_events(void) {
 
 		case EVENT_HALT_COMMAND:
 			if (w->is_switch) break;
-			sendf(w->socket_fd, "halt");
+			worker_send(w, "halt");
 			w->state = WORKER_HALTING;
 			w->timestamp = time;
 			break;
@@ -434,9 +423,12 @@ void server_run(int argc, char** argv) {
 	server.e_meter_timestamp = 0;
 	server.running = 1;
 
-	if (cambri_init()) printf("error initializing cambri\n");
 	if (worker_init()) {
 		printf("error initializing workers\n");
+		return;
+	}
+	if (cambri_init()) {
+		printf("error initializing cambri\n");
 		return;
 	}
 

@@ -17,10 +17,27 @@ enum {
 };
 
 
-static int cambri_fds[NUM_CAMBRIS];
 static FILE* cambri_log;
 static FILE* status_log;
 
+
+
+static double energy = 0;
+
+double cambri_get_energy(void) { return energy; }
+void cambri_set_energy(double e) { energy = e; }
+
+
+static int current_cache[NUM_CAMBRIS * 8] = {};
+
+int	cambri_get_current(int id) {
+	int index = 8 * (id / 1000 - 1) + (id % 1000 - 1);
+	return current_cache[index];
+}
+
+
+/*
+static int cambri_fds[NUM_CAMBRIS];
 
 static const char* get_tty_name(int c) {
 	if (c == 0) {
@@ -134,16 +151,7 @@ int cambri_read(int c, char* buf, int len) {
 }
 
 
-static double energy = 0;
-static int current_cache[NUM_CAMBRIS * 8] = {};
 
-int	cambri_get_current(int id) {
-	int i = 8*(id/1000 - 1)+(id%1000-1);
-	return current_cache[i];
-}
-
-double	cambri_get_energy(void) { return energy; }
-void	cambri_set_energy(double e) { energy = e; }
 
 
 void cambri_log_data(double time, char* scheduler) {
@@ -224,5 +232,239 @@ void cambri_set_mode(int id, int mode) {
 	cambri_write(c, "mode %c %d %d", mode, id % 10, PROFILE);
 	char buf[1024] = {};
 	cambri_read(c, buf, sizeof(buf));
+}
+*/
+
+
+
+
+// simulation
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <pthread.h>
+#include <errno.h>
+#include "worker.h"
+#include "server.h"
+
+
+ssize_t sendf(int s, const char* format, ...) {
+	char line[256];
+	va_list args;
+	va_start(args, format);
+	vsnprintf(line, sizeof(line), format, args);
+	va_end(args);
+	printf("send: %s\n", line);
+	return send(s, line, strlen(line) + 1, 0);
+}
+
+enum { OFF, BOOTING, ONLINE, HALTING };
+const char* flag_strings[] = { "OFF", "BOOTING", "ONLINE", "HALTING" };
+
+typedef struct {
+	Worker* worker;
+	pthread_t thread;
+
+	int		work_id;
+	double	remaining_load;
+	double	time;
+
+	int flag;
+
+} WorkerState;
+
+volatile static WorkerState worker_states[NUM_CAMBRIS * 8] = {};
+
+
+static void* fake_worker_thread(void* data) {
+	volatile WorkerState* state = (WorkerState*) data;
+	Worker* w = state->worker;
+
+
+	struct sockaddr_in server = { AF_INET, htons(PORT), { inet_addr("127.0.0.1") } };
+	struct sockaddr_in client = { AF_INET, htons(w->id + 10000), { inet_addr("127.0.0.1") } };
+
+	// override worker address
+	w->port = client.sin_port;
+	w->addr = client.sin_addr;
+
+	int socket_fd;
+
+
+	usleep(100000);
+
+	for (;;) {
+
+		usleep(100000);
+
+		if (state->flag != BOOTING) continue;
+
+		// TODO: adjust boot time
+		if (timestamp() - state->time < 3) continue;
+
+		state->flag = ONLINE;
+
+reconnect:
+
+		socket_fd = socket(AF_INET, SOCK_STREAM, 0);
+		if (socket_fd < 0) error(1, 0, "socket\n");
+
+		int enable = 1;
+		if (setsockopt(socket_fd, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(int)) < 0) {
+			perror("SIM setsockopt");
+			exit(1);
+		}
+
+		if (bind(socket_fd, (struct sockaddr*) &client, sizeof(client)) < 0) {
+			perror("SIM bind");
+			exit(1);
+		}
+
+		if (connect(socket_fd, (struct sockaddr*) &server, sizeof(server)) < 0) {
+			if (errno == ECONNREFUSED) {
+				printf("SIM connection refused\n");
+			}
+			perror("SIM connect");
+			close(socket_fd);
+			usleep(100000);
+			goto reconnect;
+		}
+
+		while (state->flag == ONLINE) {
+
+
+			// block only a little bit
+			struct timeval timeout = { 0, 50000 };
+			fd_set read_fds;
+			FD_ZERO(&read_fds);
+			FD_SET(socket_fd, &read_fds);
+			if (select(socket_fd + 1, &read_fds, NULL, NULL, &timeout) > 0) {
+
+				char msg[1024];
+				ssize_t len = recv(socket_fd, msg, sizeof(msg), 0);
+				if (len <= 0) {
+					printf("SIM server hung up!\n");
+					close(socket_fd);
+					usleep(100000);
+					goto reconnect;
+				}
+				else {
+
+					// parse commands
+					msg[len] = '\0';
+					char* cmd = msg;
+					ssize_t pos = 0;
+					while (pos < len) {
+						ssize_t cmd_len = strlen(cmd);
+						if (sscanf(cmd, "work %d %lf", &state->work_id, &state->remaining_load) == 2) {
+							state->time = timestamp();
+							sendf(socket_fd, "work-ack 0");
+						}
+						else if (strcmp(cmd, "halt") == 0) {
+							state->flag = HALTING;
+							sendf(socket_fd, "halt-ack 0");
+						}
+
+						fflush(stdout);
+						cmd += cmd_len + 1;
+						pos += cmd_len + 1;
+					}
+				}
+			}
+
+			if (state->remaining_load > 0) {
+				double now = timestamp();
+				// TODO: variable speed
+				state->remaining_load -= (now - state->time) * 3.6;
+				state->time = now;
+				if (state->remaining_load <= 0) {
+					state->remaining_load = 0;
+					sendf(socket_fd, "work-complete %d 0", state->work_id);
+				}
+
+			}
+
+		}
+		close(socket_fd);
+	}
+
+
+	return NULL;
+}
+
+
+int cambri_init(void) {
+
+	// spawn threads
+	for (Worker* w = worker_next(NULL); w; w = worker_next(w)) {
+		if (w->is_switch) continue;
+
+		int index = 8 * (w->id / 1000 - 1) + (w->id % 1000 - 1);
+		WorkerState* state = &worker_states[index];
+		state->worker = w;
+
+		pthread_create(&state->thread, NULL, &fake_worker_thread, (void*) state);
+	}
+
+	int i;
+	cambri_log = fopen("cambri.log", "w");
+	fprintf(cambri_log, " time      ");
+	for (i = 0; i < NUM_CAMBRIS * 8; i++) fprintf(cambri_log, " | %5d", (i/8+1) * 1000 + i%8+1);
+	fprintf(cambri_log, "\n");
+	fprintf(cambri_log, "-----------");
+	for (i = 0; i < NUM_CAMBRIS * 8; i++) fprintf(cambri_log, "-+------");
+	fprintf(cambri_log, "\n");
+	fflush(cambri_log);
+
+	status_log = fopen("status.log", "w");
+
+	return 0;
+}
+
+void cambri_kill(void) {
+	fclose(cambri_log);
+	fclose(status_log);
+}
+
+void cambri_write(int c, const char* fmt, ...) {
+
+	for (Worker* w = worker_next(NULL); w; w = worker_next(w)) {
+		int index = 8 * (w->id / 1000 - 1) + (w->id % 1000 - 1);
+
+		WorkerState* state = &worker_states[index];
+
+
+		if (w->is_switch) {
+			printf("switch | %d | %-7s\n",
+				w->id,
+				state->flag ? "ON" : "OFF");
+		}
+		else {
+
+			printf("worker | %d | %-7s | %6.1lf\n",
+				w->id,
+				flag_strings[state->flag],
+				state->remaining_load);
+		}
+	}
+
+}
+int cambri_read(int c, char* buf, int len) {
+	return 0;
+}
+void cambri_log_data(double time, char* scheduler) {
+}
+void cambri_set_mode(int id, int mode) {
+	int i = 8 * (id / 1000 - 1) + (id % 1000 - 1);
+	WorkerState* state = &worker_states[i];
+
+	if (mode == CAMBRI_CHARGE) {
+		if (state->flag == OFF) {
+			state->flag = BOOTING;
+			state->time = timestamp();
+		}
+	}
+	else {
+		state->flag = OFF;
+	}
 }
 

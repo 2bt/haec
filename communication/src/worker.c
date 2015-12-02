@@ -109,7 +109,8 @@ Worker* worker_find_by_address(struct in_addr a, unsigned short p) {
 	for (i = 0; i < worker_count; i++) {
 		Worker* w = &workers[i];
 		if (w->is_switch) continue;
-		if (w->addr.s_addr == a.s_addr && w->port == p) return w;
+		if (w->addr.s_addr == a.s_addr
+		&& (w->port == 0 || w->port == p)) return w;
 	}
 	return NULL;
 }
@@ -134,3 +135,15 @@ Worker* worker_find_by_id(int id) {
 	}
 	return NULL;
 }
+
+
+ssize_t worker_send(Worker* w, const char* format, ...) {
+	char line[256];
+	va_list args;
+	va_start(args, format);
+	vsnprintf(line, sizeof(line), format, args);
+	va_end(args);
+	return send(w->socket_fd, line, strlen(line) + 1, 0);
+}
+
+
