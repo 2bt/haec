@@ -1,25 +1,21 @@
 #include <stdlib.h>
 #include <stdio.h>
-#include <time.h>
 #include <math.h>
 
 #include "event.h"
 #include "server.h"
+#include "sim.h"
 
 
 
-double absolut_timestamp(void) {
-	struct timespec t;
-	clock_gettime(CLOCK_REALTIME, &t);
-	return t.tv_sec + t.tv_nsec * 1e-9;
-}
 
 double timestamp(void) {
-	return absolut_timestamp() - server.timestamp;
+	return absolute_timestamp() - server.timestamp;
 }
 
 
 const char* format_timestamp(double t) {
+	t = ((int) (t * 100)) * 0.01;
 	double s = fmod(t, 60);
 	int m = (int)(t / 60);
 	int h = m / 60 % 99;

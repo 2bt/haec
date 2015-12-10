@@ -11,14 +11,20 @@
 #include "worker.h"
 #include "event.h"
 #include "cambri.h"
+#include "sim.h"
 
 
-#define TIME_HALTING 13.0
-#define TIME_REBOOTDELAY 12.0
-#define TIME_NOCURRENT 12.0
-//#define ADAPTATION_FREQUENCY 20.0
-#define ADAPTATION_FREQUENCY 3
-#define MAX_BOOT_TIME 100.0
+#define TIME_HALTING			13.0
+#define TIME_REBOOTDELAY		12.0
+#define TIME_NOCURRENT			12.0
+//#define ADAPTATION_FREQUENCY	20.0
+#define ADAPTATION_FREQUENCY	3.0
+#define MAX_BOOT_TIME			100.0
+
+
+
+
+
 
 Server server;
 
@@ -297,6 +303,7 @@ void server_process_events(void) {
 			break;
 
 		case EVENT_SCENARIO_DONE:
+			server.running = 0;
 			break;
 
 		case EVENT_SWITCH_ON:
@@ -419,7 +426,7 @@ void server_run(int argc, char** argv) {
 	}
 
 	server.work_counter = 0;
-	server.timestamp = absolut_timestamp();
+	server.timestamp = absolute_timestamp();
 	server.e_meter_timestamp = 0;
 	server.running = 1;
 
@@ -485,13 +492,13 @@ void server_run(int argc, char** argv) {
 		struct timeval timeout = { 0, 50000 };
 		int count;
 		for (;;) {
-tryagain:
+TRYAGAIN:
 			count = select(server.fdmax + 1, &fds, NULL, NULL, &timeout);
 			if (count == 0) break;
 			if (count < 0) {
 				if (errno == EINTR) {
 					printf("EINTR\n");
-					goto tryagain;
+					goto TRYAGAIN;
 				}
 				perror("select");
 				break;

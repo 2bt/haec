@@ -1,6 +1,9 @@
 #pragma once
 
 
+enum { NUM_CAMBRIS = 1 };
+
+
 enum {
 	CAMBRI_OFF = 'o',
 	CAMBRI_CHARGE = 'c'
