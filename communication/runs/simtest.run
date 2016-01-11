@@ -1,8 +1,8 @@
 00:00:00 reset e-meter
-00:00:00 (set-backup-workers 0)
+00:00:00 #(set-backup-workers 0)
 00:00:00 #(rewrite-terminal 'scheduler ast 'schedule-batman)
 00:00:00 #(set-backup-workers 'one-three)
 00:00:30 work 300 100
 00:01:00 work 300 100
 00:01:10 work 300 100
-00:16:00 done
+00:16:00 exit

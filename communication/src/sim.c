@@ -83,6 +83,7 @@ static void sim(double dt) {
 	int i;
 	for (i = 0; i < NUM_CAMBRIS * 8; i++) {
 		WorkerState* state = &worker_states[i];
+		if (!state->worker) continue;
 		if (state->worker->is_switch) continue;
 
 //		printf("SIM %d\n", state->flag);
@@ -286,25 +287,27 @@ void sim_cambri_log_data(double time, char* scheduler) {
 		double current = 0;
 
 		WorkerState* state = &worker_states[i];
-		if (state->worker->is_switch) {
-			if (state->flag != OFF) {
-				current = 100;
-				int j;
-				for (j = 0; j < NUM_CAMBRIS * 8; j++) {
-					WorkerState* s = &worker_states[j];
-					if (s->flag != OFF && s->worker->parent_id == state->worker->id) {
-						current += 50;
+		if (state->worker) {
+			if (state->worker->is_switch) {
+				if (state->flag != OFF) {
+					current = 100;
+					int j;
+					for (j = 0; j < NUM_CAMBRIS * 8; j++) {
+						WorkerState* s = &worker_states[j];
+						if (s->flag != OFF && s->worker->parent_id == state->worker->id) {
+							current += 50;
+						}
 					}
 				}
 			}
-		}
-		else {
-			switch (state->flag) {
-			case BOOTING:		current = 100; break;
-			case CONNECTING:	current = 200; break;
-			case ONLINE:		current = (state->remaining_load == 0) ? 200 : 300; break;
-			case HALTING:		current = 100; break;
-			default: break;
+			else {
+				switch (state->flag) {
+				case BOOTING:		current = 100; break;
+				case CONNECTING:	current = 200; break;
+				case ONLINE:		current = (state->remaining_load == 0) ? 200 : 300; break;
+				case HALTING:		current = 100; break;
+				default: break;
+				}
 			}
 		}
 

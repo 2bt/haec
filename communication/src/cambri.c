@@ -220,7 +220,7 @@ void cambri_log_data(double time, char* scheduler) {
 void cambri_set_mode(int id, int mode) {
 	int c = id / 1000 - 1;
 	if (c < 0 || c >= NUM_CAMBRIS || !cambri_fds[c]) return;
-	cambri_write(c, "mode %c %d %d", mode, id % 10, PROFILE);
+	cambri_write(c, "mode %c %d %d", mode, id % 1000, PROFILE);
 	char buf[1024] = {};
 	cambri_read(c, buf, sizeof(buf));
 }
