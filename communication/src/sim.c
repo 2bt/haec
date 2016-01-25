@@ -14,6 +14,22 @@
 #include "server.h"
 
 
+#define BOOT_TIME	70.952
+#define BOOT_POWER	1.2380610498
+
+#define HALT_TIME	13.265
+#define HALT_POWER	1.203496337
+
+#define IDLE_POWER	1.29519747757
+#define BUSY_POWER	2.44882204417
+
+
+double SWITCH_POWER(int connections) {
+	return 0.273665 + 0.213109 * connections;
+}
+
+
+
 double absolute_timestamp(void) {
 	struct timespec t;
 	clock_gettime(CLOCK_REALTIME, &t);
@@ -43,7 +59,7 @@ typedef struct {
 	Worker* worker;
 	int		socket_fd;
 	int		work_id;
-	double	remaining_load;
+	double	busy_time;
 	double	time;
 
 	int		flag;
@@ -71,7 +87,7 @@ static void sim_debug(void) {
 				w->id,
 				flag_strings[state->flag],
 				state->work_id,
-				state->remaining_load);
+				state->busy_time);
 		}
 	}
 }
@@ -90,8 +106,7 @@ static void sim(double dt) {
 
 		switch (state->flag) {
 		case BOOTING:
-			// TODO: boot time
-			if (sim_time - state->time >= 18.0) state->flag = CONNECTING;
+			if (sim_time - state->time >= BOOT_TIME) state->flag = CONNECTING;
 			break;
 
 
@@ -150,8 +165,10 @@ static void sim(double dt) {
 					ssize_t pos = 0;
 					while (pos < len) {
 						ssize_t cmd_len = strlen(cmd);
-						if (sscanf(cmd, "work %d %lf", &state->work_id, &state->remaining_load) == 2) {
+						double load_size;
+						if (sscanf(cmd, "work %d %lf", &state->work_id, &load_size) == 2) {
 							state->time = sim_time;
+							state->busy_time = 0.379926923077 + 0.262740722326 * load_size;
 							sendf(state->socket_fd, "work-ack 0");
 						}
 						else if (strcmp(cmd, "halt") == 0) {
@@ -166,11 +183,11 @@ static void sim(double dt) {
 				}
 			}
 
-			if (state->remaining_load > 0) {
+			if (state->busy_time > 0) {
 				// TODO: variable speed
-				state->remaining_load -= dt * 3.6;
-				if (state->remaining_load <= 0) {
-					state->remaining_load = 0;
+				state->busy_time -= dt;
+				if (state->busy_time <= 0) {
+					state->busy_time = 0;
 					sendf(state->socket_fd, "work-complete %d 0", state->work_id);
 				}
 			}
@@ -186,8 +203,8 @@ static void sim(double dt) {
 	}
 
 
-	puts("");
-	sim_debug();
+//	puts("");
+//	sim_debug();
 	usleep(300);
 
 };
@@ -284,35 +301,35 @@ void sim_cambri_log_data(double time, char* scheduler) {
 
 	for (i = 0; i < NUM_CAMBRIS * 8; i++) {
 
-		double current = 0;
+		double power = 0;
 
 		WorkerState* state = &worker_states[i];
 		if (state->worker) {
 			if (state->worker->is_switch) {
+
 				if (state->flag != OFF) {
-					current = 100;
+					int connections = 1;
 					int j;
 					for (j = 0; j < NUM_CAMBRIS * 8; j++) {
 						WorkerState* s = &worker_states[j];
-						if (s->flag != OFF && s->worker->parent_id == state->worker->id) {
-							current += 50;
-						}
+						if (s->flag != OFF && s->worker->parent_id == state->worker->id) connections++;
 					}
+					power = SWITCH_POWER(connections);
 				}
 			}
 			else {
 				switch (state->flag) {
-				case BOOTING:		current = 100; break;
-				case CONNECTING:	current = 200; break;
-				case ONLINE:		current = (state->remaining_load == 0) ? 200 : 300; break;
-				case HALTING:		current = 100; break;
+				case BOOTING:		power = BOOT_POWER; break;
+				case CONNECTING:	power = IDLE_POWER; break;
+				case ONLINE:		power = (state->busy_time == 0) ? IDLE_POWER : BUSY_POWER; break;
+				case HALTING:		power = HALT_POWER; break;
 				default: break;
 				}
 			}
 		}
 
-		power_acc[i] += current * 0.001 * 5.1;
-		current_cache[i] = current;
+		power_acc[i] += power;
+		current_cache[i] = power / 0.001 / 5.1;
 	}
 }
 

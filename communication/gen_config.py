@@ -17,9 +17,9 @@ def get_new_id():
 def switch(depth, parent_id=0):
 	if depth == 0: return
 	my_id = get_new_id()
-	switches.append("SWITCH %d %d" % (my_id, parent_id))
+	switches.append("switch %d %d" % (my_id, parent_id))
 
-	for _ in range(5): workers.append("WORKER %d %d 0.0.0.0 CUBIEBOARD" % (get_new_id(), my_id))
+	for _ in range(5): workers.append("worker %d %d 0.0.0.0 CUBIEBOARD" % (get_new_id(), my_id))
 	for _ in range(2): switch(depth - 1, my_id)
 
 
