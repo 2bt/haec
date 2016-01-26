@@ -1,0 +1,3 @@
+00:00:00 (set-backup-workers 'one-two)
+00:00:00 (set-backup-workers 'magic)
+00:00:00 (rewrite-terminal 'scheduler ast 'schedule-robin)
