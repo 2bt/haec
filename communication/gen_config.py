@@ -1,6 +1,9 @@
 #!/usr/bin/python
 
 
+import sys
+
+depth = int(sys.argv[1]) if len(sys.argv) > 1 else 2
 
 workers = []
 switches = []
@@ -24,7 +27,7 @@ def switch(depth, parent_id=0):
 
 
 
-switch(2)
+switch(depth)
 
 print "\n".join(switches)
 print
