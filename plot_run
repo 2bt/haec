@@ -20,16 +20,18 @@ def t2s(t):
 
 time = []
 currents = []
-for l in list(file(path + "/cambri.log"))[2:]:
+MEAN = []
+s = 0
+for i, l in enumerate(list(file(path + "/cambri.log"))[2:]):
 	c = l.split(" | ")
 	time.append(t2s(c.pop(0)))
-	currents.append(map(float, c))
+	c = map(float, c)
+	currents.append(c)
+	s += sum(c)
+	MEAN.append(s / (i + 1))
 
 N = len(currents[0])
-
-
-#time = time[:2000]
-#currents = currents[:2000]
+N = max(i for i, b in enumerate(map(any, zip(*currents))) if b) + 1
 
 
 events = {}
@@ -55,7 +57,6 @@ for l in list(file(path + "/event.log")):
 
 
 
-
 colormap = plt.get_cmap("gist_rainbow")
 #colormap = plt.get_cmap("terrain")
 
@@ -71,6 +72,13 @@ for i in range(N):
 	edgecolor = [x * 0.5 for x in facecolor[:3]]
 
 	ax.fill_between(time, [sum(c[i:]) for c in currents], facecolor=facecolor, edgecolor=edgecolor)
+
+
+
+
+ax.plot(time, MEAN, c="black", linestyle="dashed", linewidth=1.5)
+print "mean power", MEAN[-1]
+
 
 
 ax.set_ylabel("Leistung (W)")
