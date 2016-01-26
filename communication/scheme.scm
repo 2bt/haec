@@ -83,8 +83,9 @@
           (let
             ((backup-strategy (ast-child 'backupworkers n)))
              (cond
-               ((eq? backup-strategy 'one-two) (determine-num-backup-workers 1 2))
+               ((eq? backup-strategy 'one-two)   (determine-num-backup-workers 1 2))
                ((eq? backup-strategy 'one-three) (determine-num-backup-workers 1 3))
+               ((eq? backup-strategy 'magic)     (determine-num-backup-workers 2 3))
                (else backup-strategy))))))
 
 
@@ -278,7 +279,7 @@
           (let*
             ((workers (ast-child 'Workers n))
              (num-workers (ast-num-children workers)))
-            (let next ((i 1) (sum 0))
+            (let next ((i 1) (sum -1000000))
               (if (> i num-workers)
                 sum
                 (next (+ i 1)
@@ -435,7 +436,7 @@
              (and
                (memq (ast-child 'state worker) '(RUNNING BOOTING))
                (= 0 (ast-num-children (ast-child 'Queue worker)))
-               (>= (- time (ast-child 'timestamp worker)) 30)))))
+               (>= (- time (ast-child 'timestamp worker)) 60)))))
        (num-haltable-workers (length haltable-workers)))
       (cond
         ((> num-haltable-workers num-backup-workers) ; halt
@@ -614,14 +615,15 @@
                queue)))
       (if request
         (begin
-          (let*
-            ((processing-time (- time (ast-child 'dispatchtime request)))
-             (speed (/ (ast-child 'size request) processing-time))
-             (deadline (ast-child 'deadline request))
-             (remaining-time (- deadline time))
-             (met-deadline? (<= 0 remaining-time)))
-            (printf "### ~a ~a ~a ~a ~a~n" (ast-child 'size request) speed processing-time met-deadline? remaining-time))
+;          (let*
+;            ((processing-time (- time (ast-child 'dispatchtime request)))
+;             (speed (/ (ast-child 'size request) processing-time))
+;             (deadline (ast-child 'deadline request))
+;             (remaining-time (- deadline time))
+;             (met-deadline? (<= 0 remaining-time)))
+;            (printf "### ~a ~a ~a ~a ~a~n" (ast-child 'size request) speed processing-time met-deadline? remaining-time))
 
+          (rewrite-terminal 'timestamp worker time)
           (rewrite-delete request)
           (dispatch-next-request time worker))
         (say "[FATAL ERROR] no request with specified id found\n"))))) ; this should never happen

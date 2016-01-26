@@ -19,8 +19,8 @@
 #define TIME_HALTING			13.0
 #define TIME_REBOOTDELAY		12.0
 #define TIME_NOCURRENT			12.0
-#define ADAPTATION_FREQUENCY	20.0
-//#define ADAPTATION_FREQUENCY	3.0
+//#define ADAPTATION_RATE		20.0
+#define ADAPTATION_RATE			1.0
 #define MAX_BOOT_TIME			100.0
 
 
@@ -591,7 +591,7 @@ TRYAGAIN:
 			}
 		}
 
-		if (timestamp() - adapt_time > ADAPTATION_FREQUENCY ) {
+		if (timestamp() - adapt_time > ADAPTATION_RATE) {
 			Event* e = event_append(EVENT_ADAPT);
 			e->worker = w;
 			adapt_time = timestamp();
