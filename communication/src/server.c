@@ -5,6 +5,8 @@
 #include <error.h>
 #include <errno.h>
 
+#include <sys/un.h>
+
 #include <racr/racr.h>
 
 #include "server.h"
@@ -17,8 +19,8 @@
 #define TIME_HALTING			13.0
 #define TIME_REBOOTDELAY		12.0
 #define TIME_NOCURRENT			12.0
-//#define ADAPTATION_FREQUENCY	20.0
-#define ADAPTATION_FREQUENCY	3.0
+#define ADAPTATION_FREQUENCY	20.0
+//#define ADAPTATION_FREQUENCY	3.0
 #define MAX_BOOT_TIME			100.0
 
 
@@ -159,29 +161,50 @@ static int server_command(char* cmd) {
 
 
 static void server_new_connection(int s) {
+
+#ifndef SIM
 	struct sockaddr_in client;
 	socklen_t size = sizeof(client);
 	int newfd = accept(s, (struct sockaddr*) &client, &size);
-	if (newfd < 0) perror("accept");
-	else {
-		Worker* w = worker_find_by_address(client.sin_addr, client.sin_port);
-		if (!w) {
-			char s[INET_ADDRSTRLEN];
-			inet_ntop(AF_INET, &client.sin_addr, s, sizeof(s));
-			printf("unexpected connection from %s:%d\n", s, ntohs(client.sin_port));
-			close(newfd);
-			return;
-		}
-
-		FD_SET(newfd, &server.fds);
-		if (newfd > server.fdmax) server.fdmax = newfd;
-
-		w->socket_fd = newfd;
-
-		Event* e = event_append(EVENT_WORKER_ONLINE);
-		e->worker = w;
-
+	if (newfd < 0) {
+		perror("accept");
+		return;
 	}
+	Worker* w = worker_find_by_address(client.sin_addr, client.sin_port);
+	if (!w) {
+		char s[INET_ADDRSTRLEN];
+		inet_ntop(AF_INET, &client.sin_addr, s, sizeof(s));
+		printf("unexpected connection from %s:%d\n", s, ntohs(client.sin_port));
+		close(newfd);
+		return;
+	}
+#else
+	struct sockaddr_un client;
+	socklen_t size = sizeof(client);
+	int newfd = accept(s, (struct sockaddr*) &client, &size);
+	if (newfd < 0) {
+		perror("accept");
+		return;
+	}
+	Worker* w = worker_find_by_id(atoi(client.sun_path));
+	if (!w) {
+		printf("unexpected connection\n");
+		close(newfd);
+		return;
+	}
+	if (w->state == WORKER_OFF) {
+		close(newfd);
+		return;
+	}
+#endif
+
+	FD_SET(newfd, &server.fds);
+	if (newfd > server.fdmax) server.fdmax = newfd;
+
+	w->socket_fd = newfd;
+
+	Event* e = event_append(EVENT_WORKER_ONLINE);
+	e->worker = w;
 }
 
 
@@ -440,23 +463,40 @@ void server_run(int argc, char** argv) {
 	}
 
 
+#ifndef SIM
 	int listener = socket(AF_INET, SOCK_STREAM, 0);
+#else
+	int listener = socket(AF_UNIX, SOCK_STREAM, 0);
+#endif
+
 	if (listener < 0) error(1, 0, "socket");
 	int yes = 1;
 	if (setsockopt(listener, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int)) < 0) {
 		error(1, 0, "setsockopt");
 	}
+
+
 	struct sockaddr_in addr = { AF_INET, htons(PORT), { INADDR_ANY } };
+#ifndef SIM
 	if (bind(listener, (struct sockaddr*)&addr, sizeof(addr)) < 0) {
-		error(1, 0, "bind");
+		error(1, 0, "bind1");
 	}
-	listen(listener, 5);
+#else
+	struct sockaddr_un addr_un = { AF_UNIX, "0000" };
+    unlink(addr_un.sun_path);
+	if (bind(listener, (struct sockaddr*)&addr_un, sizeof(addr_un.sun_family) + strlen(addr_un.sun_path)) < 0) {
+		perror("bind1");
+	}
+#endif
+
+	listen(listener, 100);
+
 
 	int commander = socket(AF_INET, SOCK_DGRAM, 0);
 	if (commander < 0) error(1, 0, "socket");
 	addr.sin_port = htons(PORT + 1);
 	if (bind(commander, (struct sockaddr*)&addr, sizeof(addr)) < 0) {
-		error(1, 0, "bind");
+		error(1, 0, "bind2");
 	}
 
 

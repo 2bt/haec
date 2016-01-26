@@ -46,6 +46,7 @@ static Queue queue = { NULL, NULL };
 Event* event_append(int type) {
 	Event*e = calloc(1, sizeof(Event));
 	e->type = type;
+
 	if (queue.last) {
 		queue.last->next = e;
 		queue.last = e;

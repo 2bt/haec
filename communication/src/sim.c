@@ -5,6 +5,7 @@
 #include <stdarg.h>
 #include <sys/time.h>
 #include <sys/types.h>
+#include <sys/un.h>
 #include <unistd.h>
 #include <error.h>
 #include <errno.h>
@@ -98,11 +99,12 @@ static void sim(double dt) {
 
 	int i;
 	for (i = 0; i < NUM_CAMBRIS * 8; i++) {
+
+//		usleep(50);
+
 		WorkerState* state = &worker_states[i];
 		if (!state->worker) continue;
 		if (state->worker->is_switch) continue;
-
-//		printf("SIM %d\n", state->flag);
 
 		switch (state->flag) {
 		case BOOTING:
@@ -111,7 +113,7 @@ static void sim(double dt) {
 
 
 		case CONNECTING:
-			state->socket_fd = socket(AF_INET, SOCK_STREAM, 0);
+			state->socket_fd = socket(AF_UNIX, SOCK_STREAM, 0);
 			if (state->socket_fd < 0) error(1, 0, "socket\n");
 
 			int enable = 1;
@@ -120,22 +122,23 @@ static void sim(double dt) {
 				exit(1);
 			}
 
-			struct sockaddr_in client = {
-				AF_INET, htons(state->worker->id + 10000),
-				{ inet_addr("127.0.0.1") }
-			};
-			if (bind(state->socket_fd, (struct sockaddr*) &client, sizeof(client)) < 0) {
+			struct sockaddr_un client = { AF_UNIX };
+			sprintf(client.sun_path, "%d", state->worker->id);
+			unlink(client.sun_path);
+			if (bind(state->socket_fd, (struct sockaddr*)&client, sizeof(client.sun_family) + strlen(client.sun_path)) < 0) {
 				perror("SIM bind");
 				exit(1);
 			}
 
-			struct sockaddr_in server = { AF_INET, htons(PORT), { inet_addr("127.0.0.1") } };
-			if (connect(state->socket_fd, (struct sockaddr*) &server, sizeof(server)) < 0) {
+			struct sockaddr_un server = { AF_UNIX, "0000" };
+			if (connect(state->socket_fd, (struct sockaddr*) &server, sizeof(server.sun_family) + strlen(server.sun_path)) < 0) {
 				if (errno == ECONNREFUSED) printf("SIM connection refused\n");
 				perror("SIM connect");
 				close(state->socket_fd);
 				break;
 			}
+
+
 			state->flag = ONLINE;
 			break;
 
@@ -202,10 +205,8 @@ static void sim(double dt) {
 
 	}
 
-
 //	puts("");
 //	sim_debug();
-	usleep(300);
 
 };
 

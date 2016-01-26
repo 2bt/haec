@@ -11,9 +11,8 @@
 	#define		cambri_log_data		sim_cambri_log_data
 	#define		cambri_set_mode		sim_cambri_set_mode
 
-
-
 #endif
+
 
 double	absolute_timestamp(void);
 int		select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *exceptfds, struct timeval *timeout);

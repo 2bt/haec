@@ -1,7 +1,7 @@
 #pragma once
 
 
-enum { NUM_CAMBRIS = 1 };
+enum { NUM_CAMBRIS = 4 };
 
 
 enum {
