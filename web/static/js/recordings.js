@@ -439,9 +439,8 @@ Energy.set_x_domain = function(t1, t2) {
 	for (var i = 0; i < self.lines.length; i++) {
 		self.svg_lines[i].attr("d", self.lines[i]);
 	}
-
-
 };
+
 
 
 Energy.add_line = function(statuses, color, name) {
@@ -492,6 +491,8 @@ $(document).ready(function() {
 	var G, H;
 
 
+
+/*
 	i = new Graph("x6", function(i){
 		e.set_x_domain(0, domain);
 		i.set_x_domain(0, domain);
@@ -519,6 +520,8 @@ $(document).ready(function() {
 			e.add_line(h.json.statuses, "green", "load-consolidating scheduler with adaptive switching of workers");
 		}, "load-consolidating scheduler with adaptive switching of workers", "green");
 	};
+*/
+
 
 
 /*
@@ -541,6 +544,15 @@ $(document).ready(function() {
 		e.add_line(k.json.statuses, "#777");
 	});
 */
+
+	i = new Graph("..", function(i){
+		var domain = 60 * 60;
+		e.set_x_domain(0, domain);
+		i.set_x_domain(0, domain);
+		e.add_line(i.json.statuses, "red", "simple scheduler");
+		G();
+	}, "last run", "red");
+
 
 });
 

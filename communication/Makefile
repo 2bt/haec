@@ -12,8 +12,10 @@ LF = -pthread -lrt
 
 all: server worker
 
+# simulator
+CF += -DSIM -g
 
-SERVERSRC = src/main.c src/server.c src/cambri.c src/event.c src/worker.c
+SERVERSRC = src/main.c src/server.c src/cambri.c src/event.c src/worker.c src/sim.c
 SERVEROBJ = $(SERVERSRC:src/%.c=obj/%.o)
 
 server: Makefile $(SERVEROBJ)
