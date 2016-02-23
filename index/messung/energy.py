@@ -97,12 +97,9 @@ def client(host):
 	print " cpus | workers | freq in MHz | input in MB | time in s | current in mA"
 	print "------+---------+-------------+-------------+-----------+---------------"
 
-#	for input_len in [0, 25, 50, 100]:
-	for input_len in [100]:
-#		for cpus in [1, 2]:
-		for cpus in [2]:
-			#for workers in [0, 1, 2] if input_len else [0]:
-			for workers in [1, 2] if input_len else [0]:
+	for input_len in [50]:
+		for cpus in [1, 2]:
+			for workers in [0, 1, 2]:
 				for freq in freqs:
 					time = 0
 					current = 0
