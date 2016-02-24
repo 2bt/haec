@@ -50,15 +50,22 @@ void* reduce(void* ta, void* tb) {
 }
 
 
-void print_table(void* table) {
+void save_table(void* table, const char* name) {
+	FILE* f = fopen(name, "w");
 	uint8_t key[MAX_KEY_LEN] = "";
 	int* value;
 	JSLF(value, table, key);
 	while (value) {
-		printf("%8d %s\n", *value, key);
+		fprintf(f, "%8d %s\n", *value, key);
 		JSLN(value, table, key);
 	}
+	fclose(f);
 }
+
+int check_table(void* table, const char* name) {
+	return 0;
+}
+
 
 
 FILE* pages_file;
@@ -149,16 +156,6 @@ void* pop_table(void) {
 }
 
 
-void single_thread_map(void) {
-	char* page;
-	while ((page = next_page())) {
-		void* table = map(page);
-		free(page);
-		push_table(table);
-	}
-}
-
-
 void* single_thread_map_reduce(void) {
 	char* page;
 	while ((page = next_page())) {
@@ -206,28 +203,6 @@ void* worker_map(void* arg) {
 }
 
 
-void multi_thread_map(void) {
-	pthread_mutex_init(&pages_mutex, NULL);
-	pthread_mutex_init(&tables_mutex, NULL);
-
-	workers_working = num_workers;
-	pthread_t threads[num_workers];
-	int i;
-	for (i = 0; i < num_workers; i++) {
-		pthread_create(&threads[i], NULL, worker_map, NULL);
-	}
-
-	worker_map(NULL);
-
-	for (i = 0; i < num_workers; i++) {
-		pthread_join(threads[i], NULL);
-	}
-
-	pthread_mutex_destroy(&pages_mutex);
-	pthread_mutex_destroy(&tables_mutex);
-}
-
-
 void* multi_thread_map_reduce(void) {
 	pthread_mutex_init(&pages_mutex, NULL);
 	pthread_mutex_init(&tables_mutex, NULL);
@@ -272,14 +247,14 @@ void* multi_thread_map_reduce(void) {
 
 
 void usage(int argc, char** argv) {
-	printf("usage: %s (m | mr) worker-count filename [max-input-size]\n", argv[0]);
+	printf("usage: %s mr worker-count filename [max-input-size]\n", argv[0]);
 	exit(0);
 }
 
 
 int main(int argc, char** argv) {
 	if (argc != 4 && argc != 5) usage(argc, argv);
-
+	if (strcmp(argv[1], "mr") != 0) usage(argc, argv);
 	if (argc == 5) max_chars_read = atoi(argv[4]);
 
 	pages_file = fopen64(argv[3], "r");
@@ -290,52 +265,17 @@ int main(int argc, char** argv) {
 
 	num_workers = atoi(argv[2]);
 
-	struct timespec t1, t2;
-	clock_gettime(CLOCK_REALTIME, &t1);
+	void* table;
+	if (num_workers == 0) table = single_thread_map_reduce();
+	else table = multi_thread_map_reduce();
 
-	if (num_workers == 0) {
-		if (strcmp(argv[1], "m") == 0) {
-			single_thread_map();
-			void* t;
-			while ((t = pop_table())) {
-				int size;
-				JSLFA(size, t);
-			}
-		}
-		else if (strcmp(argv[1], "mr") == 0) {
-			void* table = single_thread_map_reduce();
-//			print_table(table);
-			int size;
-			JSLFA(size, table);
-		}
-		else usage(argc, argv);
-	}
-	else {
-		if (strcmp(argv[1], "m") == 0) {
-			multi_thread_map();
-			void* t;
-			while ((t = pop_table())) {
-				int size;
-				JSLFA(size, t);
-			}
-		}
-		else if (strcmp(argv[1], "mr") == 0) {
-			void* table = multi_thread_map_reduce();
-//			print_table(table);
-			int size;
-			JSLFA(size, table);
-		}
-		else usage(argc, argv);
-	}
+//	save_table(table, argv[3]);
+//	check_table(table, argv[3]);
+
+	int size;
+	JSLFA(size, table);
 
 	fclose(pages_file);
 
-
-	clock_gettime(CLOCK_REALTIME, &t2);
-	long mseconds = (t2.tv_nsec - t1.tv_nsec) / 1000000 + (t2.tv_sec - t1.tv_sec) * 1000;
-	printf("%ld.%03ld\n", mseconds / 1000, mseconds % 1000);
-
 	return 0;
 }
-
-
