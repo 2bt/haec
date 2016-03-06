@@ -92,17 +92,14 @@ def client(host):
 	s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 	s.connect((host, PORT))
 	import serial
-	cambri = serial.Serial("/dev/ttyUSB0", 115200, 8, "N", 1)
+	cambri = serial.Serial("/dev/ttyUSB0", 115200, 8, "N", 1, timeout=0.25)
 
 	print " cpus | workers | freq in MHz | input in MB | time in s | current in mA"
 	print "------+---------+-------------+-------------+-----------+---------------"
 
-#	for input_len in [0, 25, 50, 100]:
-	for input_len in [100]:
-#		for cpus in [1, 2]:
-		for cpus in [2]:
-			#for workers in [0, 1, 2] if input_len else [0]:
-			for workers in [1, 2] if input_len else [0]:
+	for input_len in [50]:
+		for cpus in [1, 2]:
+			for workers in [0, 1, 2]:
 				for freq in freqs:
 					time = 0
 					current = 0
@@ -116,6 +113,7 @@ def client(host):
 							"input_len": input_len
 						}))
 						start = s.recv(1024)
+						t = time.time()
 
 						# track current
 						s.setblocking(0)
@@ -123,7 +121,7 @@ def client(host):
 						while 1:
 							currents.append(read_current(cambri, 1))
 							try:
-								t = float(s.recv(1024))
+								s.recv(1024)
 								break
 							except: continue
 						s.setblocking(1)
@@ -132,7 +130,7 @@ def client(host):
 						c = sum(currents) / float(len(currents))
 
 
-						time += t
+						time += time.time() - t
 						current += c
 					time /= SAMPLES
 					current /= SAMPLES
