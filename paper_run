@@ -1,0 +1,210 @@
+#!/usr/bin/env python
+# coding=utf-8
+
+
+import pylab as plt
+import matplotlib.patches as patches
+import matplotlib.ticker as ticker
+import sys
+
+path = sys.argv[1] if len(sys.argv) > 1 else "."
+
+
+def t2s(t):
+	h, m, s = map(float, t.split(":"))
+	return s + m*60 + h*3600
+
+
+
+# fetch data
+
+time = []
+currents = []
+MEAN = []
+s = 0
+for i, l in enumerate(list(file(path + "/cambri.log"))[2:]):
+	c = l.split(" | ")
+	time.append(t2s(c.pop(0)))
+	c = map(float, c)
+	currents.append(c)
+	s += sum(c)
+	MEAN.append(s / (i + 1))
+
+N = len(currents[0])
+N = max(i for i, b in enumerate(map(any, zip(*currents))) if b) + 1
+
+
+events = {}
+
+for l in list(file(path + "/event.log")):
+	f = l.split()
+	e = {
+		"t": t2s(f[0]),
+		"e": f[1],
+		"d": dict(
+			x.split(":")
+			for x in "".join(f[2:])[1:-1].split(";") if f[2:]
+		)
+	}
+	if not "id" in e["d"]: continue
+
+	eid = e["d"]["id"]
+	es = events[eid] = events.get(eid, [])
+	es.append(e)
+
+
+
+
+
+
+colormap = plt.get_cmap("jet")
+#colormap = plt.get_cmap("terrain")
+
+
+# plots
+f, ax = plt.subplots(sharex=True, facecolor='white')
+
+print N
+
+for i in range(N)[::-1]:
+
+	facecolor = colormap(i * 1.0 / 229)
+	edgecolor = [x * 1.0 for x in facecolor[:3]]
+
+	ax.fill_between(time, [sum(c[:i+1]) for c in currents], facecolor=facecolor, edgecolor=edgecolor)
+
+
+
+ax.plot(time, [sum(c) for c in currents], c='black')
+
+
+
+# ax.plot(time, MEAN, c="black", linestyle="dashed", linewidth=1.5)
+ax.plot(time, [MEAN[-1]]*len(time), c="black", linestyle="dashed", linewidth=1.5)
+print "mean power", MEAN[-1]
+
+
+
+ax.set_ylabel("power (W)")
+ax.set_xlabel("time (hh:mm)")
+
+ax.xaxis.grid(True, which='major')
+ax.xaxis.grid(True, which='major')
+
+def format_time(t, i):
+	t = int(t)
+	s = t % 60
+	m = t / 60 % 60
+	h = t / 3600
+	return "%02d:%02d" % (h, m)
+
+
+ax.xaxis.set_major_formatter(ticker.FuncFormatter(format_time))
+ax.xaxis.set_major_locator(ticker.IndexLocator(60 * 10,	-1))
+ax.xaxis.set_minor_locator(ticker.IndexLocator(60, 		-1))
+
+plt.xlim(0, time[-1])
+
+plt.show()
+
+exit()
+
+#f.autofmt_xdate()
+
+
+plt.setp(ax.get_xticklabels(), visible=False)
+plt.setp(ax.get_xticklabels(), visible=True)
+
+f.subplots_adjust(hspace=0)
+
+for k in sorted(events.keys()):
+	i = int(k) / 1000 * 8 + int(k) % 10 - 9
+	h = N - i - 1
+
+#	bx.text(-10, h + 0.5, k, verticalalignment="center", horizontalalignment="right")
+
+	facecolor = colormap(i * 1.0 / N)
+	edgecolor = facecolor # [x * 0.5 for x in facecolor[:3]]
+
+#	p = patches.Rectangle((0, h), time[-1], 1, lw=0, facecolor=facecolor, alpha=0.1)
+#	bx.add_patch(p)
+
+	state = "OFF"
+
+	es = events[k]
+	for e in es:
+		if state == "OFF" and e["e"] in ("WORKER_ON", "SWITCH_ON"):
+			state = "ON"
+
+			beg = e["t"]
+			end = time[-1]
+			for f in es:
+				if f["e"] in ("WORKER_OFF", "SWITCH_OFF") and f["t"] >= beg:
+					end = f["t"]
+					break
+			p = patches.Rectangle((beg, h), end - beg, 1,
+				facecolor=facecolor, edgecolor=edgecolor, alpha=0.5)
+			bx.add_patch(p)
+
+
+#			if e["e"][:6] == "SWITCH":
+#				p = patches.Rectangle((beg, h), end - beg, 1,
+#					facecolor=facecolor, edgecolor=edgecolor, alpha=0.7)
+#				bx.add_patch(p)
+
+
+		if e["e"] in ("WORKER_OFF", "SWITCH_ON"):
+			state = "OFF"
+
+
+
+		if state != "ONLINE" and e["e"] == "WORKER_ONLINE":
+			if state == "OFF":
+				beg = e["t"]
+				end = time[-1]
+				for f in es:
+					if f["e"] in ("WORKER_OFF", "SWITCH_OFF") and f["t"] >= beg:
+						end = f["t"]
+						break
+				p = patches.Rectangle((beg, h), end - beg, 1,
+					facecolor=facecolor, edgecolor=edgecolor, alpha=0.5)
+				bx.add_patch(p)
+
+
+			state = "ONLINE"
+
+			beg = e["t"]
+			end = time[-1]
+			for f in es:
+				if f["e"] in ("WORKER_OFFLINE", "WORKER_OFF") and f["t"] >= beg:
+					end = f["t"]
+					break
+			p = patches.Rectangle((beg, h + 0.1), end - beg, 0.8,
+				facecolor=facecolor, edgecolor=edgecolor, alpha=0.7)
+			bx.add_patch(p)
+
+
+		if e["e"] == "WORKER_OFFLINE":
+			state = "ON"
+
+
+		if e["e"] == "WORK_COMMAND":
+
+			beg = e["t"]
+			end = time[-1]
+			for f in es:
+				if f["e"] == "WORK_COMPLETE" and f["t"] >= beg and f["d"]["work-id"] == e["d"]["work-id"]:
+					end = f["t"]
+					break
+			p = patches.Rectangle((beg, h + 0.3), end - beg, 0.4,
+				facecolor="#555555", edgecolor="#333333", alpha=0.5)
+			bx.add_patch(p)
+
+
+
+
+plt.tick_params(axis='y', which='both', left='off', right='off', labelleft='off')
+plt.ylim(0, N)
+
+
+plt.show()
