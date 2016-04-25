@@ -86,6 +86,7 @@
                ((eq? backup-strategy 'one-two)   (determine-num-backup-workers 1 2))
                ((eq? backup-strategy 'one-three) (determine-num-backup-workers 1 3))
                ((eq? backup-strategy 'magic)     (determine-num-backup-workers 2 3))
+               ((eq? backup-strategy 'magic8)     (determine-num-backup-workers 20 30))
                (else backup-strategy))))))
 
 
@@ -337,7 +338,7 @@
               ;(say (length sorted-workers))
               (let next ((rest sorted-workers))
                 (if (null? rest)
-                  (cons #f (format "request could not be scheduled."))
+                  (cons #f (format "request at ~A could not be scheduled." time))
                   (let*
                     ((pair (att-value 'schedule-batman (car rest) time work-id load-size deadline))
                      (w (car pair))

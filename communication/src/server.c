@@ -489,7 +489,7 @@ void server_run(int argc, char** argv) {
 	}
 #endif
 
-	listen(listener, 100);
+	listen(listener, 500);
 
 
 	int commander = socket(AF_INET, SOCK_DGRAM, 0);
