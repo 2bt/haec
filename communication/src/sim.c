@@ -48,6 +48,20 @@ static ssize_t sendf(int s, const char* format, ...) {
 }
 
 
+// how much time is spent running scheme stuff
+static double racr_total_time = 0;
+
+static double racr_time;
+void sim_racr_time_start(void) {
+	racr_time = absolute_timestamp();
+}
+void sim_racr_time_end(void) {
+	racr_total_time += absolute_timestamp() - racr_time;
+}
+
+
+
+
 static double sim_time = 0;
 double sim_absolute_timestamp(void) { return sim_time; }
 
@@ -215,7 +229,13 @@ extern FILE* cambri_log;
 extern FILE* status_log;
 extern int current_cache[NUM_CAMBRIS * 8];
 
+void	sim_exit(void) {
+	printf("racr-time: %lf\n", racr_total_time);
+}
+
 int		sim_cambri_init(void) {
+	atexit(sim_exit);
+
 
 	// init workers
 	Worker* w;

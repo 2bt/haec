@@ -11,7 +11,11 @@
 	#define		cambri_log_data		sim_cambri_log_data
 	#define		cambri_set_mode		sim_cambri_set_mode
 
+
+	#define		racr_call_str(...)	do { sim_racr_time_start(); racr_call_str(__VA_ARGS__); sim_racr_time_end(); } while(0);
+
 #endif
+
 
 
 double	absolute_timestamp(void);
@@ -24,3 +28,5 @@ int		sim_cambri_read(int c, char* buf, int len);
 void	sim_cambri_log_data(double time, char* scheduler);
 void	sim_cambri_set_mode(int id, int mode);
 
+void	sim_racr_time_start(void);
+void	sim_racr_time_end(void);
