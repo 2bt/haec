@@ -74,7 +74,7 @@ class Chart(wx.Panel):
 		if type == "freq":
 			self.color = "#ff0000"
 			self.y_range = 60
-			self.y_inc = 10
+			self.y_inc = 60
 		elif type == "size":
 			self.color = "#00aa00"
 			self.y_range = 384

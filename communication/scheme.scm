@@ -82,24 +82,21 @@
         (lambda (n)
           (let
             ((backup-strategy (ast-child 'backupworkers n)))
-             (cond
-               ((eq? backup-strategy 'one-two)   (determine-num-backup-workers 1 2))
-               ((eq? backup-strategy 'one-three) (determine-num-backup-workers 1 3))
-               ((eq? backup-strategy 'magic)     (determine-num-backup-workers 2 3))
-               (else backup-strategy))))))
-
+            (cond
+              ((eq? backup-strategy 'one-two)   (determine-num-backup-workers 1 2))
+              ((eq? backup-strategy 'one-three) (determine-num-backup-workers 1 3))
+              ((eq? backup-strategy 'magic)     (determine-num-backup-workers 2 3))
+              (else backup-strategy))))))
 
     (ag-rule
       lookup-worker
       (Worker
         (lambda (n id)
-          (say "[ATTRIBUTE on Worker] lookup-worker\n")
           (if (= id (ast-child 'id n))
             n
             #f)))
       (CompositeWorker
         (lambda (n id)
-          (say "[ATTRIBUTE on CompositeWorker] lookup-worker\n")
           (if (= id (ast-child 'id n))
             n
             (ast-find-child*
@@ -113,20 +110,12 @@
       (Worker
         #f
         (lambda (n check)
-          (say "[ATTRIBUTE on Worker ")
-          (say (ast-child 'id n))
-          (say "] get-filtered-workers: ")
-          (sayln (check n))
           (if (check n) (list n) (list))))
       (CompositeWorker
         #f
         (lambda (n check)
-          (say "[ATTRIBUTE on CompositeWorker ")
-          (say (ast-child 'id n))
-          (sayln "] get-filtered-workers")
           (fold-left
-            (lambda (a b)
-              (append a (att-value 'get-filtered-workers b check)))
+            (lambda (a b) (append a (att-value 'get-filtered-workers b check)))
             (list)
             (ast-children (ast-child 'Workers n))))))
 
@@ -153,17 +142,17 @@
     (ag-rule
       schedule
       (Root
-        (lambda (n time work-id load-size deadline)
+        (lambda (n time load-size deadline)
           (say "[ATTRIBUTE on Root] schedule\n")
           (let
             ((scheduler (ast-child 'scheduler n)))
-            (att-value scheduler (ast-child 'Config n) time work-id load-size deadline)))))
+            (att-value scheduler (ast-child 'Config n) time load-size deadline)))))
 
 
     (ag-rule
       schedule-robin
       (Config
-        (lambda (n time work-id load-size deadline)
+        (lambda (n time load-size deadline)
           (say "[ATTRIBUTE on Config] schedule-robin\n")
           (let
             ((running-workers
@@ -207,8 +196,7 @@
           (let*
             ((queue (ast-parent n))
              (worker (ast-parent queue))
-             (index (ast-child-index n))
-             (device-type (ast-child 'devicetype worker)))
+             (index (ast-child-index n)))
             (+ (att-value 'processing-timespan n)
                (if (= index 1)
                  (ast-child 'dispatchtime n) ; must not be #f
@@ -238,27 +226,18 @@
       find-insertion-position
       (Worker
         (lambda (n deadline)
-          (say "[ATTRIBUTE on Worker] find-insertion-position\n")
           (let*
             ((queue (ast-child 'Queue n))
              (queue-length (ast-num-children queue)))
             (if (= queue-length 0)
-              (begin
-                (say "  CASE 1: queue length=0\n")
-                1)
-              (begin
-                (say "  CASE 2: queue length>0\n")
-                (let next ((index 2))
-                  (if (> index queue-length)
-                    (begin
-                      (say "    CASE 2 A: index > queue-length\n")
-                      index)
-                    (begin
-                      (say "    CASE 2 B: index <= queue-length\n")
-                      (let ((next-deadline (ast-child 'deadline (ast-child index (ast-child 'Queue n)))))
-                        (if (> next-deadline deadline)
-                          index
-                          (next (+ index 1)))))))))))))
+              1
+              (let next ((index 2))
+                (if (> index queue-length)
+                  index
+                  (let ((next-deadline (ast-child 'deadline (ast-child index (ast-child 'Queue n)))))
+                    (if (> next-deadline deadline)
+                      index
+                      (next (+ index 1)))))))))))
 
     (ag-rule
       workload-heuristic
@@ -268,7 +247,7 @@
           (let*
             ((queue (ast-child 'Queue n))
              (queue-length (ast-num-children queue)))
-            (let next ((i 1) (sum 0))
+            (let next ((i 1) (sum (* -1000000 (att-value 'depth n))))
               (if (> i queue-length)
                 sum
                 (next (+ i 1)
@@ -279,17 +258,43 @@
           (let*
             ((workers (ast-child 'Workers n))
              (num-workers (ast-num-children workers)))
-            (let next ((i 1) (sum -1000000))
+            (let next ((i 2) (v (att-value 'workload-heuristic (ast-child 1 workers))))
               (if (> i num-workers)
-                sum
+                v
                 (next (+ i 1)
-                      (+ sum (att-value 'workload-heuristic (ast-child i workers))))))))))
+                      (max v (att-value 'workload-heuristic (ast-child i workers))))))))))
+
+;    (ag-rule
+;      workload-heuristic
+;      (Worker
+;        (lambda (n)
+;          (say "[ATTRIBUTE on Worker] workload-heuristic\n")
+;          (let*
+;            ((queue (ast-child 'Queue n))
+;             (queue-length (ast-num-children queue)))
+;            (let next ((i 1) (sum 0))
+;              (if (> i queue-length)
+;                sum
+;                (next (+ i 1)
+;                      (+ sum (att-value 'processing-timespan (ast-child i queue)))))))))
+;      (Switch
+;        (lambda (n)
+;          (say "[ATTRIBUTE on Switch] workload-heuristic\n")
+;          (let*
+;            ((workers (ast-child 'Workers n))
+;             (num-workers (ast-num-children workers)))
+;;           (let next ((i 1) (sum (* -1000000 (att-value 'depth worker))))
+;            (let next ((i 1) (sum -1000000))
+;              (if (> i num-workers)
+;                sum
+;                (next (+ i 1)
+;                      (+ sum (att-value 'workload-heuristic (ast-child i workers))))))))))
 
 
     (ag-rule
       schedule-batman
       (Worker
-        (lambda (n time work-id load-size deadline)
+        (lambda (n time load-size deadline)
           (say "[ATTRIBUTE on Worker] schedule-batman\n")
           ; hint: worker must be in state RUNNING
           (if (not (eq? (ast-child 'state n) 'RUNNING))
@@ -320,9 +325,8 @@
                 (cons n index))))))
 
       (CompositeWorker
-        (lambda (n time work-id load-size deadline)
+        (lambda (n time load-size deadline)
           (say "[ATTRIBUTE on CompositeWorker] schedule-batman\n")
-          ; hint: switch must be in state RUNNING
           (if (not (eq? (ast-child 'state n) 'RUNNING))
             (cons #f (format "composite worker ~a is not running." (ast-child 'id n)))
             (let*
@@ -334,16 +338,12 @@
                        (att-value 'workload-heuristic a)
                        (att-value 'workload-heuristic b)))
                    workers)))
-              ;(say (length sorted-workers))
               (let next ((rest sorted-workers))
                 (if (null? rest)
                   (cons #f (format "request could not be scheduled."))
                   (let*
-                    ((pair (att-value 'schedule-batman (car rest) time work-id load-size deadline))
-                     (w (car pair))
-                     (i (cdr pair)))
-                    ;(say i)
-                    (if w
+                    ((pair (att-value 'schedule-batman (car rest) time load-size deadline)))
+                    (if (car pair)
                       pair
                       (next (cdr rest)))))))))))
 
@@ -470,7 +470,7 @@
                     (and
                       (>= (- time (ast-child 'timestamp x)) 30)
                       bootable)))
-                  sorted-haltable-workers)))
+                sorted-haltable-workers)))
            (let next ((i num-excess-workers) (rest sorted-bootable-haltable-workers))
              (when (and (> i 0) (not (null? rest)))
                (let ((worker (car rest)))
@@ -590,7 +590,7 @@
 (define event-work-request
   (lambda (time work-id load-size deadline)
     (let*
-      ((pair (att-value 'schedule ast time work-id load-size deadline))
+      ((pair (att-value 'schedule ast time load-size deadline))
        (worker (car pair))
        (index (cdr pair)))
       (if worker
@@ -607,12 +607,13 @@
 
 (define event-work-complete
   (lambda (id time work-id)
-    (let* ((worker (att-value 'lookup-worker config id))
-           (queue (ast-child 'Queue worker))
-           (request
-             (ast-find-child
-               (lambda (i request) (= (ast-child 'id request) work-id))
-               queue)))
+    (let*
+      ((worker (att-value 'lookup-worker config id))
+       (queue (ast-child 'Queue worker))
+       (request
+         (ast-find-child
+           (lambda (i request) (= (ast-child 'id request) work-id))
+           queue)))
       (if request
         (begin
 ;          (let*
@@ -622,7 +623,6 @@
 ;             (remaining-time (- deadline time))
 ;             (met-deadline? (<= 0 remaining-time)))
 ;            (printf "### ~a ~a ~a ~a ~a~n" (ast-child 'size request) speed processing-time met-deadline? remaining-time))
-
           (rewrite-terminal 'timestamp worker time)
           (rewrite-delete request)
           (dispatch-next-request time worker))

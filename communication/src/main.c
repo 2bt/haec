@@ -30,6 +30,9 @@ static Scheme_Object* prim_timestamp(int argc, Scheme_Object** argv) {
 
 
 static Scheme_Object* prim_add_event(int argc, Scheme_Object** argv) {
+
+	printf("add_event\n");
+
 	if (!SCHEME_SYMBOLP(argv[0])) error(1, 0, "prim_add_event");
 	const char* sym = SCHEME_SYM_VAL(argv[0]);
 
