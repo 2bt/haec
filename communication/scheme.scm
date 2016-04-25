@@ -86,7 +86,9 @@
               ((eq? backup-strategy 'one-two)   (determine-num-backup-workers 1 2))
               ((eq? backup-strategy 'one-three) (determine-num-backup-workers 1 3))
               ((eq? backup-strategy 'magic)     (determine-num-backup-workers 2 3))
+              ((eq? backup-strategy 'magic8)     (determine-num-backup-workers 20 30))
               (else backup-strategy))))))
+
 
     (ag-rule
       lookup-worker
@@ -264,32 +266,6 @@
                 (next (+ i 1)
                       (max v (att-value 'workload-heuristic (ast-child i workers))))))))))
 
-;    (ag-rule
-;      workload-heuristic
-;      (Worker
-;        (lambda (n)
-;          (say "[ATTRIBUTE on Worker] workload-heuristic\n")
-;          (let*
-;            ((queue (ast-child 'Queue n))
-;             (queue-length (ast-num-children queue)))
-;            (let next ((i 1) (sum 0))
-;              (if (> i queue-length)
-;                sum
-;                (next (+ i 1)
-;                      (+ sum (att-value 'processing-timespan (ast-child i queue)))))))))
-;      (Switch
-;        (lambda (n)
-;          (say "[ATTRIBUTE on Switch] workload-heuristic\n")
-;          (let*
-;            ((workers (ast-child 'Workers n))
-;             (num-workers (ast-num-children workers)))
-;;           (let next ((i 1) (sum (* -1000000 (att-value 'depth worker))))
-;            (let next ((i 1) (sum -1000000))
-;              (if (> i num-workers)
-;                sum
-;                (next (+ i 1)
-;                      (+ sum (att-value 'workload-heuristic (ast-child i workers))))))))))
-
 
     (ag-rule
       schedule-batman
@@ -340,7 +316,7 @@
                    workers)))
               (let next ((rest sorted-workers))
                 (if (null? rest)
-                  (cons #f (format "request could not be scheduled."))
+                  (cons #f (format "request at ~A could not be scheduled." time))
                   (let*
                     ((pair (att-value 'schedule-batman (car rest) time load-size deadline)))
                     (if (car pair)

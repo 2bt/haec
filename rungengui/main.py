@@ -40,7 +40,7 @@ def generate(path, data, disp):
 	f = open(path, "w")
 	t = 180
 	while t < total_time:
-		s = max(0, get(size, t) + random.uniform(-size_disp, size_disp))
+		s = max(1, get(size, t) + random.uniform(-size_disp, size_disp))
 		l = max(0, get(time, t) + random.uniform(-time_disp, time_disp))
 		if l > 0: f.write("%s work %d %d\n" % (seconds_to_formated_time(t), s, l))
 		t += 60 * 60.0 / max(get(freq, t), 1)
