@@ -1,0 +1,45 @@
+#!/usr/bin/env python
+# coding=utf-8
+
+
+import pylab as plt
+#import matplotlib.patches as patches
+#import matplotlib.ticker as ticker
+#import sys
+#import matplotlib as mpl
+#mpl.rcParams['font.size'] = 12
+#mpl.rcParams['font.family'] = "monospace"
+#mpl.rcParams['font.monospace'] = "Inconsulata"
+#mpl.rcParams['axes.labelsize'] = 16.
+#mpl.rcParams['xtick.labelsize'] = 12.
+#mpl.rcParams['ytick.labelsize'] = 12.
+# plt.rcParams['text.latex.preamble']=[r"\usepackage[cdfont]{tudscrfonts}"]
+#Options
+# params = {'text.usetex' : True,
+#          'font.size' : 11,
+#          'font.family' : 'UniverseCE-Light',
+#           'text.latex.unicode': True,
+#         }
+# plt.rcParams.update(params)
+
+
+
+X = [x*10 for x in range(1, 11)]
+Y = {}
+
+f = file("racr-time")
+for a in "batman", "robin":
+	next(f)
+	y = Y[a] = []
+	for x in range(10):
+		next(f)
+		y.append(map(float, next(f).split()))
+
+
+for x, y in zip(X, Y["batman"]):
+	plt.scatter([x]*len(y), y, marker="o", color='#000077')
+
+#for x, y in zip(X, Y["robin"]):
+#	plt.scatter([x]*len(y), y, marker="o", color='#770000')
+
+plt.show()
