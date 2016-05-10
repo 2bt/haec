@@ -267,6 +267,7 @@
                       (max v (att-value 'workload-heuristic (ast-child i workers))))))))))
 
 
+
     (ag-rule
       schedule-batman
       (Worker
@@ -558,9 +559,25 @@
             (add-event 'event-switch-off (ast-child 'id parent))
             (next (ast-parent (ast-parent parent)))))))))
 
+
+;(define print-heuristic
+;  (lambda (l)
+;    (when (not (null? l))
+;      (begin
+;        (display "depth ")
+;        (display (att-value 'depth (car l)))
+;        (display " ")
+;        (displayln (att-value 'workload-heuristic (car l)))
+;        (when (ast-has-child? 'Workers (car l))
+;          (print-heuristic (ast-children (ast-child 'Workers (car l)))))
+;        (print-heuristic (cdr l))
+;        ))))
+
 (define event-adapt
   (lambda (time)
     (adapt time)))
+;    (when (> time 1200)
+;      (print-heuristic (ast-children (ast-child 'Workers config))))))
 
 
 (define event-work-request

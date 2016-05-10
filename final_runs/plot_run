@@ -116,9 +116,9 @@ for i in range(N)[::-1]:
 #if 0:
 
 	facecolor = colormap(i * 1.0 / M)
-	edgecolor = [x * 1.0 for x in facecolor[:3]]
+#	edgecolor = [x * 1.0 for x in facecolor[:3]]
 
-	ax.fill_between(time, [sum(c[:i+1]) for c in currents], facecolor=facecolor, edgecolor=edgecolor)
+	ax.fill_between(time, [sum(c[:i+1]) for c in currents], facecolor=facecolor, linewidth=0)
 
 ax.plot(time, [sum(c) for c in currents], c='black', linewidth=0.5)
 
@@ -237,6 +237,6 @@ for i in range(0,6):
 
 
 plt.savefig("plot.pdf")
-#plt.show()
+plt.show()
 
 
